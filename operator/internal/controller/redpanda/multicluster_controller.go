@@ -1,0 +1,2143 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package redpanda
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"net"
+	"reflect"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/otelkube"
+	"github.com/redpanda-data/common-go/otelutil/trace"
+	"github.com/redpanda-data/common-go/rpadmin"
+	"go.opentelemetry.io/otel/attribute"
+	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+)
+
+const (
+	// Aliases for the canonical constants in v1alpha2 so this package's
+	// existing call sites read clean. Single source of truth lives in
+	// redpandav1alpha2.{StretchClusterBootstrapUsername,
+	// StretchClusterBootstrapPasswordKey} and
+	// (*StretchCluster).BootstrapUserSecretName().
+	bootstrapUserPasswordKey = redpandav1alpha2.StretchClusterBootstrapPasswordKey
+	defaultBootstrapUsername = redpandav1alpha2.StretchClusterBootstrapUsername
+	caOrganization           = "Redpanda"
+
+	// brokerFetchTimeout bounds a single state.admin.Broker(brokerID) call
+	// in reconcileDecommission. The admin client's default ClientTimeout is
+	// generous (10s) so a partitioned broker would otherwise hold up the
+	// per-broker iteration for that long each. Decommission safety still
+	// relies on scaleDown's len(downNodes) > 0 deferral when a pod is
+	// missing from brokerMap, so a transient timeout here can only defer
+	// pod deletion to the next reconcile — it cannot cause an unsafe
+	// decommission.
+	brokerFetchTimeout = 2 * time.Second
+)
+
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceexports,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=get;list;watch;create;update;patch;delete
+
+type MulticlusterReconciler struct {
+	Manager         multicluster.Manager
+	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
+	ClientFactory   internalclient.ClientFactory
+
+	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
+	// single reconcile pass — the primary mechanism is per-call timeouts
+	// on individual downstream clients. Zero (the default) applies
+	// defaultReconcileTimeout; ops may override via the operator's
+	// --reconcile-timeout flag, and tests may inject shorter values to
+	// exercise the deadline path without real latency.
+	ReconcileTimeout time.Duration
+
+	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
+	// broker must report on /v1/broker/post_restart_probe before the roll
+	// loop proceeds to the next broker. Mirrors RedpandaReconciler; defaults
+	// to probes.DefaultPostRestartCaughtUpPercent (100).
+	PostRestartCaughtUpPercent int
+
+	// WaitForSchemaRegistrySync gates the roll loop on every broker's Schema
+	// Registry store having caught up on _schemas (GET /status/ready on the
+	// SR listener) before the next broker is rolled, so overlapping SR
+	// replay windows can't leave the stretch cluster without a consistent
+	// Schema Registry endpoint mid-upgrade. Mirrors RedpandaReconciler; set
+	// via the --wait-for-schema-registry-sync flag. Skipped when the pools'
+	// SR listener configs would make the probe unsound (explicit disable, or
+	// heterogeneous port/TLS) — see stretchSchemaRegistryGateApplies.
+	WaitForSchemaRegistrySync bool
+
+	// MaintenanceModeClearThreshold is how long a broker must be down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// maintenance flag so the partition balancer can auto-decommission it. Zero
+	// applies defaultClearMaintenanceModeAfter (30m); set via the
+	// --clear-maintenance-mode-after flag.
+	MaintenanceModeClearThreshold time.Duration
+
+	// StaleDiskWipeNotReadyThreshold is how long a broker pod must remain
+	// not-Ready before reconcileStaleDiskWipe is allowed to destroy its data
+	// disk to recover a decommissioned-broker bad_rejoin (K8S-843). Zero
+	// applies defaultStaleDiskWipeNotReadyThreshold; a negative value disables
+	// the stale-disk wipe entirely. Set via the --wipe-stale-disk-after flag.
+	StaleDiskWipeNotReadyThreshold time.Duration
+
+	// staleDiskWipeDebounce carries retired-identity observations across
+	// reconcile passes so the destructive wipe only fires on a re-confirmed
+	// identity (see wipeDebounce). Zero value is ready to use.
+	staleDiskWipeDebounce wipeDebounce
+}
+
+// reconcileDeadline returns the timeout to apply on the reconcile context.
+// Extracted from Reconcile so tests can cover the zero/override fallback
+// without standing up a full MulticlusterReconciler.
+func (r *MulticlusterReconciler) reconcileDeadline() time.Duration {
+	if r.ReconcileTimeout > 0 {
+		return r.ReconcileTimeout
+	}
+	return defaultReconcileTimeout
+}
+
+type stretchClusterReconciliationState struct {
+	cluster               *lifecycle.StretchClusterWithPools
+	pools                 *lifecycle.PoolTracker
+	status                *lifecycle.ClusterStatus
+	restartOnConfigChange bool
+	admin                 *rpadmin.AdminAPI
+	bootstrapUser         string
+	bootstrapPassword     string
+	// podEndpoints lazily renders the cluster's per-pod admin endpoints
+	// (memoized: at most one render per pass, and none when no remediation
+	// step needs an endpoint). Set alongside admin by initAdminClient.
+	podEndpoints lazyEndpoints
+
+	// unobservedBrokerPoolClusters lists the configured clusters whose
+	// RedpandaBrokerPool list could not be fetched this pass (unreachable
+	// probe, transient list error, etc.). When non-empty, cluster.BrokerPools
+	// (and therefore cluster.GetAllBrokerPools()) is a partial view of the
+	// StretchCluster's true broker membership, so rendering seed_servers or
+	// any other pool-derived resource from it risks producing an incomplete
+	// list — e.g. a self-only seed list for a freshly added pool, which makes
+	// that broker bootstrap its own standalone cluster instead of joining
+	// (K8S-891). Callers must defer pool-derived rendering while this is set.
+	unobservedBrokerPoolClusters []string
+}
+
+func (s *stretchClusterReconciliationState) cleanup() {
+	if s.admin != nil {
+		s.admin.Close()
+	}
+}
+
+type stretchClusterReconciliationFn func(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error)
+
+func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
+	start := time.Now()
+	l := log.FromContext(ctx).WithName("MulticlusterReconciler.Reconcile")
+
+	// Defense-in-depth ceiling on the reconcile pass. The primary line of
+	// defense is per-call timeouts on each downstream (admin API, peer K8s
+	// API, etc.); this wrapper catches anything we've missed. Healthy
+	// reconciles finish in well under a second, so the default 2-minute
+	// budget does not affect normal operation. See defaultReconcileTimeout
+	// for sizing rationale.
+	ctx, cancel := context.WithTimeout(ctx, r.reconcileDeadline())
+	defer cancel()
+
+	l.V(1).Info("Starting reconcile loop")
+	defer func() {
+		l.V(1).Info("Finished reconciling", "elapsed", time.Since(start))
+	}()
+
+	cluster, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		l.Error(err, "unable to fetch cluster, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
+	k8sClient := cluster.GetClient()
+
+	stretchCluster := &redpandav1alpha2.StretchCluster{}
+	if err := k8sClient.Get(ctx, req.NamespacedName, stretchCluster); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	defer func() {
+		// If we have a resource to manage, ensure that we re-enqueue to re-examine it on a regular basis
+		if err != nil {
+			// Error returns cause a re-enqueuing this with exponential backoff
+			return
+		}
+
+		if result.RequeueAfter > 0 {
+			// We're already set up to enqueue this resource again
+			return
+		}
+
+		result.RequeueAfter = periodicRequeue
+	}()
+
+	ctx, span := trace.Start(otelkube.Extract(ctx, stretchCluster), "Reconcile", trace.WithAttributes(
+		attribute.String("name", req.Name),
+		attribute.String("namespace", req.Namespace),
+		attribute.String("clusterName", req.ClusterName),
+	))
+	defer func() { trace.EndSpan(span, err) }()
+
+	// TODO Should it be removed?
+	if !feature.V2Managed.Get(ctx, stretchCluster) {
+		if controllerutil.RemoveFinalizer(stretchCluster, FinalizerKey) {
+			if err := k8sClient.Update(ctx, stretchCluster); err != nil {
+				l.Error(err, "updating cluster finalizer")
+				// no need to update the status at this point since the
+				// previous update failed
+				return ignoreConflict(err)
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	state, err := r.fetchInitialState(ctx, stretchCluster)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	defer state.cleanup()
+
+	// Update the per-member broker count gauges from the freshly-fetched
+	// RedpandaBrokerPool state. Recording here rather than later means the dashboard
+	// reflects what's deployed even on reconcile paths that abort early
+	// (deletion, finalizer-only updates, etc.).
+	r.recordBrokerCountMetrics(state)
+
+	// Examine if the object is under deletion
+	if !stretchCluster.ObjectMeta.DeletionTimestamp.IsZero() {
+		l.V(log.TraceLevel).Info("deletion timestamp is not zero. Resources cleanup and remove finalizer")
+		// Guard: block partial deletion. If the SC is still alive on any other
+		// cluster, refuse to clean up resources — running cleanup here would
+		// destroy resources that the surviving clusters still need, and the
+		// cross-cluster syncers would fight with deletion.
+		// Recovery: remove the finalizer (kubectl patch) then re-apply the SC.
+		if aliveCluster := r.findAliveCluster(ctx, stretchCluster, req.ClusterName); aliveCluster != "" {
+			msg := fmt.Sprintf(
+				"StretchCluster still active on cluster %q — deletion blocked to prevent data loss. "+
+					"Either delete from all clusters, or recover by removing the finalizer and re-applying the StretchCluster.",
+				aliveCluster,
+			)
+			l.Info("blocking partial deletion", "aliveCluster", aliveCluster)
+			state.status.StretchClusterStatus.SetResourcesSynced(
+				statuses.StretchClusterResourcesSyncedReasonError, msg,
+			)
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, nil)
+		}
+
+		// All clusters are deleting — safe to proceed with cleanup. Requeue
+		// while resources are still going away: nothing this controller
+		// watches fires when a Pod or StatefulSet finally disappears, so a
+		// bare result would fall through to the 3m periodicRequeue.
+		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, err)
+		}
+		if controllerutil.RemoveFinalizer(stretchCluster, FinalizerKey) {
+			if err := k8sClient.Update(ctx, stretchCluster); err != nil {
+				l.Error(err, "updating cluster finalizer")
+				// no need to update the status at this point since the
+				// previous update failed
+				return ignoreConflict(err)
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Check that .spec is consistent across all clusters before proceeding.
+	// If there's drift, block reconciliation until the user fixes it.
+	if drifted, driftResult := r.checkSpecConsistency(ctx, state, stretchCluster, req.ClusterName); drifted {
+		return r.syncStatus(ctx, cluster, state, driftResult, nil)
+	}
+
+	// Update our StretchCluster with our finalizer and any default Annotation FFs.
+	// If any changes are made, persist the changes and immediately requeue to
+	// prevent any cache / resource version synchronization issues.
+	if controllerutil.AddFinalizer(stretchCluster, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, stretchCluster) {
+		if err := k8sClient.Update(ctx, stretchCluster); err != nil {
+			l.Error(err, "updating cluster finalizer or Annotation")
+			return ignoreConflict(err)
+		}
+		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
+	}
+
+	// syncCA (Phase 1) and both Phase 2 reconcilers derive pool-scoped
+	// resources — CA cert names, seed_servers, StatefulSets, ConfigMaps —
+	// from state.cluster.GetAllBrokerPools(), the union of BrokerPools
+	// fetched across every expected cluster. If any cluster wasn't observed
+	// this pass, that union is incomplete — skip exactly those pool-derived
+	// steps rather than apply a partial view (K8S-891; see
+	// checkBrokerPoolViewComplete). Everything else still runs: a peer
+	// outage is precisely when Phase 3's recovery steps (maintenance-mode
+	// clear, stale-disk wipe, decommission hygiene, license/config sync)
+	// are needed on the members we can still reach.
+	poolViewIncomplete, poolViewResult := r.checkBrokerPoolViewComplete(ctx, state)
+
+	// Phase 1: cross-cluster syncers — ensure shared resources exist in all k8s clusters
+	// before any per-cluster reconciliation begins.
+	syncers := []stretchClusterReconciliationFn{
+		r.syncBootstrapUser,
+	}
+	// syncCA derives the managed-cert names from the BrokerPool union, so it
+	// is deferred alongside Phase 2 while the pool view is incomplete.
+	// syncBootstrapUser is spec-derived and skips unreachable peers itself,
+	// so it always runs.
+	if !poolViewIncomplete {
+		syncers = append(syncers, r.syncCA)
+	}
+
+	for _, syncer := range syncers {
+		result, err := syncer(ctx, state, cluster)
+		if err != nil || result.RequeueAfter > 0 {
+			l.V(log.TraceLevel).Info("aborting reconciliation early during sync phase", "error", err, "requeueAfter", result.RequeueAfter)
+			return r.syncStatus(ctx, cluster, state, result, err)
+		}
+	}
+
+	// Phase 2: sync Kubernetes resources (simple resources + broker pools).
+	// EndpointSlice sync runs between resource creation and pool readiness
+	// checks so that pods can discover each other before becoming ready.
+	// Skipped entirely while the pool view is incomplete:
+	// checkBrokerPoolViewComplete has already set ResourcesSynced to a
+	// retryable error explaining the deferral.
+	if !poolViewIncomplete {
+		resourceReconcilers := []stretchClusterReconciliationFn{
+			r.reconcileResources,
+			r.reconcilePools,
+		}
+		for _, reconciler := range resourceReconcilers {
+			result, err := reconciler(ctx, state, cluster)
+			if err != nil || result.RequeueAfter > 0 {
+				l.V(log.TraceLevel).Info("aborting reconciliation early during resource sync", "error", err, "requeueAfter", result.RequeueAfter)
+				return r.syncStatus(ctx, cluster, state, result, err)
+			}
+		}
+
+		// All Kubernetes resources are in sync.
+		state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+	}
+
+	// Phase 3: cluster-level reconciliation. Deliberately NOT gated on the
+	// pool view: these steps act through the admin API and on the pods/pools
+	// we can see, and any "no desired counterpart → drain" decision inside
+	// them is separately guarded by the per-cluster observed set threaded
+	// into FetchExistingAndDesiredPools.
+	//
+	// initAdminClient gates everything below. The remediation steps run in
+	// strict order and stop at the first error or requeue (see
+	// clusterRemediationReconcilers), but the declarative syncs still run
+	// afterwards: a persistently failing remediation step — e.g.
+	// reconcileDecommission unable to fetch cluster health during broker
+	// churn — must not starve cluster-config and license sync, or
+	// ConfigurationApplied sits at a stale True while the spec has moved on.
+	phase3Result, phase3Err := r.initAdminClient(ctx, state, cluster)
+	if phase3Err == nil && phase3Result.RequeueAfter == 0 {
+		remResult, remErr := runOrderedSteps(ctx, state, cluster, r.clusterRemediationReconcilers())
+		syncResult, syncErr := runIndependentSteps(ctx, state, cluster, r.clusterSyncReconcilers())
+		phase3Result, phase3Err = soonerRequeue(remResult, syncResult), errors.Join(remErr, syncErr)
+	}
+	if phase3Err != nil || phase3Result.RequeueAfter > 0 {
+		l.V(log.TraceLevel).Info("aborting reconciliation early", "error", phase3Err, "requeueAfter", phase3Result.RequeueAfter)
+		return r.syncStatus(ctx, cluster, state, phase3Result, phase3Err)
+	}
+
+	// we're at the end of reconciliation, so sync back our status.
+	// Poll again quickly (faster than the periodic requeue) while the cluster is
+	// not yet settled: pool-derived rendering was deferred on an incomplete
+	// pool view, the cluster scaled up with no broker Ready yet, or a
+	// scale/roll is still in flight (reconcilePools skipped mutations this
+	// pass). This is applied here — after the Phase-3 cluster reconcilers —
+	// rather than aborting earlier, so outage-recovery steps still run while
+	// a peer is unobserved or brokers are unready or churning. See
+	// PoolTracker.ScaledUpButNoneReady / CheckScale.
+	pollResult := ctrl.Result{}
+	switch {
+	case poolViewIncomplete:
+		pollResult = poolViewResult
+	case state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx):
+		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
+		pollResult.RequeueAfter = requeueTimeout
+	}
+	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
+	return r.syncStatus(ctx, cluster, state, pollResult, nil)
+}
+
+// clusterRemediationReconcilers returns the ordered remediation steps
+// (maintenance mode, stale-disk wipe, decommission). Order matters: any step
+// returning a non-zero RequeueAfter or an error stops the rest of this group
+// for the pass, so a step whose completion is a precondition for another must
+// come first. initAdminClient runs before this group in Reconcile.
+//
+// reconcileMaintenanceMode must precede reconcileDecommission specifically:
+// reconcileDecommission requeues for as long as a decommission it started is
+// not yet Finished, which is exactly the state a broker stuck in maintenance
+// mode sits in forever (the partition balancer refuses to move data off a
+// maintenance-mode node), so the clear would never run if ordered after it.
+//
+// reconcileStaleDiskWipe must precede reconcileDecommission: reconcileDecommission
+// runs the rolling-restart pre-check and requeues (aborting the rest of the
+// group) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
+// replaced pod is still not-Ready. A decommissioned-broker bad_rejoin (K8S-843)
+// is exactly that state (its pod is stuck not-Ready), so if the wipe step were
+// ordered after reconcileDecommission it would never run to recover the very
+// bad_rejoin it exists for. Running it first lets it destroy the stale disk and
+// unblock the pod before the roll-loop deferral aborts the pass.
+func (r *MulticlusterReconciler) clusterRemediationReconcilers() []stretchClusterReconciliationFn {
+	return []stretchClusterReconciliationFn{
+		r.reconcileMaintenanceMode,
+		r.reconcileStaleDiskWipe,
+		r.reconcileDecommission,
+	}
+}
+
+// clusterSyncReconcilers returns the declarative sync steps (license, cluster
+// config). They run every pass once the admin client is initialized — even
+// when a remediation step failed or requeued, and independently of each other
+// — because they share no preconditions with the remediation group and
+// skipping them turns any persistent remediation failure into a silent config
+// and license freeze.
+func (r *MulticlusterReconciler) clusterSyncReconcilers() []stretchClusterReconciliationFn {
+	return []stretchClusterReconciliationFn{
+		r.reconcileLicense,
+		r.reconcileClusterConfig,
+	}
+}
+
+// runOrderedSteps runs steps in order, stopping at the first error or
+// non-zero requeue: later steps depend on earlier ones having completed.
+func runOrderedSteps(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster, steps []stretchClusterReconciliationFn) (ctrl.Result, error) {
+	for _, step := range steps {
+		result, err := step(ctx, state, cluster)
+		if err != nil || result.RequeueAfter > 0 {
+			log.FromContext(ctx).V(log.TraceLevel).Info("stopping ordered steps early", "error", err, "requeueAfter", result.RequeueAfter)
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+// runIndependentSteps runs every step even when an earlier one fails, joining
+// errors and keeping the soonest requested requeue: the steps don't depend on
+// one another, and stopping early would starve the rest behind a persistent
+// failure.
+func runIndependentSteps(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster, steps []stretchClusterReconciliationFn) (ctrl.Result, error) {
+	var combined ctrl.Result
+	var errs error
+	for _, step := range steps {
+		result, err := step(ctx, state, cluster)
+		errs = errors.Join(errs, err)
+		combined = soonerRequeue(combined, result)
+	}
+	return combined, errs
+}
+
+// soonerRequeue merges two results, keeping the soonest non-zero RequeueAfter.
+func soonerRequeue(a, b ctrl.Result) ctrl.Result {
+	if a.RequeueAfter == 0 {
+		return b
+	}
+	if b.RequeueAfter != 0 && b.RequeueAfter < a.RequeueAfter {
+		return b
+	}
+	return a
+}
+
+// findAliveCluster checks whether the StretchCluster exists and is NOT being
+// deleted on any cluster other than localClusterName. Returns the name of the
+// first alive cluster found, or "" if all clusters are deleting.
+//
+// On transient errors (anything other than NotFound) the function assumes the
+// remote cluster is alive and returns its name. This is the safe default —
+// allowing cleanup to proceed when a cluster is unreachable could destroy
+// resources that the surviving cluster still needs.
+func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpandav1alpha2.StretchCluster, localClusterName string) string {
+	l := log.FromContext(ctx).WithName("findAliveCluster")
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		if clusterName == localClusterName || clusterName == "" {
+			continue
+		}
+		remote, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			l.Info("cannot reach cluster, assuming alive to block cleanup", "cluster", clusterName, "error", err)
+			return clusterName
+		}
+		remoteSC := &redpandav1alpha2.StretchCluster{}
+		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			l.Error(err, "cannot fetch StretchCluster from cluster, assuming alive to block cleanup", "cluster", clusterName)
+			return clusterName
+		}
+		if remoteSC.DeletionTimestamp.IsZero() {
+			return clusterName
+		}
+	}
+	return ""
+}
+
+// checkBrokerPoolViewComplete reports whether fetchInitialState observed
+// every expected cluster's BrokerPool list this pass. When a cluster was
+// probe-skipped, its List call failed, or its runtime registration hasn't
+// completed yet — most commonly a brief post-leader-election window before
+// the engage cycle and bootstrap peer registration finish —
+// state.cluster.GetAllBrokerPools() is a partial view of the
+// StretchCluster's true broker membership.
+//
+// Rendering seed_servers (or any other pool-derived resource, e.g. syncCA's
+// managed-cert-name derivation) from a partial view is unsafe: a freshly
+// added pool can render with a self-only seed list, and a broker that
+// bootstraps from a self-only seed list forms its own standalone cluster
+// instead of joining the existing one — a split-brain (K8S-891). When this
+// returns incomplete=true, the caller must skip exactly the pool-derived
+// steps (syncCA and the Phase 2 renderers) and requeue with the returned
+// result at the end of the pass — but must still run the steps that don't
+// need the complete pool view (syncBootstrapUser and the Phase 3 cluster
+// reconcilers), since a peer outage is exactly when Phase 3's recovery work
+// is needed on reachable members. The next pass retries once the peer
+// becomes reachable (health.go's unreachable→reachable transition also
+// wakes the engage loop directly, so this typically resolves within one
+// probe interval).
+//
+//nolint:laconiccomments
+func (r *MulticlusterReconciler) checkBrokerPoolViewComplete(ctx context.Context, state *stretchClusterReconciliationState) (incomplete bool, _ ctrl.Result) {
+	if len(state.unobservedBrokerPoolClusters) == 0 {
+		return false, ctrl.Result{}
+	}
+
+	l := log.FromContext(ctx).WithName("checkBrokerPoolViewComplete")
+	msg := fmt.Sprintf(
+		"broker pool view incomplete, clusters not yet observed: %s — deferring resource rendering to avoid an incomplete seed_servers list",
+		strings.Join(state.unobservedBrokerPoolClusters, ", "),
+	)
+	l.Info(msg)
+	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, msg)
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}
+}
+
+// checkSpecConsistency fetches the StretchCluster from every reachable cluster
+// and verifies that .Spec is identical. Unreachable clusters are skipped with a
+// logged warning — reconciliation continues on the clusters that are available
+// rather than being blocked by a transient outage. A peer that is reachable but
+// has no StretchCluster CR (NotFound) is treated as not participating: it is
+// recorded separately and does not block, so the cluster can still reach Stable
+// when the only outlier is an intentionally-absent peer (K8S-883). If drift is
+// detected on a reachable cluster it sets SpecSynced=False and returns
+// drifted=true so the caller can abort. When all participating reachable specs
+// are aligned it sets SpecSynced=True.
+//
+// Records observability gauges as a side effect — `member_reachable` for every
+// member cluster, and `spec_drift` for reachable members (left untouched for
+// unreachable ones because we genuinely don't know).
+func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster, localClusterName string) (drifted bool, _ ctrl.Result) {
+	l := log.FromContext(ctx).WithName("checkSpecConsistency")
+
+	localSpec := sc.Spec
+	var driftDetails []string
+	var unreachable []string
+	// Peers that are reachable but have no StretchCluster CR. These are NOT
+	// unreachable — the peer is simply not participating in this stretch
+	// (intentionally removed, or not yet created). Tracked separately so the
+	// status can report them distinctly from a genuine connectivity failure
+	// (K8S-883).
+	var missingStretchCluster []string
+
+	// The local cluster is always reachable from this operator and is
+	// (by definition) aligned with itself. Record both gauges so the
+	// local member's series is present.
+	//
+	// req.ClusterName is the multicluster-runtime's internal local-cluster
+	// sentinel (empty string in practice). Convert to the canonical
+	// cluster name so the prometheus `member` label is a stable peer
+	// name rather than an empty string.
+	localCanonical := lifecycle.CanonicalClusterName(localClusterName, r.Manager.GetLocalClusterName)
+	observability.RecordStretchClusterMemberReachable(sc.Name, localCanonical, true)
+	observability.RecordStretchClusterSpecDrift(sc.Name, localCanonical, false)
+
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		// Skip the local cluster — we already have its spec.
+		if clusterName == localClusterName {
+			continue
+		}
+
+		// Check the background health probe first — this avoids a direct
+		// API call on every reconcile. The probe runs independently in the
+		// manager and caches reachability per cluster.
+		// Canonicalise once per loop iteration so all record calls use a
+		// stable `member` label (peer names that the user knows, not the
+		// multicluster-runtime's internal sentinels).
+		canonical := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+
+		if !r.Manager.IsClusterReachable(clusterName) {
+			l.Info("cluster unreachable (background probe), skipping", "cluster", clusterName)
+			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
+			continue
+		}
+
+		remote, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			l.Info("cluster unreachable during spec consistency check, skipping", "cluster", clusterName, "error", err)
+			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
+			continue
+		}
+
+		remoteSC := &redpandav1alpha2.StretchCluster{}
+		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
+			// A NotFound on a reachable peer is fundamentally different from an
+			// unreachable cluster: the peer answered, it just has no
+			// StretchCluster CR. Conflating the two reports "cluster
+			// unreachable" for a perfectly reachable peer (misleading) and, by
+			// keeping SpecSynced non-True, blocks the cluster from ever
+			// reaching Stable even when the data plane is healthy (K8S-883).
+			// Treat such a peer as not participating: record it as reachable,
+			// track it separately, and do not block on it.
+			if apierrors.IsNotFound(err) {
+				l.Info("peer has no StretchCluster, treating as not participating", "cluster", clusterName)
+				missingStretchCluster = append(missingStretchCluster, clusterName)
+				observability.RecordStretchClusterMemberReachable(sc.Name, canonical, true)
+				continue
+			}
+			l.Info("could not fetch StretchCluster from cluster, skipping", "cluster", clusterName, "error", err)
+			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
+			continue
+		}
+
+		// Member is reachable and the SC fetch succeeded — record both
+		// reachability and the drift outcome so the gauges stay in sync.
+		observability.RecordStretchClusterMemberReachable(sc.Name, canonical, true)
+		isDrifted := !apiequality.Semantic.DeepEqual(localSpec, remoteSC.Spec)
+		observability.RecordStretchClusterSpecDrift(sc.Name, canonical, isDrifted)
+		if isDrifted {
+			fields := specDiffFields(localSpec, remoteSC.Spec)
+			driftDetails = append(driftDetails, fmt.Sprintf("%s (fields: %s)", clusterName, strings.Join(fields, ", ")))
+		}
+	}
+
+	if len(driftDetails) == 0 {
+		switch {
+		case len(unreachable) > 0:
+			msg := fmt.Sprintf("clusters unreachable, spec consistency could not be verified: %s", strings.Join(unreachable, ", "))
+			if len(missingStretchCluster) > 0 {
+				msg += fmt.Sprintf("; peers reachable but without a StretchCluster (not participating): %s", strings.Join(missingStretchCluster, ", "))
+			}
+			l.Info(msg)
+			// Reachable specs are aligned but some clusters are down. Use the
+			// ClusterUnreachable reason so operators can distinguish a partial
+			// check from a genuine drift or error. Reconciliation continues on
+			// live clusters — we do NOT block on an unreachable peer.
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonClusterUnreachable, msg)
+		case len(missingStretchCluster) > 0:
+			// Every reachable, participating peer agrees. The only outliers are
+			// peers that are reachable but have no StretchCluster CR — they are
+			// not participating, so they must not block stability. Resolve to
+			// Synced=True while clearly naming the absent peers so operators can
+			// tell "peer missing StretchCluster" apart from drift or an
+			// unreachable cluster (K8S-883).
+			msg := fmt.Sprintf("spec consistent across all participating clusters; peers reachable but without a StretchCluster (not participating): %s", strings.Join(missingStretchCluster, ", "))
+			l.Info(msg)
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced, msg)
+		default:
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced)
+		}
+		return false, ctrl.Result{}
+	}
+
+	msg := fmt.Sprintf("StretchCluster .spec differs on clusters: %s — reconciliation is blocked until specs are aligned", strings.Join(driftDetails, "; "))
+	l.Info(msg)
+
+	state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonDriftDetected, msg)
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}
+}
+
+// specDiffFields returns the top-level JSON field names of StretchClusterSpec
+// that differ between a and b.
+func specDiffFields(a, b redpandav1alpha2.StretchClusterSpec) []string {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+	t := av.Type()
+
+	var fields []string
+	for i := range t.NumField() {
+		if !apiequality.Semantic.DeepEqual(av.Field(i).Interface(), bv.Field(i).Interface()) {
+			name := t.Field(i).Name
+			if tag, ok := t.Field(i).Tag.Lookup("json"); ok {
+				if jsonName, _, _ := strings.Cut(tag, ","); jsonName != "" {
+					name = jsonName
+				}
+			}
+			fields = append(fields, name)
+		}
+	}
+	return fields
+}
+
+// expectedBrokerPoolClusters returns the set of clusters whose BrokerPool
+// list must be observed before pool-derived rendering is safe: the union of
+// the currently-registered clusters (the caller passes sccluster.GetClusters(),
+// sourced from Manager.GetClusterNames) and the manager's *configured*
+// clusters. The configured set is what closes the K8S-891 startup/failover
+// race: in bootstrap mode a peer is registered with the runtime provider only
+// after raft leadership is acquired and its kubeconfig fetched, so a
+// reconcile racing that registration would otherwise see expected ==
+// observed == {local} and render a self-only seed list anyway. Taking the
+// union (rather than the configured set alone) keeps any dynamically
+// registered cluster in the expected set too.
+func (r *MulticlusterReconciler) expectedBrokerPoolClusters(registered []string) []string {
+	return unionClusterNames(registered, r.Manager.GetConfiguredClusterNames())
+}
+
+// unionClusterNames returns the sorted, deduplicated union of the two
+// cluster-name lists.
+func unionClusterNames(a, b []string) []string {
+	seen := make(map[string]struct{}, len(a)+len(b))
+	var union []string
+	for _, names := range [][]string{a, b} {
+		for _, name := range names {
+			if _, ok := seen[name]; ok {
+				continue
+			}
+			seen[name] = struct{}{}
+			union = append(union, name)
+		}
+	}
+	sort.Strings(union)
+	return union
+}
+
+// unobservedClusters returns the canonical names of every entry in
+// allClusters that observed does not mark true, preserving allClusters'
+// order. Used to detect when FetchExistingBrokerPoolsFromAllClusters'
+// observed set is missing an expected cluster — i.e. its BrokerPool list
+// was probe-skipped, failed to fetch, or the cluster isn't even registered
+// with the runtime provider yet, making the union of BrokerPools an
+// incomplete view of the StretchCluster (K8S-891).
+func unobservedClusters(allClusters []string, observed map[string]bool, getLocalClusterName func() string) []string {
+	var missing []string
+	for _, clusterName := range allClusters {
+		if !observed[clusterName] {
+			missing = append(missing, lifecycle.CanonicalClusterName(clusterName, getLocalClusterName))
+		}
+	}
+	return missing
+}
+
+func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
+	logger := log.FromContext(ctx)
+	logger.V(log.DebugLevel).Info("fetchInitialState")
+
+	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
+
+	// grab BrokerPools from all connected clusters
+	brokerPools, brokerPoolsObserved, err := r.LifecycleClient.FetchExistingBrokerPoolsFromAllClusters(ctx, sccluster)
+	if err != nil {
+		logger.Error(err, "fetching brokerpools")
+		return nil, err
+	}
+	sccluster.BrokerPools = brokerPools
+
+	// Any expected cluster missing from brokerPoolsObserved means its
+	// BrokerPool list was probe-skipped or failed to fetch this pass, so
+	// sccluster.BrokerPools (and GetAllBrokerPools()) is an incomplete view.
+	// Recorded here so Reconcile can defer any pool-derived rendering until
+	// every cluster has been observed (K8S-891).
+	unobservedBrokerPoolClusters := unobservedClusters(r.expectedBrokerPoolClusters(sccluster.GetClusters()), brokerPoolsObserved, r.Manager.GetLocalClusterName)
+
+	// grab our existing and desired pool resources
+	// so that we can immediately calculate cluster status
+	// from and sync in any subsequent operation that
+	// early returns
+	restartOnConfigChange := feature.RestartOnConfigChange.Get(ctx, sc)
+	injectedConfigVersion := ""
+	if restartOnConfigChange {
+		injectedConfigVersion = sc.Status.ConfigVersion
+	}
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, brokerPoolsObserved)
+	if err != nil {
+		logger.Error(err, "fetching pools")
+		return nil, err
+	}
+
+	status := lifecycle.NewStretchClusterStatus()
+	status.Pools = pools.PoolStatuses()
+
+	if pools.AnyReady() {
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonReady)
+	} else if pools.AllZero() {
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, messageNoBrokers)
+	} else {
+		// This branch is exactly pools.ScaledUpButNoneReady() — the same state
+		// that drives the end-of-Reconcile fast readiness poll. Keep the two in
+		// lockstep: a broker exists/desired but none is Ready yet.
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, "No pods are ready")
+	}
+
+	// Populate pod endpoints on the cluster struct so the renderer can
+	// produce Endpoints/EndpointSlices for flat network mode.
+	sccluster.PodEndpoints = pools.PodEndpoints(ctx)
+
+	return &stretchClusterReconciliationState{
+		cluster:                      sccluster,
+		pools:                        pools,
+		status:                       status,
+		restartOnConfigChange:        restartOnConfigChange,
+		unobservedBrokerPoolClusters: unobservedBrokerPoolClusters,
+	}, nil
+}
+
+// recordBrokerCountMetrics walks every member cluster's BrokerPools and emits
+// the per-member `brokers` / `brokers_ready` gauges. Done as a side effect
+// of fetchInitialState rather than inside the lifecycle package because
+// the metric label set (stretchcluster, member) is observability-specific
+// and the lifecycle types don't otherwise need to know about it.
+//
+// Members with no BrokerPools still emit zero values so dashboards can show
+// "this peer is configured but has no pools yet" instead of an absent
+// series.
+func (r *MulticlusterReconciler) recordBrokerCountMetrics(state *stretchClusterReconciliationState) {
+	sc := state.cluster.StretchCluster
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		var desired, ready int32
+		for _, pool := range state.cluster.GetBrokerPoolsForCluster(clusterName) {
+			if pool == nil {
+				continue
+			}
+			if pool.Spec.Replicas != nil {
+				desired += *pool.Spec.Replicas
+			}
+			ready += pool.Status.ReadyReplicas
+		}
+		// Canonicalise so the `member` label always carries a stable
+		// peer name, even when the manager exposes the local cluster as
+		// "" (the multicluster-runtime convention for "this cluster").
+		canonical := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+		observability.RecordStretchClusterBrokers(sc.Name, canonical, desired, ready)
+	}
+}
+
+// bootstrapSecretName returns the name of the bootstrap user secret for a given
+// stretch cluster. The same name is used in every k8s cluster so the
+// StatefulSet env var can reference it without knowing the cluster name.
+//
+// Deprecated: thin wrapper around [redpandav1alpha2.StretchCluster.BootstrapUserSecretName]
+// for back-compat with this package's call sites; prefer the method directly
+// in new code.
+func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster) string {
+	return sc.BootstrapUserSecretName()
+}
+
+func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "syncBootstrapUser")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error syncing bootstrap user")
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	sc := state.cluster.StretchCluster
+
+	if !sc.Spec.Auth.IsSASLEnabled() {
+		logger.V(log.TraceLevel).Info("SASL is not enabled, skipping bootstrap user sync")
+		// There is no bootstrap user to manage when SASL is disabled, so the
+		// condition is trivially reconciled. We must still set it to a final
+		// state: leaving it at its CRD default (Unknown/NotReconciled) keeps it
+		// non-final, which blocks the Quiesced aggregate — and therefore Stable
+		// — from ever reaching True on an otherwise healthy cluster (K8S-884).
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(
+			statuses.StretchClusterBootstrapUserSyncedReasonSynced,
+			"SASL is disabled; no bootstrap user secret is required",
+		)
+		return ctrl.Result{}, nil
+	}
+	clusterNames := r.Manager.GetClusterNames()
+
+	// Resolve where the password lives. When the user pins a location via
+	// spec.auth.sasl.bootstrapUser.secretKeyRef we read/generate/replicate there
+	// instead of the operator-managed <name>-bootstrap-user Secret. This is the
+	// single writer for that Secret regardless of who named it, which is what
+	// keeps concurrent multi-cluster applies from diverging (K8S-900).
+	secretName, passwordKey := sc.BootstrapUserPasswordLocation()
+
+	// Whether the location above came from a user-provided secretKeyRef (as
+	// opposed to the operator-managed default). SASL is enabled here, so SASL is
+	// non-nil; only BootstrapUser/SecretKeyRef can be absent.
+	userPinnedSecret := sc.Spec.Auth.SASL.BootstrapUser != nil && sc.Spec.Auth.SASL.BootstrapUser.SecretKeyRef != nil
+
+	// Phase 1: scan all clusters for existing bootstrap user secrets.
+	// If multiple secrets exist, verify they all have the same password.
+	//
+	// Both the probe check and the per-call timeout are required here. The
+	// probe is the fast path: a peer known unreachable is skipped without a
+	// dial attempt. The timeout is the backstop: when the controller-runtime
+	// cached client is asked to Get from a cluster whose informer cache
+	// hasn't synced (typical right after leader transition, before the
+	// engage cycle has run for that peer), the Get blocks waiting for cache
+	// sync — *not* on a network call, so net.Dialer.Timeout doesn't help.
+	// The parent reconcile context's 2-minute ceiling is the only thing that
+	// would otherwise stop it, and we'd burn the whole reconcile budget on
+	// one Get. Same pattern as Phase 3 below.
+	var canonicalPassword string
+	var canonicalCluster string
+	for _, clusterName := range clusterNames {
+		if clusterName != mcmanager.LocalCluster && !r.Manager.IsClusterReachable(clusterName) {
+			logger.V(log.TraceLevel).Info("cluster unreachable, skipping bootstrap user scan", "cluster", clusterName)
+			continue
+		}
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				logger.Info("could not get cluster, skipping bootstrap user scan", "cluster", clusterName, "error", err)
+				continue
+			}
+			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+		}
+
+		var existing corev1.Secret
+		getCtx, getCancel := context.WithTimeout(ctx, lifecycle.CallTimeoutFor(clusterName))
+		err = cl.GetClient().Get(getCtx, client.ObjectKey{
+			Namespace: sc.Namespace,
+			Name:      secretName,
+		}, &existing)
+		getCancel()
+		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				logger.Info("could not Get bootstrap user secret on cluster, skipping scan", "cluster", clusterName, "error", err)
+				continue
+			}
+			// Local Get error other than NotFound: log and continue scanning;
+			// Phase 3 will recreate the secret if missing.
+			continue
+		}
+		pw, ok := existing.Data[passwordKey]
+		if !ok || len(pw) == 0 {
+			// The Secret object exists but carries no password under the resolved
+			// key. For a user-pinned secretKeyRef this is a misconfiguration we must
+			// surface: silently falling through would generate a fresh password and
+			// write it only to the *other* clusters (Phase 3 skips this one because
+			// the object already exists), splitting credentials across the stretch —
+			// the exact K8S-900 failure mode. For the operator-managed Secret this
+			// cannot normally happen, so leave Phase 3 to (re)create it.
+			if userPinnedSecret {
+				pinnedCluster := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+				msg := fmt.Sprintf(
+					"bootstrap user secret %q in cluster %q has no data under key %q; "+
+						"populate the referenced secret's key or remove spec.auth.sasl.bootstrapUser.secretKeyRef",
+					secretName, pinnedCluster, passwordKey,
+				)
+				state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonTerminalError, msg)
+				return ctrl.Result{}, errors.New(msg)
+			}
+			continue
+		}
+
+		password := string(pw)
+		if canonicalPassword == "" {
+			canonicalPassword = password
+			canonicalCluster = clusterName
+			logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
+		} else if canonicalPassword != password {
+			// Canonicalise both names so a secret found on the local cluster —
+			// which GetClusterNames() reports as the empty-string sentinel
+			// (mcmanager.LocalCluster) — is surfaced by its human-readable peer
+			// name rather than an empty "" in the operator-facing error (K8S-900).
+			mismatchCluster := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+			sourceCluster := lifecycle.CanonicalClusterName(canonicalCluster, r.Manager.GetLocalClusterName)
+			msg := fmt.Sprintf(
+				"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
+					"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
+				secretName, mismatchCluster, sourceCluster,
+			)
+			state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
+			return ctrl.Result{}, errors.New(msg)
+		}
+	}
+
+	// Phase 1b — migration (K8S-900): a StretchCluster created before secretKeyRef
+	// was honored was bootstrapped from the operator-managed <name>-bootstrap-user
+	// Secret. If the user has since added a secretKeyRef pointing elsewhere, the
+	// password Redpanda actually knows is the one in that legacy Secret — switching
+	// to the referenced location would break authentication (the bootstrap password
+	// cannot be changed by editing a Secret). When the legacy Secret still exists we
+	// treat it as authoritative: seed the referenced location from it so every
+	// consumer keeps using the bootstrapped password. If the referenced location
+	// already holds a *different* password we refuse rather than write divergent
+	// copies, since we cannot silently honor a password the cluster was not
+	// bootstrapped with.
+	if userPinnedSecret {
+		legacyName := sc.BootstrapUserSecretName()
+		if secretName != legacyName {
+			if legacyPassword, legacyCluster := r.findExistingBootstrapPassword(ctx, sc, clusterNames, legacyName, bootstrapUserPasswordKey); legacyPassword != "" {
+				switch {
+				case canonicalPassword == "":
+					canonicalPassword = legacyPassword
+					canonicalCluster = legacyCluster
+					logger.Info("migrating bootstrap password from operator-managed secret to the referenced secretKeyRef location",
+						"legacySecret", legacyName, "referencedSecret", secretName)
+				case canonicalPassword != legacyPassword:
+					msg := fmt.Sprintf(
+						"StretchCluster was bootstrapped with the operator-managed secret %q, but the "+
+							"referenced secret %q holds a different password; the bootstrap password cannot be "+
+							"changed by editing the secret. Set %q to the existing password or remove "+
+							"spec.auth.sasl.bootstrapUser.secretKeyRef.",
+						legacyName, secretName, secretName,
+					)
+					state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonTerminalError, msg)
+					return ctrl.Result{}, errors.New(msg)
+				}
+			}
+		}
+	}
+
+	// Phase 2: if no secret exists anywhere, generate a new password.
+	generated := canonicalPassword == ""
+	if generated {
+		canonicalPassword = helmette.RandAlphaNum(32)
+		logger.V(log.DebugLevel).Info("generated new bootstrap user password")
+	}
+
+	// Phase 3: ensure the secret exists in every cluster.
+	for _, clusterName := range clusterNames {
+		if !r.Manager.IsClusterReachable(clusterName) {
+			logger.Info("cluster unreachable, skipping bootstrap user sync", "cluster", clusterName)
+			continue
+		}
+
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			logger.Info("cluster unreachable, skipping bootstrap user sync", "cluster", clusterName, "error", err)
+			continue
+		}
+
+		k8sClient := cl.GetClient()
+
+		var existing corev1.Secret
+		if err := k8sClient.Get(ctx, client.ObjectKey{
+			Namespace: sc.Namespace,
+			Name:      secretName,
+		}, &existing); err == nil {
+			// Secret already exists — nothing to do for this cluster. We never
+			// overwrite: this bounds the blast radius of a user-supplied
+			// secretKeyRef.Name (a StretchCluster editor names the Secret the
+			// operator reads and replicates across member clusters) to creating a
+			// same-named Secret only where one is absent, never clobbering a
+			// colliding one. See the SecretKeyRef field doc for the trust boundary.
+			continue
+		}
+
+		// Fetch the StretchCluster from this specific cluster to get the correct
+		// UID for the owner reference (UIDs differ across clusters).
+		// Skip clusters where the SC doesn't exist or is being deleted.
+		localSC := &redpandav1alpha2.StretchCluster{}
+		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+			if client.IgnoreNotFound(err) == nil {
+				logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping bootstrap user sync", "cluster", clusterName)
+				continue
+			}
+			logger.Info("could not fetch StretchCluster from cluster, skipping bootstrap user sync", "cluster", clusterName, "error", err)
+			continue
+		}
+		if !localSC.DeletionTimestamp.IsZero() {
+			logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping bootstrap user sync", "cluster", clusterName)
+			continue
+		}
+
+		labels := r.LifecycleClient.AddOwnerLabels(state.cluster)
+		labels[lifecycle.GCLabel] = "false"
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: sc.Namespace,
+				Labels:    labels,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(localSC, redpandav1alpha2.SchemeGroupVersion.WithKind("StretchCluster")),
+				},
+			},
+			Immutable: ptr.To(true),
+			Type:      corev1.SecretTypeOpaque,
+			Data: map[string][]byte{
+				passwordKey: []byte(canonicalPassword),
+			},
+		}
+
+		if err := k8sClient.Create(ctx, secret); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "creating bootstrap user secret in cluster %s", clusterName)
+		}
+		logger.Info("created bootstrap user secret", "cluster", clusterName, "secret", secretName)
+	}
+
+	// Phase 4: set status condition.
+	if generated {
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonSynced, fmt.Sprintf("Bootstrap user secret created and synced across %d cluster(s)", len(clusterNames)))
+	} else {
+		// Canonicalise for the same reason as the mismatch error above: the
+		// reused secret may have been found on the local cluster, which
+		// GetClusterNames() reports as the empty-string sentinel (K8S-900).
+		sourceCluster := lifecycle.CanonicalClusterName(canonicalCluster, r.Manager.GetLocalClusterName)
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused, fmt.Sprintf("Using existing bootstrap user secret from cluster %q", sourceCluster))
+	}
+
+	state.bootstrapUser = defaultBootstrapUsername
+	state.bootstrapPassword = canonicalPassword
+
+	return ctrl.Result{}, nil
+}
+
+// findExistingBootstrapPassword scans reachable clusters for a Secret named
+// `name` carrying a non-empty password under `key`, returning the first one found
+// and the cluster it came from (canonicalised for display), or ("", "") if none.
+// Used during secretKeyRef migration to locate the legacy operator-managed
+// bootstrap password a pre-existing cluster was actually bootstrapped with. Scan
+// order follows GetClusterNames, mirroring the Phase-1 reachability/timeout
+// handling so a partitioned peer cannot stall the reconcile.
+func (r *MulticlusterReconciler) findExistingBootstrapPassword(ctx context.Context, sc *redpandav1alpha2.StretchCluster, clusterNames []string, name, key string) (password, clusterCanonical string) {
+	logger := log.FromContext(ctx)
+	for _, clusterName := range clusterNames {
+		if clusterName != mcmanager.LocalCluster && !r.Manager.IsClusterReachable(clusterName) {
+			continue
+		}
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			continue
+		}
+		var existing corev1.Secret
+		getCtx, getCancel := context.WithTimeout(ctx, lifecycle.CallTimeoutFor(clusterName))
+		err = cl.GetClient().Get(getCtx, client.ObjectKey{Namespace: sc.Namespace, Name: name}, &existing)
+		getCancel()
+		if err != nil {
+			continue
+		}
+		if pw, ok := existing.Data[key]; ok && len(pw) > 0 {
+			logger.V(log.TraceLevel).Info("found legacy bootstrap user secret for migration", "cluster", clusterName, "secret", name)
+			return string(pw), lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+		}
+	}
+	return "", ""
+}
+
+// syncCA ensures that a shared root CA Secret exists for each operator-managed
+// TLS cert. The CA is generated once (on any cluster) and then synced to every
+// known cluster, similar to how syncBootstrapUser works for SASL credentials.
+func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "syncCA")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error syncing CA")
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	sc := state.cluster.StretchCluster
+
+	// Apply defaults to a copy of the spec so BootstrappedCertNames sees the
+	// same TLS configuration that the renderer will use (MergeDefaults enables
+	// TLS by default when TLS is nil).
+	defaultedSpec := *sc.Spec.DeepCopy()
+	defaultedSpec.MergeDefaults()
+	managedCerts := rendermulticluster.BootstrappedCertNames(state.cluster.GetAllBrokerPools())
+	if len(managedCerts) == 0 {
+		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
+		return ctrl.Result{}, nil
+	}
+
+	clusterNames := r.Manager.GetClusterNames()
+
+	for _, certName := range managedCerts {
+		secretName := rendermulticluster.CASecretName(sc.Name, certName)
+
+		// Phase 1: scan all clusters for an existing CA secret.
+		var canonicalSecret *corev1.Secret
+		for _, clusterName := range clusterNames {
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+			}
+
+			var existing corev1.Secret
+			if err := cl.GetClient().Get(ctx, client.ObjectKey{
+				Namespace: sc.Namespace,
+				Name:      secretName,
+			}, &existing); err == nil {
+				canonicalSecret = &existing
+				logger.V(log.TraceLevel).Info("found existing CA secret", "cert", certName, "cluster", clusterName)
+				break
+			}
+		}
+
+		// Phase 2: if no secret exists anywhere, generate a new CA.
+		if canonicalSecret == nil {
+			ca, err := bootstrap.GenerateCA(caOrganization, secretName, nil)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "generating CA for cert %q", certName)
+			}
+			canonicalSecret = &corev1.Secret{
+				Data: map[string][]byte{
+					corev1.TLSCertKey:       ca.Bytes(),
+					corev1.TLSPrivateKeyKey: ca.PrivateKeyBytes(),
+					"ca.crt":                ca.Bytes(),
+				},
+			}
+			logger.V(log.DebugLevel).Info("generated new CA", "cert", certName)
+		}
+
+		// Phase 3: ensure the CA secret exists in every cluster.
+		for _, clusterName := range clusterNames {
+			if !r.Manager.IsClusterReachable(clusterName) {
+				logger.Info("cluster unreachable, skipping CA sync", "cluster", clusterName, "cert", certName)
+				continue
+			}
+
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				logger.Info("cluster unreachable, skipping CA sync", "cluster", clusterName, "cert", certName, "error", err)
+				continue
+			}
+
+			k8sClient := cl.GetClient()
+
+			var existing corev1.Secret
+			if err := k8sClient.Get(ctx, client.ObjectKey{
+				Namespace: sc.Namespace,
+				Name:      secretName,
+			}, &existing); err == nil {
+				// Secret already exists — don't overwrite. CA secrets are
+				// create-once: overwriting would invalidate all existing
+				// leaf certs signed by the old CA.
+				continue
+			}
+
+			// Fetch the StretchCluster from this cluster for owner reference.
+			// Skip clusters where the SC doesn't exist or is being deleted.
+			localSC := &redpandav1alpha2.StretchCluster{}
+			if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+				if client.IgnoreNotFound(err) == nil {
+					logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping CA sync", "cluster", clusterName)
+					continue
+				}
+				logger.Info("could not fetch StretchCluster from cluster, skipping CA sync", "cluster", clusterName, "error", err)
+				continue
+			}
+			if !localSC.DeletionTimestamp.IsZero() {
+				logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping CA sync", "cluster", clusterName)
+				continue
+			}
+
+			caLabels := r.LifecycleClient.AddOwnerLabels(state.cluster)
+			caLabels[lifecycle.GCLabel] = "false"
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: sc.Namespace,
+					Labels:    caLabels,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(localSC, redpandav1alpha2.SchemeGroupVersion.WithKind("StretchCluster")),
+					},
+				},
+				Type: corev1.SecretTypeTLS,
+				Data: canonicalSecret.Data,
+			}
+
+			if err := k8sClient.Create(ctx, secret); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "creating CA secret %q in cluster %s", secretName, clusterName)
+			}
+			logger.Info("created CA secret", "cert", certName, "cluster", clusterName, "secret", secretName)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "reconcileResources")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error reconciling resources")
+			if internalclient.IsTerminalClientError(err) {
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
+			} else {
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
+			}
+		}
+		// Success status for ResourcesSynced is set by reconcileDecommission
+		// which runs later and has the full picture including health status.
+
+		trace.EndSpan(span, err)
+	}()
+
+	if err = r.LifecycleClient.SyncAll(ctx, state.cluster); err != nil {
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "reconcilePools")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error reconciling pools")
+			if internalclient.IsTerminalClientError(err) {
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
+			} else {
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
+			}
+		}
+		// Success status for ResourcesSynced is set after both reconcileResources
+		// and reconcilePools complete successfully, in the main reconcile loop.
+
+		trace.EndSpan(span, err)
+	}()
+
+	if !state.pools.CheckScale(ctx) {
+		// A scale/roll is underway — skip pool mutations this pass so we don't
+		// stack changes mid-scale. Do NOT abort: returning a RequeueAfter here
+		// would skip the Phase-3 cluster reconcilers (maintenance-mode clear,
+		// stale-disk wipe, decommission), which must still run while a pod is churning
+		// (e.g. a bad_rejoin pod being replaced flips len(pods)!=spec.Replicas).
+		// The fast requeue for the still-scaling state is applied at the end of
+		// Reconcile.
+		logger.V(log.TraceLevel).Info("scale operation currently underway; skipping pool mutations this pass")
+		return ctrl.Result{}, nil
+	}
+
+	logger.V(log.TraceLevel).Info("ready to scale and apply broker pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
+
+	// first create any pools that don't currently exists
+	for _, set := range state.pools.ToCreate() {
+		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "creating statefulset")
+		}
+	}
+
+	// next scale up any under-provisioned pools and patch them to use the new spec
+	for _, set := range state.pools.ToScaleUp() {
+		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
+		}
+	}
+
+	// now make sure all of the patch any sets that might have changed without affecting the cluster size
+	// here we can just wholesale patch everything
+	for _, set := range state.pools.RequiresUpdate() {
+		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
+		}
+	}
+
+	// NOTE: the "no pod is Ready yet" fast requeue is intentionally NOT returned
+	// here. reconcilePools runs in the Phase-2 resource loop; a RequeueAfter from
+	// it aborts that loop, so the reconcile returns before Phase 3 ever runs the
+	// cluster reconcilers (maintenance-mode clear, stale-disk wipe, decommission) —
+	// which must run precisely while brokers are unready during an outage. The
+	// readiness poll is applied at the end of Reconcile instead — see
+	// PoolTracker.ScaledUpButNoneReady and the tail of Reconcile.
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	if state.pools.AllZero() {
+		return ctrl.Result{}, nil
+	}
+
+	logger := log.FromContext(ctx)
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.StretchCluster)
+	if err != nil {
+		if internalclient.IsNoRepresentativePoolError(err) {
+			// it may happen when there's no BrokerPool for this StretchCluster yet available
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+		logger.Error(err, "error fetching redpanda admin client")
+		return ctrl.Result{}, err
+	}
+	state.admin = admin
+	// Deferred + memoized so a pass renders the per-pod endpoint list at most
+	// once, and only when a remediation step actually needs an endpoint.
+	state.podEndpoints = memoizeEndpoints(func() []string {
+		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
+	})
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
+	var health rpadmin.ClusterHealthOverview
+
+	ctx, span := trace.Start(ctx, "reconcileDecommission")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error decommissioning brokers")
+			if internalclient.IsTerminalClientError(err) {
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, err.Error())
+			} else {
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, err.Error())
+			}
+			trace.EndSpan(span, err)
+			return
+		}
+
+		if state.pools.AllZero() {
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, messageNoBrokers)
+		} else if health.IsHealthy {
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonHealthy)
+		} else {
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, "Cluster is not healthy")
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	health, err = r.fetchClusterHealth(ctx, state.admin)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
+	}
+
+	// Record the cluster-wide replication health gauge alongside the existing
+	// condition write. Done here (rather than in the defer above) because we
+	// only have an authoritative answer once the admin API call has returned;
+	// the defer fires on every code path including errors where `health` is
+	// the zero value.
+	observability.RecordStretchClusterReplicationHealth(state.cluster.Name, health.IsHealthy)
+
+	// health.NodesDown is treated as an advisory hint, not authority.
+	// The cluster health overview is the controller broker's consensus view of
+	// who has missed heartbeats. Right after a partition (or controller
+	// re-election) it can transiently list brokers that are actually alive —
+	// observed in the lab as cluster three's brokers being flagged "down"
+	// alongside the genuinely-partitioned cluster two brokers. The per-broker
+	// gossip endpoint (/v1/brokers) doesn't help here because it's
+	// broker-local: each broker reports its own opinion, not consensus.
+	// Skipping a wrongly-reported "down" broker would leave it out of the
+	// brokerMap used by scaleDown for decommission pod-lookup, breaking
+	// decommission safety.
+	//
+	// Instead, attempt the Broker fetch for every node with a tight per-call
+	// timeout. Truly unreachable brokers fail fast (or hit the timeout);
+	// brokers wrongly listed in NodesDown succeed and end up in the map. The
+	// timeout keeps reconcileClusterConfig and later phases from being
+	// gated on a 10s (or whatever the admin-client default is) hang per
+	// down broker.
+	//
+	// brokerMap keys brokers by the first DNS label of their internal RPC
+	// address (pod name for single-cluster) and also by the raw host (pod IP
+	// for stretch-cluster flat-network mode where InternalRPCAddress is an IP).
+	// Values are buckets, not a single broker ID: a StretchCluster with
+	// identically-named BrokerPools across member clusters can legitimately
+	// produce the same pod name in more than one member cluster (a
+	// StatefulSet/pod name has no member-cluster component), so
+	// brokerIDForPod treats a bucket with more than one entry as ambiguous
+	// rather than guessing (see its doc comment) instead of the operator
+	// decommissioning, or skipping the pre-restart probe for, the wrong broker.
+	//nolint:laconiccomments
+	brokerMap := map[string][]int{}
+	downNodes := map[int]bool{}
+	for _, brokerID := range health.AllNodes {
+		brokerCtx, brokerCancel := context.WithTimeout(ctx, brokerFetchTimeout)
+		broker, err := state.admin.Broker(brokerCtx, brokerID)
+		brokerCancel()
+		if err != nil {
+			logger.Info("broker unreachable, omitting from brokerMap (will be treated as down for decommission)", "brokerID", brokerID, "error", err)
+			downNodes[brokerID] = true
+			continue
+		}
+
+		host := broker.InternalRPCAddress
+		// InternalRPCAddress may be "host:port" or just "host".
+		if h, _, err := net.SplitHostPort(broker.InternalRPCAddress); err == nil {
+			host = h
+		}
+		if host == "" {
+			continue
+		}
+		// Key by first DNS label (pod name for single-cluster FQDN).
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = append(brokerMap[strings.SplitN(host, ".", 2)[0]], brokerID)
+		// Also key by the full host (pod IP for stretch-cluster flat-network).
+		brokerMap[host] = append(brokerMap[host], brokerID)
+	}
+
+	// next scale down any over-provisioned pools, patching them to use the new spec
+	// and decommissioning any nodes as needed
+	for _, set := range state.pools.ToScaleDown() {
+		// Until the previous step's pod is gone it is still LastPod, and its
+		// decommissioned broker reads as already removed, so scaleDown would
+		// drop the next broker without decommissioning it.
+		if !state.pools.CheckScale(ctx) {
+			logger.V(log.DebugLevel).Info("previous scale-down step still settling, deferring")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap, downNodes)
+		result := ctrl.Result{}
+		if requeue {
+			result.RequeueAfter = requeueTimeout
+		}
+		//nolint:staticcheck // SA4004 this is intentionally early terminated
+		return result, err
+	}
+
+	// at this point any set that needs to be deleted should have 0 replicas
+	// so we can attempt to delete them all in one pass
+	for _, set := range state.pools.ToDelete() {
+		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCanonicalClusterName())
+		if err := r.LifecycleClient.DeleteStatefulSetForBrokerPool(ctx, set); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
+		}
+	}
+
+	if state.pools.AllZero() {
+		// When there is no desired node pool the cluster is tearing down, so
+		// no pods needs to be roll over.
+		logger.V(log.TraceLevel).Info("no desired broker pool found")
+		return reconcile.Result{}, nil
+	}
+
+	// finally, we make sure we roll every pod that is not in-sync with its statefulset
+	rollSet := state.pools.PodsToRoll()
+	logger.V(log.DebugLevel).Info("rolling pods", "rollSet", len(rollSet), "brokerMap", brokerMap, "isHealthy", health.IsHealthy)
+
+	// Don't start rolling while a recently replaced pod is still coming up.
+	// The cluster health view (brokerMap, isHealthy) lags behind pod state,
+	// and rolling a second pod before the first one's replacement is ready
+	// would cause two pods to be unavailable simultaneously.
+	// Only check when there are actually pods to roll — otherwise we'd block
+	// normal reconciliation when a pod is unready for unrelated reasons.
+	if len(rollSet) > 0 && state.pools.HasRecentlyReplacedPods() {
+		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	}
+
+	// Post-restart recovery gate (Redpanda 25.1+), mirroring RedpandaReconciler:
+	// even when the prior pod is K8s-Ready the broker inside it may still be
+	// replaying partition state from its peers. Wait for every broker to report
+	// load_reclaimed_pc >= threshold before rolling the next one. These are live
+	// admin-API calls (not informer reads), so they don't add the cache-staleness
+	// concern stretch's multiple informers otherwise carry. On <25.1 the endpoint
+	// 404s and brokersStillRecovering reports not-recovering, so behavior is
+	// unchanged there.
+	if len(rollSet) > 0 {
+		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, r.PostRestartCaughtUpPercent, logger)
+		switch {
+		case err != nil:
+			// Fail closed — a non-404 probe error means we can't confirm the
+			// just-restarted broker finished recovering, so defer rather than
+			// risk rolling the next broker mid-recovery. (Bounded retry/backoff
+			// for transient errors is handled by the rpadmin client.)
+			logger.V(log.DebugLevel).Info("post-restart probe error, deferring rolling restart", "error", err)
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		case recovering:
+			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
+	// Schema Registry sync gate, mirroring RedpandaReconciler: a rolled
+	// broker serves Kafka as soon as it restarts, but its SR store replays
+	// _schemas before answering consistently (INC-2903: ~13 minutes on large
+	// topics). Probing every broker's SR listener via /status/ready —
+	// auth-exempt, blocking until the store is caught up — serializes the
+	// roll against SR sync the same way the post-restart probe serializes it
+	// against partition recovery. The factory discovers per-broker SR
+	// endpoints across all member clusters, so the probe covers remote pools
+	// too. Fail closed like the gate above; escape hatch:
+	// --wait-for-schema-registry-sync=false. Skipped when the pools' SR
+	// listener configs would make per-broker probing unsound — see
+	// internalclient.SchemaRegistryProbeUniform. The uniformity check runs
+	// on the reconciler's cached pool state rather than re-listing pools.
+	if len(rollSet) > 0 && r.WaitForSchemaRegistrySync {
+		if uniform, reason := internalclient.SchemaRegistryProbeUniform(state.cluster.GetAllBrokerPools()); !uniform {
+			logger.V(log.DebugLevel).Info("skipping schema registry sync roll gate", "reason", reason)
+		} else {
+			satisfied := schemaRegistryReady(ctx, r.ClientFactory, state.cluster.StretchCluster, logger)
+			if !satisfied {
+				return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			}
+		}
+	}
+
+	rolled := false
+	for _, pod := range rollSet {
+		// Same roll-safety decision as the single-cluster RedpandaReconciler:
+		// resolve the pod to a broker (pod name, then pod IP for stretch
+		// flat-network mode where InternalRPCAddress is a bare IP),
+		// pre-restart-probe it when mapped, then apply decideRollAction. These
+		// are live admin-API checks, not informer reads, so they don't add the
+		// cache-staleness concern stretch's multiple informers otherwise carry.
+		brokerID, inBrokerMap, ambiguous := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
+		if ambiguous {
+			// Do NOT treat this as "not in brokerMap" — decideRollAction
+			// deletes an unmapped pod outright when the cluster is healthy,
+			// which would bypass the pre-restart safety probe for a pod that
+			// in fact maps to more than one live broker across member
+			// clusters.
+			logger.Info("skipping roll decision: pod name matches multiple brokers, refusing to guess which one it is", "pod", pod.GetName(), "cluster", pod.GetCluster())
+			continue
+		}
+		var brokerSafe bool
+		var probeErr error
+		if inBrokerMap {
+			brokerSafe, probeErr = brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
+		}
+
+		shouldRoll, continueExecution, reason := decideRollAction(inBrokerMap, health.IsHealthy, brokerSafe, probeErr)
+		logArgs := []any{"pod", pod.GetName(), "cluster", pod.GetCluster(), "inBrokerMap", inBrokerMap, "isHealthy", health.IsHealthy, "shouldRoll", shouldRoll, "reason", reason}
+		if probeErr != nil {
+			logArgs = append(logArgs, "error", probeErr)
+		}
+		logger.V(log.DebugLevel).Info("pod roll decision", logArgs...)
+
+		if shouldRoll {
+			rolled = true
+			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String(), "cluster", pod.GetCluster())
+
+			if err := r.LifecycleClient.DeletePod(ctx, pod); err != nil {
+				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
+			}
+		}
+
+		if !continueExecution {
+			// requeue since we just rolled a pod
+			// and we want for the system to stabilize
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
+	if !rolled && len(rollSet) > 0 {
+		// here we're in a state where we can't currently roll any
+		// pods but we need to, therefore we just reschedule rather
+		// than marking the cluster as quiesced.
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
+	var license *redpandav1alpha2.RedpandaLicenseStatus
+
+	ctx, span := trace.Start(ctx, "reconcileLicense")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			if internalclient.IsTerminalClientError(err) {
+				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonTerminalError, err.Error())
+			} else {
+				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
+			}
+		} else if license != nil {
+			state.status.LicenseStatus = license
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	if state.pools.AllZero() {
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent, messageNoBrokers)
+		return ctrl.Result{}, nil
+	}
+
+	// rate limit license reconciliation
+	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.StretchClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
+		// just copy over the license status from our existing status
+		state.status.StretchClusterStatus.SetLicenseValidFromCurrent(state.cluster.StretchCluster)
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.setupLicense(ctx, state.cluster.StretchCluster, state.admin); err != nil {
+		logger.Error(err, "error setting up license")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	features, err := state.admin.GetEnterpriseFeatures(ctx)
+	if err != nil {
+		logger.Error(err, "error getting enterprise features")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	licenseInfo, err := state.admin.GetLicenseInfo(ctx)
+	if err != nil {
+		logger.Error(err, "error getting license info")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	switch features.LicenseStatus {
+	case rpadmin.LicenseStatusExpired:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonExpired)
+	case rpadmin.LicenseStatusNotPresent:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent)
+	case rpadmin.LicenseStatusValid:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonValid)
+	}
+
+	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
+		inUseFeatures := []string{}
+		for _, feature := range features.Features {
+			if feature.Enabled {
+				inUseFeatures = append(inUseFeatures, feature.Name)
+			}
+		}
+		// features.Features iterates a map under the hood; sort the
+		// resulting slice so repeated reconciles produce byte-identical
+		// status. Without this, the slice order flips on every write,
+		// bumps resourceVersion, and triggers a watch-driven hot
+		// reconcile loop on the StretchCluster controller.
+		sort.Strings(inUseFeatures)
+
+		status := &redpandav1alpha2.RedpandaLicenseStatus{
+			InUseFeatures: inUseFeatures,
+			Violation:     features.Violation,
+		}
+
+		// make sure we can actually format the extend license properties
+		if !licenseInfo.Loaded {
+			return status
+		}
+
+		status.Organization = ptr.To(licenseInfo.Properties.Organization)
+		status.Type = ptr.To(licenseInfo.Properties.Type)
+		expirationTime := time.Unix(licenseInfo.Properties.Expires, 0)
+
+		// if we have an expiration that is below 0 we are already expired
+		// so no need to set the expiration time
+		status.Expired = ptr.To(licenseInfo.Properties.Expires <= 0 || expirationTime.Before(time.Now()))
+
+		if !*status.Expired {
+			status.Expiration = &metav1.Time{Time: expirationTime.UTC()}
+		}
+
+		return status
+	}
+
+	license = licenseStatus()
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
+	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			if internalclient.IsTerminalClientError(err) {
+				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonTerminalError, err.Error())
+			} else {
+				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonError, err.Error())
+			}
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	if state.pools.AllZero() {
+		state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonNotApplied, messageNoBrokers)
+		return ctrl.Result{}, nil
+	}
+
+	// we rate limit setting cluster configuration to once a minute if it's already been applied and is up-to-date
+	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.StretchClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
+		state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
+		return ctrl.Result{}, nil
+	}
+
+	config := state.cluster.StretchCluster.Spec.GetClusterConfig()
+	if config == nil {
+		config = map[string]any{}
+	}
+
+	superusers, err := r.superusersFor(ctx, state, cluster)
+	if err != nil {
+		logger.Error(err, "fetching super users")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	mode := feature.ClusterConfigSyncMode.Get(ctx, state.cluster.StretchCluster)
+
+	syncer := syncclusterconfig.Syncer{Client: state.admin, Mode: mode}
+	configStatus, err := syncer.Sync(ctx, config, superusers)
+	if err != nil {
+		logger.Error(err, "syncing cluster config")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
+
+	version := configStatus.PropertiesThatNeedRestartHash
+	didConfigChange := state.cluster.StretchCluster.Status.ConfigVersion != version
+	state.status.ConfigVersion = ptr.To(version)
+
+	logger.Info("cluster config sync result",
+		"configVersion", version,
+		"previousConfigVersion", state.cluster.StretchCluster.Status.ConfigVersion,
+		"didConfigChange", didConfigChange,
+		"restartOnConfigChange", state.restartOnConfigChange,
+		"needsRestart", configStatus.NeedsRestart,
+	)
+
+	result := ctrl.Result{}
+	if didConfigChange && state.restartOnConfigChange {
+		logger.Info("config version changed, requeuing for rolling restart")
+		result.RequeueAfter = requeueTimeout
+	}
+
+	return result, nil
+}
+
+func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) ([]string, error) {
+	sc := state.cluster.StretchCluster
+
+	if sc.Spec.Auth == nil || sc.Spec.Auth.SASL == nil || !ptr.Deref(sc.Spec.Auth.SASL.Enabled, false) {
+		return nil, nil
+	}
+
+	superusers := []string{}
+
+	if sc.Spec.Auth.SASL.SecretRef != nil {
+		key := client.ObjectKey{Namespace: sc.Namespace, Name: *sc.Spec.Auth.SASL.SecretRef}
+
+		var users corev1.Secret
+		if err := cluster.GetClient().Get(ctx, key, &users); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		for filename, userTXT := range users.Data {
+			superusers = append(superusers, syncclusterconfig.LoadUsersFile(ctx, filename, userTXT)...)
+		}
+	}
+
+	// The bootstrap user was already set by syncBootstrapUser earlier in the reconciliation chain.
+	if state.bootstrapUser != "" {
+		superusers = append(superusers, state.bootstrapUser)
+	}
+
+	return syncclusterconfig.NormalizeSuperusers(superusers), nil
+}
+
+func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
+	original := state.cluster.StretchCluster.Status.DeepCopy()
+	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
+		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
+
+		// Update status on all clusters, not just the triggering one,
+		// since the StretchCluster CRD exists on every cluster.
+		// Unreachable clusters are skipped — status will be propagated
+		// once they reconnect.
+		logger := log.FromContext(ctx)
+		for _, clusterName := range r.Manager.GetClusterNames() {
+			if !r.Manager.IsClusterReachable(clusterName) {
+				logger.V(log.DebugLevel).Info("cluster unreachable, skipping status update", "cluster", clusterName)
+				continue
+			}
+
+			cl, clErr := r.Manager.GetCluster(ctx, clusterName)
+			if clErr != nil {
+				logger.Info("cluster unreachable, skipping status update", "cluster", clusterName, "error", clErr)
+				continue
+			}
+
+			// Fetch the latest version from this cluster to get the correct resource version.
+			// Skip clusters where the SC doesn't exist (e.g. partial deletion).
+			remoteSC := &redpandav1alpha2.StretchCluster{}
+			if clErr := cl.GetClient().Get(ctx, client.ObjectKeyFromObject(state.cluster.StretchCluster), remoteSC); clErr != nil {
+				if client.IgnoreNotFound(clErr) != nil {
+					logger.Info("could not fetch StretchCluster for status update, skipping", "cluster", clusterName, "error", clErr)
+				}
+				continue
+			}
+
+			remoteSC.Status = *state.cluster.StretchCluster.Status.DeepCopy()
+			if syncErr := cl.GetClient().Status().Update(ctx, remoteSC); syncErr != nil {
+				err = errors.Join(err, errors.Wrapf(syncErr, "updating status on cluster %s", clusterName))
+			}
+		}
+	}
+
+	syncResult, syncErr := ignoreConflict(err)
+	if syncErr == nil && (result.RequeueAfter > 0) {
+		syncResult.RequeueAfter = result.RequeueAfter
+	}
+	return syncResult, syncErr
+}
+
+func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (_ rpadmin.ClusterHealthOverview, err error) {
+	ctx, span := trace.Start(ctx, "fetchClusterHealth")
+	defer func() { trace.EndSpan(span, err) }()
+
+	var health rpadmin.ClusterHealthOverview
+
+	if admin == nil {
+		log.FromContext(ctx).Error(errors.New("no admin api"), "Admin must be initialized")
+		return health, nil
+	}
+
+	health, err = admin.GetHealthOverview(ctx)
+	if err != nil {
+		return health, err
+	}
+
+	return health, nil
+}
+
+// scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
+// decommissioning the broker with the last pod ordinal and then patching the statefulset with
+// a single less replica.
+func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string][]int, downNodes map[int]bool) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
+	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	// Resolve by pod name, then pod IP (stretch flat-network advertises brokers
+	// by bare IP) so a live broker is decommissioned before its pod is removed
+	// rather than being misclassified as already-removed.
+	brokerID, ok, ambiguous := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
+	if ambiguous {
+		// Do NOT fall through to the !ok branch below: that path assumes the
+		// broker was already fully removed from the cluster and proceeds to
+		// patch the StatefulSet directly. Here the pod maps to more than one
+		// real broker (identically-named BrokerPools across member
+		// clusters), so guessing could decommission — or silently orphan —
+		// the wrong one.
+		logger.Info("deferring scale-down: pod name matches multiple brokers, refusing to guess which one to decommission",
+			"pod", client.ObjectKeyFromObject(set.LastPod).String())
+		return true, nil
+	}
+	if ok {
+		// decommission if we have a brokerID, if not
+		// then the node has already been fully removed from
+		// the cluster and we can go ahead and delete the pod
+		// through patching the statefulset
+
+		requeue, err := r.decommissionBroker(ctx, admin, cluster, set, brokerID)
+		if err != nil {
+			return false, err
+		}
+
+		if requeue {
+			return true, nil
+		}
+	} else {
+		// The pod isn't in brokerMap. Two cases:
+		//   1. The broker was fully removed from the cluster — safe to delete
+		//      the pod (the brokerMap absence reflects ground truth).
+		//   2. The broker sits on a partitioned peer and was skipped earlier
+		//      to keep reconcileDecommission from hanging. Deleting the pod
+		//      now would orphan the broker on heal. Requeue and wait.
+		// Distinguish by checking whether ANY known broker for this pool sits
+		// in downNodes — if so, treat the absence as transient and requeue.
+		if len(downNodes) > 0 {
+			logger.Info("pod missing from brokerMap while peer brokers are down, requeueing scale-down to avoid orphaning a partitioned broker",
+				"pod", set.LastPod.GetName(), "downNodes", downNodes)
+			return true, nil
+		}
+	}
+
+	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+
+	// now patch the statefulset to remove the pod
+	if err := r.LifecycleClient.PatchPoolSet(ctx, cluster, set.StatefulSet); err != nil {
+		return false, errors.Wrap(err, "scaling down statefulset")
+	}
+	// we only do a statefulset at a time, waiting for them to
+	// become stable first
+	return true, nil
+}
+
+// decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
+func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
+	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].decommissionBroker", *cluster))
+	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
+	if err != nil {
+		if strings.Contains(err.Error(), "is not decommissioning") {
+			logger.V(log.TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
+				return false, errors.Wrap(err, "decommissioning broker")
+			}
+
+			return true, nil
+		}
+		return false, errors.Wrap(err, "fetching decommission status")
+	}
+	if !decommissionStatus.Finished {
+		logger.V(log.TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+
+		// just requeue since we're still decommissioning
+		return true, nil
+	}
+
+	// we're finished
+	return false, nil
+}
+
+func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav1alpha2.StretchCluster, adminClient *rpadmin.AdminAPI) error {
+	if sc.Spec.Enterprise == nil {
+		return nil
+	}
+
+	if literalLicense := ptr.Deref(sc.Spec.Enterprise.License, ""); literalLicense != "" {
+		if err := adminClient.SetLicense(ctx, strings.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if secretReference := sc.Spec.Enterprise.LicenseSecretRef; secretReference != nil {
+		name := ptr.Deref(secretReference.Name, "")
+		key := ptr.Deref(secretReference.Key, "")
+		if name == "" || key == "" {
+			return errors.Newf("both name %q and key %q of the secret can not be empty string", name, key)
+		}
+
+		// Search all clusters for the license secret since the user may have
+		// created it on any cluster.
+		var licenseSecret *corev1.Secret
+		for _, clusterName := range r.Manager.GetClusterNames() {
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				continue
+			}
+			var secret corev1.Secret
+			if err := cl.GetClient().Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: name}, &secret); err == nil {
+				licenseSecret = &secret
+				break
+			}
+		}
+
+		if licenseSecret == nil {
+			return errors.Newf("license secret %q not found in any cluster", name)
+		}
+
+		literalLicense := licenseSecret.Data[key]
+		if err := adminClient.SetLicense(ctx, bytes.NewReader(literalLicense)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, waitForSchemaRegistrySync bool, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
+	// A nil factory survives until the first reconcile that builds an admin
+	// client, then panics on every such pass (Factory methods dispatch fine on
+	// a nil receiver until the first field access). Refuse it at startup.
+	if factory == nil {
+		return errors.New("SetupMulticlusterController requires a non-nil client factory")
+	}
+	lifecycleClient := lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration)
+
+	builder := mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
+		// registration properly, so we can't boot multiple controllers in test without doing this.
+		// Consider an upstream fix.
+		SkipNameValidation: ptr.To(true),
+	})
+
+	// Watch the StretchCluster itself plus every resource the lifecycle
+	// renderers create (StatefulSets, Services, ConfigMaps, Secrets, ...), so
+	// drift in an owned resource triggers reconciliation instead of waiting
+	// for the periodic requeue. Watches are keyed by the union of registered
+	// and configured cluster names: setup runs before the provider registers
+	// any raft peer, so GetClusterNames() alone would leave every peer's
+	// resources unwatched.
+	watchClusters := unionClusterNames(mgr.GetClusterNames(), mgr.GetConfiguredClusterNames())
+	if err := lifecycleClient.WatchResources(builder, &redpandav1alpha2.StretchCluster{}, watchClusters,
+		mcbuilder.WithEngageWithLocalCluster(true),
+		mcbuilder.WithEngageWithProviderClusters(true),
+	); err != nil {
+		return err
+	}
+
+	builder.Watches(&redpandav1alpha2.RedpandaBrokerPool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
+		return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+			l := log.FromContext(ctx).WithName("MulticlusterReconciler.RedpandaBrokerPoolWatch").V(log.TraceLevel)
+			np, ok := object.(*redpandav1alpha2.RedpandaBrokerPool)
+			if !ok {
+				return nil
+			}
+			if !np.Spec.ClusterRef.IsStretchCluster() {
+				return nil
+			}
+			l.V(log.TraceLevel).Info("RedpandaBrokerPool event received", "brokerPool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
+			return []mcreconcile.Request{{
+				Request: reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: np.Namespace,
+						Name:      np.Spec.ClusterRef.Name,
+					},
+				},
+				ClusterName: clusterName,
+			}}
+		})
+	})
+
+	return builder.Complete(
+		observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
+			Manager:                        mgr,
+			LifecycleClient:                lifecycleClient,
+			ClientFactory:                  factory,
+			ReconcileTimeout:               reconcileTimeout,
+			PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
+			WaitForSchemaRegistrySync:      waitForSchemaRegistrySync,
+			MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
+			StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
+		}, "StretchCluster", periodicRequeue),
+	)
+}

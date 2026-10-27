@@ -481,6 +481,13 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// next scale down any over-provisioned pools, patching them to use the new spec
 	// and decommissioning any nodes as needed
 	for _, set := range state.pools.ToScaleDown() {
+		// Until the previous step's pod is gone it is still LastPod, and its
+		// decommissioned broker reads as already removed, so scaleDown would
+		// drop the next broker without decommissioning it.
+		if !state.pools.CheckScale(ctx) {
+			logger.V(log.DebugLevel).Info("previous scale-down step still settling, deferring")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
 		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap)
 		return ctrl.Result{Requeue: requeue}, err
 	}
