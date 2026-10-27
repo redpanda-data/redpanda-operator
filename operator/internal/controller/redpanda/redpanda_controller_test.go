@@ -794,17 +794,20 @@ func (s *RedpandaControllerSuite) TestScaling() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
 
+	// Stable only requires Healthy to be set, not True, so a scale-down that
+	// drops brokers without decommissioning them still reports Stable.
 	isStable := func(obj client.Object, err error) (bool, error) {
 		if err != nil {
 			return false, err
 		}
 		rp := obj.(*redpandav1alpha2.Redpanda)
-		for _, cond := range rp.Status.Conditions {
-			if cond.Type == statuses.ClusterStable {
-				return cond.ObservedGeneration == rp.Generation && cond.Status == metav1.ConditionTrue, nil
+		for _, condType := range []string{statuses.ClusterStable, statuses.ClusterHealthy} {
+			cond := apimeta.FindStatusCondition(rp.Status.Conditions, condType)
+			if cond == nil || cond.ObservedGeneration != rp.Generation || cond.Status != metav1.ConditionTrue {
+				return false, nil
 			}
 		}
-		return false, nil
+		return true, nil
 	}
 
 	rp := s.minimalRP()
