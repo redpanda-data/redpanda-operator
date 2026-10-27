@@ -44,30 +44,26 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// kafkaTestPort is the Kafka port the steered Services under test carry; it
-// exists only to be a port the Schema Registry probe has no say over.
-const (
-	kafkaTestPort = 9092
-	// externalRegistryTestPort stands in for the registry's external
-	// listener. Nothing listens there: the point is that the internal
-	// listener's probe decides it.
-	externalRegistryTestPort = 18081
-)
+// externalRegistryTestPort stands in for the registry's external listener.
+// Nothing listens there: the point is that the internal listener's probe
+// decides it.
+const externalRegistryTestPort = 18081
 
-// TestSteersSchemaRegistryPort drives the controller against a real API
-// server, for both cluster kinds at once as the operator runs them: broker
-// pods, a steered Service each, and one stand-in Schema Registry the test can
-// stop answering. It covers what no unit test can -- that the decisions reach
-// the published EndpointSlices, per port, through the same factory and
-// resolvers the operator resolves clusters with -- and it covers the
-// transitions in both directions, which the acceptance scenarios cannot,
+// TestSteersProbedPorts drives the controller against a real API server, for
+// both cluster kinds at once as the operator runs them: broker pods, a
+// steered Service each, and one stand-in Schema Registry and Kafka listener
+// the test can take down. It covers what no unit test can -- that the
+// decisions reach the published EndpointSlices, per port, through the same
+// factory and resolvers the operator resolves clusters with -- and it covers
+// the transitions in both directions, which the acceptance scenarios cannot,
 // since nothing can put a real broker's registry back into replay on demand.
-func TestSteersSchemaRegistryPort(t *testing.T) {
+func TestSteersProbedPorts(t *testing.T) {
 	// The published addresses have to be real pod addresses as far as the API
 	// server is concerned -- it rejects loopback in an EndpointSlice -- and
-	// the probes then dial exactly those, so the stand-in registry has to
-	// listen on an address this host actually answers on.
-	listener, err := net.Listen("tcp", net.JoinHostPort(routableHostAddress(t), "0"))
+	// the probes then dial exactly those, so the stand-ins have to listen on
+	// an address this host actually answers on.
+	host := routableHostAddress(t)
+	listener, err := net.Listen("tcp", net.JoinHostPort(host, "0"))
 	require.NoError(t, err)
 
 	var serving atomic.Bool
@@ -83,6 +79,10 @@ func TestSteersSchemaRegistryPort(t *testing.T) {
 	registry.Start()
 	t.Cleanup(registry.Close)
 	address := registry.Listener.Addr().(*net.TCPAddr)
+
+	kafka := serveKafka(t, net.JoinHostPort(host, "0"))
+	kafkaAddress := kafka.Addr().String()
+	kafkaPort := int32(kafka.Addr().(*net.TCPAddr).Port)
 
 	ctl := kubetest.NewEnv(t, kube.Options{Options: client.Options{Scheme: controller.UnifiedScheme}})
 	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
@@ -103,8 +103,8 @@ func TestSteersSchemaRegistryPort(t *testing.T) {
 	require.NoError(t, err)
 
 	clusters := []steeredCluster{
-		applyV1Cluster(t, ctl, namespace.Name, "rp-v1", address),
-		applyV2Cluster(t, ctl, namespace.Name, "rp-v2", address),
+		applyV1Cluster(t, ctl, namespace.Name, "rp-v1", address, kafkaPort),
+		applyV2Cluster(t, ctl, namespace.Name, "rp-v2", address, kafkaPort),
 	}
 
 	// Both managers bind ephemeral ports. kubetest.RunManager would do for
@@ -193,6 +193,36 @@ func TestSteersSchemaRegistryPort(t *testing.T) {
 	serving.Store(true)
 	requirePublished("schema-registry", allBrokers)
 	requirePublished("schema-registry-external", allBrokers)
+
+	// A Kafka listener that refuses leaves the Kafka port, and only that.
+	require.NoError(t, kafka.Close())
+	requirePublished("kafka", none)
+	requirePublished("schema-registry", allBrokers)
+
+	serveKafka(t, kafkaAddress)
+	requirePublished("kafka", allBrokers)
+}
+
+// serveKafka stands in for a broker's Kafka listener at address, which only
+// has to accept connections. Each is closed straight away: left in the
+// accept queue, the probes would fill the listen backlog -- 128 on macOS --
+// and every dial after that would time out.
+func serveKafka(t *testing.T, address string) net.Listener {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", address)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			_ = conn.Close()
+		}
+	}()
+	return listener
 }
 
 // steeredCluster is one cluster under test: the Service the operator steers
@@ -204,8 +234,9 @@ type steeredCluster struct {
 }
 
 // applyV1Cluster creates a v1 Cluster, its broker pods, and a Service steered
-// for it, with its Schema Registry listener pointed at address.
-func applyV1Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address *net.TCPAddr) steeredCluster {
+// for it, with its Schema Registry listener pointed at address and its Kafka
+// listener at kafkaPort on the same host.
+func applyV1Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address *net.TCPAddr, kafkaPort int32) steeredCluster {
 	t.Helper()
 
 	_, err := kube.Create(t.Context(), ctl, vectorizedv1alpha1.Cluster{
@@ -216,7 +247,7 @@ func applyV1Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 			Replicas: ptr.To(int32(3)),
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
 				RPCServer:      vectorizedv1alpha1.SocketAddress{Port: 33145},
-				KafkaAPI:       []vectorizedv1alpha1.KafkaAPI{{Port: kafkaTestPort}},
+				KafkaAPI:       []vectorizedv1alpha1.KafkaAPI{{Port: int(kafkaPort)}},
 				AdminAPI:       []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
 				SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{Port: address.Port},
 				SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{{
@@ -235,13 +266,13 @@ func applyV1Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 
 	return steeredCluster{
 		name:    "v1 Cluster",
-		service: applySteeredService(t, ctl, namespace, name, address),
+		service: applySteeredService(t, ctl, namespace, name, address, kafkaPort),
 		pods:    applyBrokerPods(t, ctl, namespace, name, podLabels, address),
 	}
 }
 
 // applyV2Cluster is applyV1Cluster for a v2 Redpanda.
-func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address *net.TCPAddr) steeredCluster {
+func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address *net.TCPAddr, kafkaPort int32) steeredCluster {
 	t.Helper()
 
 	_, err := kube.Create(t.Context(), ctl, redpandav1alpha2.Redpanda{
@@ -252,7 +283,7 @@ func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 				// stand-in.
 				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
 				Listeners: &redpandav1alpha2.Listeners{
-					Kafka: &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(kafkaTestPort))}},
+					Kafka: &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{Port: ptr.To(kafkaPort)}},
 					SchemaRegistry: &redpandav1alpha2.SchemaRegistry{
 						Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(address.Port))},
 						External: map[string]*redpandav1alpha2.ExternalListener{
@@ -267,7 +298,7 @@ func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 
 	return steeredCluster{
 		name:    "v2 Redpanda",
-		service: applySteeredService(t, ctl, namespace, name, address),
+		service: applySteeredService(t, ctl, namespace, name, address, kafkaPort),
 		pods: applyBrokerPods(t, ctl, namespace, name, map[string]string{
 			"app.kubernetes.io/instance": name,
 			"app.kubernetes.io/name":     "redpanda",
@@ -278,7 +309,7 @@ func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 // applySteeredService creates a Service shaped as the operator renders the
 // clusters' own: annotated for the cluster, no selector, and publishing
 // not-ready addresses because Raft needs them.
-func applySteeredService(t *testing.T, ctl *kube.Ctl, namespace, cluster string, address *net.TCPAddr) string {
+func applySteeredService(t *testing.T, ctl *kube.Ctl, namespace, cluster string, address *net.TCPAddr, kafkaPort int32) string {
 	t.Helper()
 
 	name := cluster + "-steered"
@@ -291,7 +322,7 @@ func applySteeredService(t *testing.T, ctl *kube.Ctl, namespace, cluster string,
 		Spec: corev1.ServiceSpec{
 			PublishNotReadyAddresses: true,
 			Ports: []corev1.ServicePort{
-				{Name: "kafka", Port: kafkaTestPort, TargetPort: intstr.FromInt32(kafkaTestPort), Protocol: corev1.ProtocolTCP},
+				{Name: "kafka", Port: kafkaPort, TargetPort: intstr.FromInt32(kafkaPort), Protocol: corev1.ProtocolTCP},
 				{Name: "schema-registry", Port: int32(address.Port), TargetPort: intstr.FromInt32(int32(address.Port)), Protocol: corev1.ProtocolTCP},
 				// The external listener, exposed the way a node-ported or
 				// load-balanced Service exposes it: a different Service port,
@@ -306,7 +337,7 @@ func applySteeredService(t *testing.T, ctl *kube.Ctl, namespace, cluster string,
 }
 
 // applyBrokerPods creates three pods that a cluster's Services will take as
-// brokers, every one of them answering at address.
+// brokers, every one of them answering on address's host.
 func applyBrokerPods(t *testing.T, ctl *kube.Ctl, namespace, cluster string, podLabels map[string]string, address *net.TCPAddr) []string {
 	t.Helper()
 
@@ -328,8 +359,8 @@ func applyBrokerPods(t *testing.T, ctl *kube.Ctl, namespace, cluster string, pod
 		})
 		require.NoError(t, err)
 
-		// The registry stand-in listens on one address, so that is where
-		// every pod's probes have to be pointed.
+		// The stand-ins listen on one host, so that is where every pod's
+		// probes have to be pointed.
 		pod.Status = corev1.PodStatus{
 			Phase:      corev1.PodRunning,
 			PodIP:      address.IP.String(),

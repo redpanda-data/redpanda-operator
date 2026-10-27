@@ -15,6 +15,7 @@ import (
 	"io"
 	"net"
 	"slices"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -56,22 +57,30 @@ const (
 	// probe. Two costs a recovered broker one resync, against a replay
 	// measured in minutes.
 	probeSuccessThreshold = 2
+
+	// kafkaDialTimeout bounds a Kafka port's TCP dial, at kubelet's
+	// tcpSocket default. The kernel completes the handshake whatever the
+	// broker is doing, so only a dropped SYN waits this out.
+	kafkaDialTimeout = time.Second
 )
 
 // checker decides whether to publish one pod on one Service port. It says
 // yes when the pod is one of the named cluster's brokers, Kubernetes would
-// publish it too, and -- on the Schema Registry port only -- its Schema
-// Registry answers GET /status/ready.
+// publish it too, and -- on a Schema Registry port -- its Schema Registry
+// answers GET /status/ready, or -- on a Kafka port -- that listener accepts
+// a TCP connection.
 type checker struct {
 	resolver     Resolver
 	probeTimeout time.Duration
+	dialTimeout  time.Duration
 	// podReady is Kubernetes' own rule, which every port is still held to.
 	// It reads the pod's conditions alone, so publishNotReadyAddresses is
 	// applied around it.
 	podReady portmapper.Checker
-	// schemaRegistry damps probeSchemaRegistry so one slow or dropped probe
-	// doesn't flap a healthy registry.
+	// schemaRegistry and kafka damp their probes so one slow or dropped
+	// probe doesn't flap a healthy listener.
 	schemaRegistry portmapper.Decider
+	kafka          portmapper.Decider
 
 	mu       sync.Mutex
 	clusters map[string]clusterEntry
@@ -91,15 +100,23 @@ func newChecker(resolver Resolver) *checker {
 	c := &checker{
 		resolver:     resolver,
 		probeTimeout: schemaregistry.ProbeTimeout,
+		dialTimeout:  kafkaDialTimeout,
 		podReady:     portmapper.PodReady(),
 		clusters:     map[string]clusterEntry{},
 		now:          time.Now,
 	}
-	// NB: Stable always returns a Decider -- that is how it damps an Abstain
-	// without breaking a streak -- and asserting it lets Decide call it
-	// directly.
-	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), probeSuccessThreshold, probeFailureThreshold).(portmapper.Decider)
+	c.schemaRegistry = stable(c.probeSchemaRegistry)
+	c.kafka = stable(c.probeKafka)
 	return c
+}
+
+// stable damps probe with the checker's thresholds.
+//
+// NB: Stable always returns a Decider -- that is how it damps an Abstain
+// without breaking a streak -- and asserting it lets Decide call it
+// directly.
+func stable(probe portmapper.DeciderFunc) portmapper.Decider {
+	return portmapper.Stable(probe, probeSuccessThreshold, probeFailureThreshold).(portmapper.Decider)
 }
 
 // Decide implements [portmapper.Decider].
@@ -129,12 +146,15 @@ func (c *checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.P
 	if !svc.Spec.PublishNotReadyAddresses && !c.podReady.Check(ctx, svc, pod, port) {
 		return portmapper.Exclude
 	}
+	switch {
+	case isSchemaRegistryPort(port, brokers):
+		return c.schemaRegistry.Decide(ctx, svc, pod, port)
+	case isKafkaPort(port, brokers):
+		return c.kafka.Decide(ctx, svc, pod, port)
+	}
 	// Any other port is published just as Kubernetes would, so steering
 	// changes nothing for it.
-	if !isSchemaRegistryPort(port, brokers) {
-		return portmapper.Include
-	}
-	return c.schemaRegistry.Decide(ctx, svc, pod, port)
+	return portmapper.Include
 }
 
 // groupOf is the cluster a check is about: the Service's annotation, which
@@ -162,6 +182,12 @@ func isSchemaRegistryPort(port portmapper.Port, brokers Cluster) bool {
 	return brokers.SchemaRegistry() != nil &&
 		port.Protocol == corev1.ProtocolTCP &&
 		slices.Contains(brokers.SchemaRegistryPorts(), port.Port)
+}
+
+// isKafkaPort reports whether port is one a broker serves Kafka on, internal
+// or external.
+func isKafkaPort(port portmapper.Port, brokers Cluster) bool {
+	return port.Protocol == corev1.ProtocolTCP && slices.Contains(brokers.KafkaPorts(), port.Port)
 }
 
 // probeSchemaRegistry asks one broker's Schema Registry whether its store
@@ -196,6 +222,29 @@ func (c *checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, 
 		logger.V(1).Info("schema registry not confirmed caught up", "url", broker.URL, "decision", decision.String())
 		return decision
 	}
+	return portmapper.Include
+}
+
+// probeKafka dials one broker's Kafka listener on the port being decided.
+// Accepting a connection is all it asks; TLS, SASL and the protocol are left
+// to the client.
+func (c *checker) probeKafka(ctx context.Context, _ *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
+	logger := log.FromContext(ctx).WithValues("checker", "KafkaAccepting", "pod", client.ObjectKeyFromObject(pod), "port", port.Name, "targetPort", port.Port)
+
+	host := port.Address
+	if host == "" {
+		host = pod.Status.PodIP
+	}
+	address := net.JoinHostPort(host, strconv.Itoa(int(port.Port)))
+
+	dialer := net.Dialer{Timeout: c.dialTimeout}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
+	if err != nil {
+		decision := classifyProbeError(err)
+		logger.V(1).Info("kafka listener not accepting", "address", address, "error", err.Error(), "decision", decision.String())
+		return decision
+	}
+	_ = conn.Close()
 	return portmapper.Include
 }
 
