@@ -350,7 +350,7 @@ pipelines:
   allowUnauthenticated: false
   admissionPolicy:
     # -- Creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods.
-    # It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`,
+    # It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, `updateStrategy`,
     # cpu and memory in `resources.requests` and `resources.limits`, `cluster.clusterRef.name`, which must equal `clusterRef`,
     # and `userRef.name`, which must equal `userRef`. Unless `allowBootstrapUser` is `true`, it also requires `userRef` on Pipelines that set `cluster`.
     # It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`,
