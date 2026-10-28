@@ -382,6 +382,11 @@ func (r *TopicReconciler) reconcilePartition(ctx context.Context, recorder recor
 		return 0, r.recordErrorEvent(err, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "failed topic (%s) metadata retrieval library error", topic.GetTopicName())
 	}
 
+	// partition is -1 when spec.partitions is unset; keep the topic's count.
+	if partition < 0 {
+		return int16(len(respMetadata.Topics[0].Partitions[0].Replicas)), nil
+	}
+
 	if len(respMetadata.Topics[0].Partitions) > partition {
 		return 0, r.recordErrorEvent(ErrScaleDownPartitionCount, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "unable to update topic (%s)", topic.GetTopicName())
 	}
@@ -647,7 +652,8 @@ func generateConf(
 		}
 	}
 
-	if desiredReplicationFactor != actualReplicationFactor {
+	// desiredReplicationFactor is -1 when spec.replicationFactor is unset.
+	if desiredReplicationFactor > 0 && desiredReplicationFactor != actualReplicationFactor {
 		setConf["replication.factor"] = strconv.Itoa(int(desiredReplicationFactor))
 	}
 

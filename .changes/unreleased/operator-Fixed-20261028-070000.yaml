@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Topic resources without `spec.partitions` or `spec.replicationFactor` no longer fail every reconcile after the topic is created. The operator now leaves the topic''s current partition count and replication factor alone when those fields are unset, instead of reporting `unable to scale down number of partition in topic` or `replication factor -1 must be positive` (#1126).'
+time: 2026-10-28T07:00:00.000000000-07:00
