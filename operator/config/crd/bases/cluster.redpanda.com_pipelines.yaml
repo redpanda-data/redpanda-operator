@@ -7370,6 +7370,24 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              updateStrategy:
+                default: Recreate
+                description: |-
+                  UpdateStrategy controls how pipeline pods are replaced when the pipeline
+                  restarts, for example after a config, image, or resource change.
+
+                    - Recreate (default): stop the old pods, then start new ones. Two
+                      instances never run at once, which inputs that need exclusive
+                      ownership (such as CDC replication slots) require. Inputs that cannot
+                      replay (such as core NATS) lose messages sent during the gap.
+                    - Rolling: start a new pod and wait until it is ready before stopping
+                      an old one (maxSurge 1, maxUnavailable 0). There is no gap, but old
+                      and new pods briefly run side by side and may process some messages
+                      twice.
+                enum:
+                - Recreate
+                - Rolling
+                type: string
               userRef:
                 description: |-
                   UserRef binds the pipeline to a User CR. When set alongside

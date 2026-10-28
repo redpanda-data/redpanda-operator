@@ -182,3 +182,97 @@
             name: annotated-pipeline
           name: config
   status: {}
+-- rolling-update-strategy --
+- apiVersion: v1
+  data:
+    connect.yaml: |
+      input:
+        generate:
+          mapping: 'root = "hello"'
+      output:
+        stdout: {}
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: rolling-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: rolling-pipeline
+    namespace: default
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: rolling-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: rolling-pipeline
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: connect-pipeline
+        app.kubernetes.io/instance: rolling-pipeline
+        app.kubernetes.io/managed-by: redpanda-operator
+        app.kubernetes.io/name: redpanda-connect
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          cluster.redpanda.com/config-checksum: 5c65290b10eabb9ff475a4dabdf2ab83856c7f421a8d13bb339aecc802501484
+        labels:
+          app.kubernetes.io/component: connect-pipeline
+          app.kubernetes.io/instance: rolling-pipeline
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda-connect
+      spec:
+        containers:
+        - command:
+          - /redpanda-connect
+          - run
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: connect
+          ports:
+          - containerPort: 4195
+            name: http
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4195
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        initContainers:
+        - command:
+          - /redpanda-connect
+          - lint
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: lint
+          resources: {}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        volumes:
+        - configMap:
+            name: rolling-pipeline
+          name: config
+  status: {}

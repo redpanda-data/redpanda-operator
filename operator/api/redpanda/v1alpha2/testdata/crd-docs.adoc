@@ -2810,6 +2810,19 @@ The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 protecting pipeline pods from voluntary disruptions such as node drains +
 and cluster autoscaler evictions. When not set, no PDB is created. + |  | Optional: \{} +
 
+| *`updateStrategy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineupdatestrategy[$$PipelineUpdateStrategy$$]__ | UpdateStrategy controls how pipeline pods are replaced when the pipeline +
+restarts, for example after a config, image, or resource change. +
+
+- Recreate (default): stop the old pods, then start new ones. Two +
+instances never run at once, which inputs that need exclusive +
+ownership (such as CDC replication slots) require. Inputs that cannot +
+replay (such as core NATS) lose messages sent during the gap. +
+- Rolling: start a new pod and wait until it is ready before stopping +
+an old one (maxSurge 1, maxUnavailable 0). There is no gap, but old +
+and new pods briefly run side by side and may process some messages +
+twice. + | Recreate | Enum: [Recreate Rolling] +
+Optional: \{} +
+
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource declaratively binds the pipeline's redpanda input/output +
 to a Redpanda cluster. Mirrors the ClusterSource pattern used by the +
 User/Topic CRDs: +
@@ -2893,6 +2906,23 @@ how HPA and KEDA discover the pods backing this Pipeline when +
 computing per-pod (cpu/memory/custom) metrics. + |  | Optional: \{} +
 
 |===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineupdatestrategy"]
+==== PipelineUpdateStrategy
+
+_Underlying type:_ _string_
+
+PipelineUpdateStrategy controls how pipeline pods are replaced on a restart.
+
+.Validation:
+- Enum: [Recreate Rolling]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
+****
+
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineuserref"]

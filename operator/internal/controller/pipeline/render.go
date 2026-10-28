@@ -595,9 +595,7 @@ func (r *render) deployment() *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: r.labels,
 			},
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RecreateDeploymentStrategyType,
-			},
+			Strategy: r.deploymentStrategy(),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      r.labels,
@@ -638,6 +636,22 @@ func (r *render) deployment() *appsv1.Deployment {
 			},
 		},
 	}
+}
+
+// deploymentStrategy maps .spec.updateStrategy onto the Deployment. An unset
+// value (objects built in Go rather than read back from the API server) means
+// Recreate, matching the CRD default.
+func (r *render) deploymentStrategy() appsv1.DeploymentStrategy {
+	if r.pipeline.Spec.UpdateStrategy == redpandav1alpha2.PipelineUpdateStrategyRolling {
+		return appsv1.DeploymentStrategy{
+			Type: appsv1.RollingUpdateDeploymentStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateDeployment{
+				MaxSurge:       ptr.To(intstr.FromInt32(1)),
+				MaxUnavailable: ptr.To(intstr.FromInt32(0)),
+			},
+		}
+	}
+	return appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 }
 
 func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
