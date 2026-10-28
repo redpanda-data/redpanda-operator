@@ -2810,17 +2810,20 @@ The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 protecting pipeline pods from voluntary disruptions such as node drains +
 and cluster autoscaler evictions. When not set, no PDB is created. + |  | Optional: \{} +
 
-| *`updateStrategy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineupdatestrategy[$$PipelineUpdateStrategy$$]__ | UpdateStrategy controls how pipeline pods are replaced when the pipeline +
-restarts, for example after a config, image, or resource change. +
+| *`updateStrategy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineupdatestrategy[$$PipelineUpdateStrategy$$]__ | Controls how pipeline pods are replaced when the pipeline restarts, for +
+example after a configuration, image, or resource change. Defaults to +
+`Recreate`. +
 
-- Recreate (default): stop the old pods, then start new ones. Two +
-instances never run at once, which inputs that need exclusive +
-ownership (such as CDC replication slots) require. Inputs that cannot +
-replay (such as core NATS) lose messages sent during the gap. +
-- Rolling: start a new pod and wait until it is ready before stopping +
-an old one (maxSurge 1, maxUnavailable 0). There is no gap, but old +
-and new pods briefly run side by side and may process some messages +
-twice. + | Recreate | Enum: [Recreate Rolling] +
+- `Recreate`: stop the old pods, then start the new ones. An old pod +
+and a new pod never run at the same time, which inputs that need +
+exclusive ownership of their source, such as change data capture +
+(CDC) replication slots, require. Inputs that cannot replay, such as +
+core NATS, lose messages sent while no pod is running. +
+- `Rolling`: start a new pod and wait until it is ready before stopping +
+an old one. The operator sets `maxSurge: 1` and `maxUnavailable: 0` +
+on the pipeline Deployment's rolling update, so the pipeline is never +
+fully stopped, but old and new pods briefly run side by side and may +
+process some messages twice. + | Recreate | Enum: [Recreate Rolling] +
 Optional: \{} +
 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource declaratively binds the pipeline's redpanda input/output +
