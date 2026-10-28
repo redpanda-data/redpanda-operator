@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Pipeline CRD: new `spec.rpcPlugins` field that lists Redpanda Connect dynamic (RPC) plugin manifest paths or globs. The operator passes them to `--rpc-plugins` for both the lint init container and the pipeline container. The manifests and plugin executables must already be in the pod, for example a manifest in `spec.configFiles` with the plugin built into a custom `spec.image`, or a static binary copied in by `spec.extraInitContainers`.'
+time: 2026-10-27T19:00:00.000000000-07:00
