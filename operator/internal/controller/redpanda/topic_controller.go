@@ -53,6 +53,7 @@ var (
 	ErrScaleDownPartitionCount     = errors.New("unable to scale down number of partition in topic")
 	ErrEmptyTopicConfigDescription = errors.New("topic config description response is empty")
 	ErrEmptyMetadataTopic          = errors.New("metadata topic response is empty")
+	ErrEmptyMetadataPartitions     = errors.New("metadata topic response has no partitions")
 	ErrWrongCreateTopicResponse    = errors.New("requested topic was not part of create topic response")
 )
 
@@ -382,17 +383,23 @@ func (r *TopicReconciler) reconcilePartition(ctx context.Context, recorder recor
 		return 0, r.recordErrorEvent(err, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "failed topic (%s) metadata retrieval library error", topic.GetTopicName())
 	}
 
+	partitions := respMetadata.Topics[0].Partitions
+	if len(partitions) == 0 {
+		return 0, r.recordErrorEvent(ErrEmptyMetadataPartitions, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "metadata topic (%s) returned no partitions", topic.GetTopicName())
+	}
+	replicas := int16(len(partitions[0].Replicas))
+
 	// partition is -1 when spec.partitions is unset; keep the topic's count.
 	if partition < 0 {
-		return int16(len(respMetadata.Topics[0].Partitions[0].Replicas)), nil
+		return replicas, nil
 	}
 
-	if len(respMetadata.Topics[0].Partitions) > partition {
+	if len(partitions) > partition {
 		return 0, r.recordErrorEvent(ErrScaleDownPartitionCount, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "unable to update topic (%s)", topic.GetTopicName())
 	}
 
-	if len(respMetadata.Topics[0].Partitions) == partition {
-		return int16(len(respMetadata.Topics[0].Partitions[0].Replicas)), nil
+	if len(partitions) == partition {
+		return replicas, nil
 	}
 
 	reqPartition := kmsg.NewCreatePartitionsRequest()
