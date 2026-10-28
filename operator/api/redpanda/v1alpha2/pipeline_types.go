@@ -112,11 +112,18 @@ const (
 	// PipelineReasonValueSourceInvalid means at least one entry in
 	// spec.valueSources could not be resolved.
 	PipelineReasonValueSourceInvalid = "ValueSourceInvalid"
-	// PipelineReasonLogsTopicEnsured means the Topic for the pipeline's logs
-	// exists.
-	PipelineReasonLogsTopicEnsured = "LogsTopicEnsured"
-	// PipelineReasonLogsTopicFailed means the operator couldn't create the
-	// Topic for the pipeline's logs.
+	// PipelineReasonLogsTopicReady means the Topic for the pipeline's logs
+	// is Ready.
+	PipelineReasonLogsTopicReady = "LogsTopicReady"
+	// PipelineReasonLogsTopicNotReady means the Topic for the pipeline's logs
+	// exists but isn't Ready.
+	PipelineReasonLogsTopicNotReady = "LogsTopicNotReady"
+	// PipelineReasonLogsTopicConflict means a Topic with the name the
+	// operator uses for the pipeline's logs exists for another topic or
+	// cluster.
+	PipelineReasonLogsTopicConflict = "LogsTopicConflict"
+	// PipelineReasonLogsTopicFailed means the operator couldn't read or
+	// create the Topic for the pipeline's logs.
 	PipelineReasonLogsTopicFailed = "LogsTopicFailed"
 )
 
@@ -129,7 +136,7 @@ const (
 	// spec.valueSources entry resolved to a backing value.
 	PipelineConditionValueSourcesResolved = "ValueSourcesResolved"
 	// PipelineConditionLogsTopic indicates whether the Topic that a
-	// clusterRef pipeline sends its logs to exists. A False status doesn't
+	// clusterRef pipeline sends its logs to is Ready. A False status doesn't
 	// stop the pipeline, only its logs in Redpanda Console.
 	PipelineConditionLogsTopic = "LogsTopic"
 )
@@ -168,13 +175,16 @@ type PipelineSpec struct {
 	// unchanged — the operator does not inject connection fields into
 	// them.
 	//
-	// With .cluster.clusterRef, the operator also sets `pipeline_id` (the
-	// Pipeline's name) and `logs_topic: __redpanda.connect.logs` in the
-	// top-level `redpanda` block, so Redpanda Console can show the
-	// pipeline's logs, and creates the Topic resource `<cluster>-connect-logs`
-	// for that topic if it doesn't exist. The Topic is shared by the
-	// cluster's pipelines and isn't deleted with them. To opt out, set
-	// `redpanda.logs_topic: ""`.
+	// With `.cluster.clusterRef`, the operator also sets `pipeline_id` (the
+	// Pipeline's name, overriding any value in this YAML) and `logs_topic:
+	// __redpanda.connect.logs` in the top-level `redpanda` block, so
+	// Redpanda Console can show the pipeline's logs. It creates the Topic
+	// resource `<cluster>-connect-logs` for that topic if it doesn't exist,
+	// shortening and hashing long cluster names to fit 63 characters. The
+	// Topic is shared by the cluster's pipelines and isn't deleted with
+	// them. To opt out, set `redpanda.logs_topic: ""`. Log records aren't
+	// authenticated: any principal with Write on the topic can write
+	// records under any pipeline's ID.
 	// +kubebuilder:validation:Required
 	ConfigYAML string `json:"configYaml"`
 
@@ -258,7 +268,8 @@ type PipelineSpec struct {
 	RPCPlugins []string `json:"rpcPlugins,omitempty"`
 
 	// ServiceAccountName is the ServiceAccount to bind to the pipeline pod.
-	// When unset, the namespace's default ServiceAccount is used.
+	// When unset, the pod runs as the namespace's default ServiceAccount with
+	// its token not mounted.
 	//
 	// Setting this is the recommended way to scope per-pipeline cloud-IAM
 	// trust (e.g. IRSA on EKS, Workload Identity on GKE, Pod Identity on

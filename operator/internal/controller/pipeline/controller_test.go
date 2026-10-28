@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -743,9 +744,10 @@ func (s *ControllerSuite) TestFindOwnershipConflict() {
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
 
 	c := &Controller{Ctl: ctl}
-	renderer := c.rendererFor(pipeline, nil, nil, nil, "")
+	rendered, err := c.rendererFor(pipeline, nil, nil, nil, "").Render(t.Context())
+	require.NoError(t, err)
 
-	conflict, err := c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	conflict, err := c.findOwnershipConflict(t.Context(), pipeline, rendered)
 	require.NoError(t, err)
 	require.NotEmpty(t, conflict, "a foreign same-named ConfigMap must be reported as a conflict")
 	assert.Contains(t, conflict, "ConfigMap")
@@ -757,14 +759,14 @@ func (s *ControllerSuite) TestFindOwnershipConflict() {
 		*metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
 	}
 	require.NoError(t, ctl.Apply(t.Context(), foreign))
-	conflict, err = c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	conflict, err = c.findOwnershipConflict(t.Context(), pipeline, rendered)
 	require.NoError(t, err)
 	assert.Empty(t, conflict)
 }
 
 // TestEnsureConnectLogsTopic covers the Topic behind Console's pipeline logs:
 // created once per cluster without an owner reference, left alone once it
-// exists, and not deleted with the pipeline.
+// exists, reported Ready only when it is, and not deleted with the pipeline.
 func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
 	t := s.T()
 
@@ -784,12 +786,19 @@ func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
 	c := &Controller{Ctl: ctl}
 	conn := &clusterConnection{Brokers: []string{"redpanda-0:9093"}}
 	renderer := c.rendererFor(pipeline, conn, nil, nil, "")
+	ensure := func(c *Controller, p *redpandav1alpha2.Pipeline) (*metav1.Condition, error) {
+		rendered, err := c.rendererFor(p, conn, nil, nil, "").Render(t.Context())
+		require.NoError(t, err)
+		return c.ensureConnectLogsTopic(t.Context(), p, rendered)
+	}
 	key := kube.ObjectKey{Namespace: ns.Name, Name: "redpanda-connect-logs"}
 
-	cond := c.ensureConnectLogsTopic(t.Context(), pipeline, renderer)
+	// A new Topic isn't Ready until the Topic controller reconciles it.
+	cond, err := ensure(c, pipeline)
+	require.NoError(t, err)
 	require.NotNil(t, cond)
-	assert.Equal(t, metav1.ConditionTrue, cond.Status)
-	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicEnsured, cond.Reason)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicNotReady, cond.Reason)
 
 	var topic redpandav1alpha2.Topic
 	require.NoError(t, ctl.Get(t.Context(), key, &topic))
@@ -797,15 +806,58 @@ func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
 	assert.Equal(t, ptr.To(connectLogsTopic), topic.Spec.OverwriteTopicName)
 	assert.Equal(t, ptr.To(1), topic.Spec.Partitions)
 	assert.Equal(t, "redpanda", topic.Spec.ClusterSource.ClusterRef.Name)
-	assert.Equal(t, map[string]*string{"retention.ms": ptr.To("86400000")}, topic.Spec.AdditionalConfig)
+	assert.Equal(t, map[string]*string{"retention.ms": ptr.To("86400000"), "retention.bytes": ptr.To("1073741824")}, topic.Spec.AdditionalConfig)
+
+	// The condition follows the Topic's Ready condition.
+	apimeta.SetStatusCondition(&topic.Status.Conditions, metav1.Condition{Type: redpandav1alpha2.ReadyCondition, Status: metav1.ConditionFalse, Reason: "Failed", Message: "broker unavailable"})
+	require.NoError(t, ctl.UpdateStatus(t.Context(), &topic))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicNotReady, cond.Reason)
+	assert.Equal(t, `Topic "redpanda-connect-logs" is not Ready: broker unavailable`, cond.Message)
+
+	apimeta.SetStatusCondition(&topic.Status.Conditions, metav1.Condition{Type: redpandav1alpha2.ReadyCondition, Status: metav1.ConditionTrue, Reason: "Succeeded"})
+	require.NoError(t, ctl.UpdateStatus(t.Context(), &topic))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicReady, cond.Reason)
 
 	// Admins may tune the Topic, and later passes don't write to it.
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
 	topic.Spec.AdditionalConfig["retention.ms"] = ptr.To("3600000")
 	require.NoError(t, ctl.Update(t.Context(), &topic))
-	require.NotNil(t, c.ensureConnectLogsTopic(t.Context(), pipeline, renderer))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
 	var tuned redpandav1alpha2.Topic
 	require.NoError(t, ctl.Get(t.Context(), key, &tuned))
 	assert.Equal(t, topic.ResourceVersion, tuned.ResourceVersion)
+
+	// A Topic of that name for another topic is reported, not used.
+	taken := pipeline.DeepCopy()
+	taken.Spec.ClusterSource.ClusterRef.Name = "taken"
+	require.NoError(t, ctl.Create(t.Context(), &redpandav1alpha2.Topic{
+		ObjectMeta: metav1.ObjectMeta{Name: "taken-connect-logs", Namespace: ns.Name},
+		Spec: redpandav1alpha2.TopicSpec{
+			OverwriteTopicName: ptr.To("orders"),
+			Partitions:         ptr.To(1),
+			ClusterSource:      &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "taken"}},
+		},
+	}))
+	cond, err = ensure(c, taken)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicConflict, cond.Reason)
+	assert.Contains(t, cond.Message, `Topic "taken-connect-logs"`)
+
+	// RBAC failures are fatal rather than a False condition.
+	cfg := rest.CopyConfig(ctl.RestConfig())
+	cfg.Impersonate = rest.ImpersonationConfig{UserName: "no-rbac"}
+	noRBAC, err := kube.FromRESTConfig(cfg, kube.Options{Options: client.Options{Scheme: controller.UnifiedScheme}})
+	require.NoError(t, err)
+	_, err = ensure(&Controller{Ctl: noRBAC}, pipeline)
+	assert.True(t, apierrors.IsForbidden(err), "expected Forbidden, got %v", err)
 
 	// The Topic outlives the pipeline's resources.
 	syncer, err := c.syncerFor(pipeline, renderer)
@@ -820,7 +872,9 @@ func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
 	optOut := pipeline.DeepCopy()
 	optOut.Spec.ConfigYAML = "redpanda:\n  logs_topic: \"\"\n" + optOut.Spec.ConfigYAML
 	optOut.Spec.ClusterSource.ClusterRef.Name = "opted-out"
-	assert.Nil(t, c.ensureConnectLogsTopic(t.Context(), optOut, c.rendererFor(optOut, conn, nil, nil, "")))
+	cond, err = ensure(c, optOut)
+	require.NoError(t, err)
+	assert.Nil(t, cond)
 	err = ctl.Get(t.Context(), kube.ObjectKey{Namespace: ns.Name, Name: "opted-out-connect-logs"}, &topic)
 	assert.True(t, apierrors.IsNotFound(err), "expected no Topic, got %v", err)
 
@@ -1991,6 +2045,7 @@ func TestRender_Deployment_ServiceAccountName(t *testing.T) {
 		require.NoError(t, err)
 		dp := objs[1].(*appsv1.Deployment)
 		assert.Equal(t, "mysql-cdc-pipeline-sa", dp.Spec.Template.Spec.ServiceAccountName)
+		assert.Nil(t, dp.Spec.Template.Spec.AutomountServiceAccountToken, "a named SA decides whether its token is mounted")
 	})
 
 	t.Run("empty_when_unset", func(t *testing.T) {
@@ -2004,6 +2059,8 @@ func TestRender_Deployment_ServiceAccountName(t *testing.T) {
 		dp := objs[1].(*appsv1.Deployment)
 		assert.Empty(t, dp.Spec.Template.Spec.ServiceAccountName,
 			"unset means the namespace's default SA is used at admission time")
+		assert.Equal(t, ptr.To(false), dp.Spec.Template.Spec.AutomountServiceAccountToken,
+			"the default SA's token, and any RBAC it holds, stays out of the pod")
 	})
 }
 

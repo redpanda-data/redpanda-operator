@@ -47,6 +47,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -139,6 +140,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -247,6 +249,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -369,6 +372,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -467,6 +471,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect

@@ -3478,13 +3478,16 @@ spec:
                   unchanged — the operator does not inject connection fields into
                   them.
 
-                  With .cluster.clusterRef, the operator also sets `pipeline_id` (the
-                  Pipeline's name) and `logs_topic: __redpanda.connect.logs` in the
-                  top-level `redpanda` block, so Redpanda Console can show the
-                  pipeline's logs, and creates the Topic resource `<cluster>-connect-logs`
-                  for that topic if it doesn't exist. The Topic is shared by the
-                  cluster's pipelines and isn't deleted with them. To opt out, set
-                  `redpanda.logs_topic: ""`.
+                  With `.cluster.clusterRef`, the operator also sets `pipeline_id` (the
+                  Pipeline's name, overriding any value in this YAML) and `logs_topic:
+                  __redpanda.connect.logs` in the top-level `redpanda` block, so
+                  Redpanda Console can show the pipeline's logs. It creates the Topic
+                  resource `<cluster>-connect-logs` for that topic if it doesn't exist,
+                  shortening and hashing long cluster names to fit 63 characters. The
+                  Topic is shared by the cluster's pipelines and isn't deleted with
+                  them. To opt out, set `redpanda.logs_topic: ""`. Log records aren't
+                  authenticated: any principal with Write on the topic can write
+                  records under any pipeline's ID.
                 type: string
               description:
                 description: |-
@@ -7164,7 +7167,8 @@ spec:
               serviceAccountName:
                 description: |-
                   ServiceAccountName is the ServiceAccount to bind to the pipeline pod.
-                  When unset, the namespace's default ServiceAccount is used.
+                  When unset, the pod runs as the namespace's default ServiceAccount with
+                  its token not mounted.
 
                   Setting this is the recommended way to scope per-pipeline cloud-IAM
                   trust (e.g. IRSA on EKS, Workload Identity on GKE, Pod Identity on

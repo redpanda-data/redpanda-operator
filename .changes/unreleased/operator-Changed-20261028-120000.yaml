@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    Pipelines with `spec.cluster.clusterRef` now send their logs to `__redpanda.connect.logs` for Redpanda Console's Logs tab: the operator sets `redpanda.pipeline_id` and `redpanda.logs_topic` in the rendered config and creates the shared Topic resource `<cluster>-connect-logs` (24 hours, 1 GiB retention). Grant each one's `spec.userRef` User Write and Describe on `__redpanda.connect.logs`, or its logs are dropped with `TOPIC_AUTHORIZATION_FAILED`. To opt out, set `redpanda.logs_topic: ""`. The Connect controller now needs `get`, `list`, `watch`, and `create` on Topics.
+
+    Pipeline Pods without `spec.serviceAccountName` no longer mount the default ServiceAccount's token. Upgrading the operator restarts those Pipelines, and those with `spec.cluster.clusterRef`, once.
+time: 2026-10-28T12:00:00.000000-07:00

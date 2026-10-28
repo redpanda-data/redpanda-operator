@@ -223,8 +223,8 @@ func TestRender_ClusterRefSASLFallback(t *testing.T) {
 }
 
 // TestRender_ConnectLogs asserts that only clusterRef pipelines send logs to
-// the topic Console reads, through the top-level redpanda block, and that
-// user-set keys win.
+// the topic Console reads, through the top-level redpanda block, that a
+// user-set logs_topic wins, and that the operator's pipeline_id does.
 func TestRender_ConnectLogs(t *testing.T) {
 	clusterRef := &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"}}
 	static := &redpandav1alpha2.ClusterSource{StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{}}
@@ -248,10 +248,12 @@ func TestRender_ConnectLogs(t *testing.T) {
 			expected: map[string]any{},
 		},
 		{
-			name:     "user-keys-win",
+			// Console attributes log records by pipeline_id, so a pipeline
+			// can't claim another's.
+			name:     "pipeline-id-wins",
 			cluster:  clusterRef,
-			config:   "redpanda:\n  pipeline_id: mine\n  logs_topic: my-logs\ninput:\n  stdin: {}\noutput:\n  stdout: {}\n",
-			expected: map[string]any{"pipeline_id": "mine", "logs_topic": "my-logs"},
+			config:   "redpanda:\n  pipeline_id: victim\n  logs_topic: my-logs\ninput:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			expected: map[string]any{"pipeline_id": "orders", "logs_topic": "my-logs"},
 		},
 		{
 			name:     "opt-out",
@@ -288,7 +290,9 @@ func TestRender_ConnectLogs(t *testing.T) {
 				assert.NotContains(t, in, "pipeline_id")
 			}
 
-			sends, err := r.sendsConnectLogs()
+			rendered, err := r.Render(t.Context())
+			require.NoError(t, err)
+			sends, err := sendsConnectLogs(rendered)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected["logs_topic"] == connectLogsTopic, sends)
 		})

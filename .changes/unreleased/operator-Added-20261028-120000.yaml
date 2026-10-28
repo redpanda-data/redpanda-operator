@@ -1,7 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    Pipelines with `spec.cluster.clusterRef` now send their logs to the topic `__redpanda.connect.logs`, which Redpanda Console shows on the pipeline's Logs tab. The operator sets `redpanda.pipeline_id` and `redpanda.logs_topic` in the rendered Connect config and creates the Topic resource `<cluster>-connect-logs` (24h retention) if it doesn't exist. The Topic is shared by the cluster's pipelines and isn't deleted with them. A pipeline's `spec.userRef` User needs Write and Describe ACLs on `__redpanda.connect.logs`. To opt out, set `redpanda.logs_topic: ""` in `spec.configYaml`.
-
-      Upgrading the operator restarts every Pipeline with `spec.cluster.clusterRef` once, because its rendered config changes. The operator now needs `get`, `list`, `watch`, and `create` on Topics for the Connect controller, which the operator Helm chart grants.
-time: 2026-10-28T12:00:00.000000-07:00

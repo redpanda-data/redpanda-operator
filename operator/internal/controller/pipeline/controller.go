@@ -387,15 +387,16 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	renderer := c.rendererFor(pipeline, clusterConn, userCreds, licenseContent, credsChecksum)
 
-	// A missing logs topic costs Console the pipeline's logs, not the
-	// pipeline its data, so it doesn't block the sync.
-	logsTopicCondition := c.ensureConnectLogsTopic(ctx, pipeline, renderer)
+	rendered, err := renderer.Render(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Refuse to adopt pre-existing objects this Pipeline didn't create: the
 	// SSA sync below force-applies, so without this check a Pipeline named
 	// after another workload's ConfigMap/Secret/Deployment would hijack that
 	// object — and deleting the Pipeline would then delete it.
-	if conflict, err := c.findOwnershipConflict(ctx, pipeline, renderer); err != nil {
+	if conflict, err := c.findOwnershipConflict(ctx, pipeline, rendered); err != nil {
 		return ctrl.Result{}, err
 	} else if conflict != "" {
 		log.Info(ctx, "refusing to adopt conflicting resources", "conflict", conflict)
@@ -409,6 +410,13 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, statusErr
 		}
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+	}
+
+	// A missing logs topic costs Console the pipeline's logs, not the
+	// pipeline its data, so only RBAC failures block the sync.
+	logsTopicCondition, err := c.ensureConnectLogsTopic(ctx, pipeline, rendered)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// Sync all child resources (ConfigMap, Deployment, license Secret) via SSA.
@@ -523,42 +531,59 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, renderer *re
 
 // ensureConnectLogsTopic creates the Topic resource for [connectLogsTopic] on
 // a clusterRef pipeline's cluster unless it exists, and returns the LogsTopic
-// condition, or nil if the pipeline doesn't send logs there. An existing
-// Topic is left as is, so admins can tune it.
-func (c *Controller) ensureConnectLogsTopic(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, renderer *render) *metav1.Condition {
+// condition, or nil if the rendered objects don't send logs there. An existing
+// Topic is left as is, so admins can tune it. Only RBAC errors are returned.
+func (c *Controller) ensureConnectLogsTopic(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, rendered []kube.Object) (*metav1.Condition, error) {
 	if pipeline.Spec.ClusterSource == nil || pipeline.Spec.ClusterSource.ClusterRef == nil {
-		return nil
+		return nil, nil
 	}
-	// A render error fails the sync, which reports it.
-	if sends, err := renderer.sendsConnectLogs(); err != nil || !sends {
-		return nil
+	if sends, err := sendsConnectLogs(rendered); err != nil || !sends {
+		return nil, err
+	}
+
+	condition := func(status metav1.ConditionStatus, reason, message string) *metav1.Condition {
+		return &metav1.Condition{Type: redpandav1alpha2.PipelineConditionLogsTopic, Status: status, Reason: reason, Message: message}
 	}
 
 	topic := connectLogsTopicFor(pipeline)
-	err := c.Ctl.Get(ctx, kube.AsKey(topic), &redpandav1alpha2.Topic{})
+	existing := &redpandav1alpha2.Topic{}
+	err := c.Ctl.Get(ctx, kube.AsKey(topic), existing)
 	if apierrors.IsNotFound(err) {
+		existing = topic
 		err = c.Ctl.Create(ctx, topic)
 		// Pipelines on the same cluster reconcile concurrently.
 		if apierrors.IsAlreadyExists(err) {
-			err = nil
+			existing = &redpandav1alpha2.Topic{}
+			err = c.Ctl.Get(ctx, kube.AsKey(topic), existing)
 		}
 	}
-	if err != nil {
+	if apierrors.IsForbidden(err) {
+		return nil, errors.WithStack(err)
+	} else if err != nil {
 		log.Error(ctx, err, "failed to create the Topic for pipeline logs", "topic", kube.AsKey(topic))
-		return &metav1.Condition{
-			Type:    redpandav1alpha2.PipelineConditionLogsTopic,
-			Status:  metav1.ConditionFalse,
-			Reason:  redpandav1alpha2.PipelineReasonLogsTopicFailed,
-			Message: err.Error(),
+		return condition(metav1.ConditionFalse, redpandav1alpha2.PipelineReasonLogsTopicFailed, err.Error()), nil
+	}
+
+	ref := ptr.Deref(existing.Spec.ClusterSource, redpandav1alpha2.ClusterSource{}).ClusterRef
+	if ptr.Deref(existing.Spec.OverwriteTopicName, "") != connectLogsTopic ||
+		ref == nil || ref.Name != topic.Spec.ClusterSource.ClusterRef.Name || ref.GetNamespace(existing.Namespace) != pipeline.Namespace ||
+		existing.Labels[connectLogsComponentLabel] != topic.Labels[connectLogsComponentLabel] {
+		return condition(metav1.ConditionFalse, redpandav1alpha2.PipelineReasonLogsTopicConflict, fmt.Sprintf("Topic %q isn't for %s on this cluster; rename or remove it to get pipeline logs in Redpanda Console", existing.Name, connectLogsTopic)), nil
+	}
+
+	if ready := meta.FindStatusCondition(existing.Status.Conditions, redpandav1alpha2.ReadyCondition); ready == nil || ready.Status != metav1.ConditionTrue {
+		message := fmt.Sprintf("Topic %q is not Ready", existing.Name)
+		if ready != nil && ready.Message != "" {
+			message += ": " + ready.Message
 		}
+		return condition(metav1.ConditionFalse, redpandav1alpha2.PipelineReasonLogsTopicNotReady, message), nil
 	}
-	return &metav1.Condition{
-		Type:    redpandav1alpha2.PipelineConditionLogsTopic,
-		Status:  metav1.ConditionTrue,
-		Reason:  redpandav1alpha2.PipelineReasonLogsTopicEnsured,
-		Message: fmt.Sprintf("Logs go to %s, managed by Topic %q", connectLogsTopic, topic.Name),
-	}
+
+	return condition(metav1.ConditionTrue, redpandav1alpha2.PipelineReasonLogsTopicReady, fmt.Sprintf("Logs go to %s, managed by Topic %q", connectLogsTopic, existing.Name)), nil
 }
+
+// connectLogsComponentLabel marks the Topic that [connectLogsTopicFor] creates.
+const connectLogsComponentLabel = "app.kubernetes.io/component"
 
 // connectLogsTopicFor returns the Topic for [connectLogsTopic] on the
 // pipeline's cluster. The cluster's pipelines share it, so it has no owner
@@ -571,25 +596,32 @@ func connectLogsTopicFor(pipeline *redpandav1alpha2.Pipeline) *redpandav1alpha2.
 			Namespace: pipeline.Namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/managed-by": "redpanda-operator",
-				"app.kubernetes.io/component":  "connect-logs",
+				connectLogsComponentLabel:      "connect-logs",
 			},
 		},
 		Spec: redpandav1alpha2.TopicSpec{
 			OverwriteTopicName: ptr.To(connectLogsTopic),
-			// The Topic controller fails every reconcile after creation when
-			// partitions is unset (#1126).
+			// One partition, because Console reads the topic in order.
 			Partitions: ptr.To(1),
 			ClusterSource: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{Name: cluster},
 			},
-			// Console's Logs tab reads the last 5 hours.
-			AdditionalConfig: map[string]*string{"retention.ms": ptr.To(connectLogsRetentionMS)},
+			AdditionalConfig: map[string]*string{
+				// Console's Logs tab reads the last 5 hours.
+				"retention.ms": ptr.To(connectLogsRetentionMS),
+				// Bounds the disk a flooding pipeline can fill.
+				"retention.bytes": ptr.To(connectLogsRetentionBytes),
+			},
 		},
 	}
 }
 
-// connectLogsRetentionMS is 24 hours.
-const connectLogsRetentionMS = "86400000"
+const (
+	// connectLogsRetentionMS is 24 hours.
+	connectLogsRetentionMS = "86400000"
+	// connectLogsRetentionBytes is 1 GiB.
+	connectLogsRetentionBytes = "1073741824"
+)
 
 // connectLogsTopicName names the logs Topic of cluster. Long cluster names are
 // shortened and hashed to keep the name within 63 characters.
@@ -605,20 +637,15 @@ func connectLogsTopicName(cluster string) string {
 	return prefix + "-" + digest + suffix
 }
 
-// findOwnershipConflict renders the objects this Pipeline would sync and
-// reports the first that already exists WITHOUT an owner reference to the
+// findOwnershipConflict reports the first of the objects this Pipeline would
+// sync that already exists WITHOUT an owner reference to the
 // Pipeline. The SSA sync uses ForceOwnership, so applying over such an object
 // would adopt it (and Pipeline deletion would then delete it); refusing up
 // front turns a would-be hijack of an unrelated ConfigMap/Secret/Deployment
 // into a NameConflict status instead. Returns a human-readable description of
 // the conflict, or "" when every object is safe to apply.
-func (c *Controller) findOwnershipConflict(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, renderer *render) (string, error) {
-	objs, err := renderer.Render(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	for _, obj := range objs {
+func (c *Controller) findOwnershipConflict(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, rendered []kube.Object) (string, error) {
+	for _, obj := range rendered {
 		existing, ok := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(kube.Object)
 		if !ok {
 			return "", errors.Newf("rendered object %T is not a kube.Object", obj)
