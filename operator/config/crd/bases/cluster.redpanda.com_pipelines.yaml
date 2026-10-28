@@ -7133,8 +7133,9 @@ spec:
                 description: |-
                   Lists manifest files for Redpanda Connect dynamic (RPC) plugins, which
                   the pipeline loads with `--rpc-plugins`. Each entry is an absolute path
-                  or glob inside the pipeline pod, and the list accepts at most 32
-                  entries. When unset, the pipeline loads no plugins.
+                  or glob inside the pipeline pod, at most 64 characters long, and the
+                  list accepts at most 32 entries. When unset, the pipeline loads no
+                  plugins.
 
                   The built-in `lint` init container gets the same `--rpc-plugins`
                   arguments, so the manifests must be readable there as well as in the
@@ -7146,7 +7147,7 @@ spec:
                   `.extraVolumeMounts`, which is what makes it visible to the `lint` and
                   pipeline containers.
                 items:
-                  maxLength: 1024
+                  maxLength: 64
                   minLength: 1
                   type: string
                 maxItems: 32

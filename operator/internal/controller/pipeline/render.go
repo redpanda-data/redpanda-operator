@@ -658,8 +658,7 @@ func (r *render) deploymentStrategy() appsv1.DeploymentStrategy {
 // lint gets the same --rpc-plugins as run, otherwise it rejects the plugin
 // components.
 func (r *render) connectCommand(subcommand string) []string {
-	cmd := make([]string, 0, 2*len(r.pipeline.Spec.RPCPlugins)+3)
-	cmd = append(cmd, "/redpanda-connect", subcommand)
+	cmd := []string{"/redpanda-connect", subcommand}
 	for _, manifest := range r.pipeline.Spec.RPCPlugins {
 		cmd = append(cmd, "--rpc-plugins", manifest)
 	}
