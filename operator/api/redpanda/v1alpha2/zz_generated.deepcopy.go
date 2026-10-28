@@ -3543,6 +3543,11 @@ func (in *PipelineSpec) DeepCopyInto(out *PipelineSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.RPCPlugins != nil {
+		in, out := &in.RPCPlugins, &out.RPCPlugins
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(corev1.ResourceRequirements)

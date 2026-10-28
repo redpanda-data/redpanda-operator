@@ -573,7 +573,7 @@ func (r *render) deployment() *appsv1.Deployment {
 	initContainers = append(initContainers, corev1.Container{
 		Name:                     "lint",
 		Image:                    image,
-		Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
+		Command:                  r.connectCommand("lint"),
 		Env:                      env,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 		VolumeMounts:             volumeMounts,
@@ -608,7 +608,7 @@ func (r *render) deployment() *appsv1.Deployment {
 						{
 							Name:    "connect",
 							Image:   image,
-							Command: []string{"/redpanda-connect", "run", "/config/connect.yaml"},
+							Command: r.connectCommand("run"),
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
 							},
@@ -652,6 +652,17 @@ func (r *render) deploymentStrategy() appsv1.DeploymentStrategy {
 		}
 	}
 	return appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+}
+
+// connectCommand returns the redpanda-connect invocation for subcommand.
+// lint gets the same --rpc-plugins as run, otherwise it rejects the plugin
+// components.
+func (r *render) connectCommand(subcommand string) []string {
+	cmd := []string{"/redpanda-connect", subcommand}
+	for _, manifest := range r.pipeline.Spec.RPCPlugins {
+		cmd = append(cmd, "--rpc-plugins", manifest)
+	}
+	return append(cmd, "/config/connect.yaml")
 }
 
 func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
