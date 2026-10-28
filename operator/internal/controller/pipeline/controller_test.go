@@ -949,6 +949,22 @@ func TestRender_GoldenFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "rpc-plugins",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "plugin-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\npipeline:\n  processors:\n    - upper: {}\noutput:\n  stdout: {}\n",
+					ConfigFiles: map[string]string{
+						"upper.yaml": "name: upper\ntype: processor\ncommand: [\"/plugins/upper\"]\n",
+					},
+					RPCPlugins: []string{"/config/upper.yaml", "/plugins/manifests/*.yaml"},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

@@ -2931,6 +2931,18 @@ Optional: \{} +
 
 | *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
 
+| *`rpcPlugins`* __string array__ | RPCPlugins lists manifest files for Redpanda Connect dynamic (RPC) +
+plugins, which the pipeline loads with `--rpc-plugins`. Each entry is an +
+absolute path or glob inside the pipeline pod. +
+
+The manifests and the plugin executables they launch must already be in +
+the pod. For example, put a manifest in .configFiles (mounted under +
+/config), and bake the plugin and its runtime into a custom .image, or +
+copy a static binary onto .extraVolumes with .extraInitContainers. + |  | MaxItems: 32 +
+items:MaxLength: 1024 +
+items:MinLength: 1 +
+Optional: \{} +
+
 | *`serviceAccountName`* __string__ | ServiceAccountName is the ServiceAccount to bind to the pipeline pod. +
 When unset, the namespace's default ServiceAccount is used. +
 
