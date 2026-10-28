@@ -249,9 +249,17 @@ func init() {
 				xstring := *(*source).ClusterRef
 				consolePartialPipelinesConfig.ClusterRef = &xstring
 			}
+			if (*source).UserRef != nil {
+				xstring2 := *(*source).UserRef
+				consolePartialPipelinesConfig.UserRef = &xstring2
+			}
+			if (*source).AllowBootstrapUser != nil {
+				xbool2 := *(*source).AllowBootstrapUser
+				consolePartialPipelinesConfig.AllowBootstrapUser = &xbool2
+			}
 			if (*source).ImpersonateUser != nil {
-				xbool2 := *(*source).ImpersonateUser
-				consolePartialPipelinesConfig.ImpersonateUser = &xbool2
+				xbool3 := *(*source).ImpersonateUser
+				consolePartialPipelinesConfig.ImpersonateUser = &xbool3
 			}
 			consolePartialPipelinesConfig.AdmissionPolicy = pV1alpha2PipelinesAdmissionPolicyToPConsolePartialPipelinesAdmissionPolicyConfig((*source).AdmissionPolicy)
 			pConsolePartialPipelinesConfig = &consolePartialPipelinesConfig

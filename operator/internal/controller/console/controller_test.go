@@ -203,6 +203,7 @@ func TestController(t *testing.T) {
 						Pipelines: &redpandav1alpha2.PipelinesConfig{
 							Enabled:    ptr.To(true),
 							ClusterRef: ptr.To("test-redpanda"),
+							UserRef:    ptr.To("console-pipelines"),
 						},
 					},
 				},
@@ -424,11 +425,17 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 			},
 		},
 	}
+	// Pipelines on a cluster must not silently run as the bootstrap user.
+	require.ErrorContains(t, ctl.Apply(t.Context(), cr), "clusterRef requires userRef")
+	cr.Spec.Pipelines.UserRef = ptr.To("console-pipelines")
 	require.NoError(t, ctl.Apply(t.Context(), cr))
 
 	consoleCtrl := Controller{Ctl: ctl, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
-	_, err = consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
-	require.NoError(t, err)
+	reconcileConsole := func() {
+		_, err := consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
+		require.NoError(t, err)
+	}
+	reconcileConsole()
 
 	// Act as Console does: as its ServiceAccount, applying with force.
 	cfg := rest.CopyConfig(ctl.RestConfig())
@@ -460,6 +467,7 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 				ClusterSource: &redpandav1alpha2.ClusterSource{
 					ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
 				},
+				UserRef: &redpandav1alpha2.PipelineUserRef{Name: "console-pipelines"},
 			},
 		}
 		if mutate != nil {
@@ -503,9 +511,15 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 		{name: "value-sources", pipeline: pipeline("secrets", managed, func(s *redpandav1alpha2.PipelineSpec) {
 			s.ValueSources = []redpandav1alpha2.NamedValueSource{{Name: "TOKEN", Source: redpandav1alpha2.ValueSource{Inline: ptr.To("x")}}}
 		}), err: "found valueSources"},
-		{name: "user-ref", pipeline: pipeline("user", managed, func(s *redpandav1alpha2.PipelineSpec) {
-			s.UserRef = &redpandav1alpha2.PipelineUserRef{Name: "superuser"}
-		}), err: "found userRef"},
+		{name: "other-user-ref", pipeline: pipeline("user", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.UserRef.Name = "superuser"
+		}), err: "may only set spec.userRef.name, to console-pipelines"},
+		{name: "no-user-ref", pipeline: pipeline("bootstrap", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.UserRef = nil
+		}), err: "must set spec.userRef.name to console-pipelines on Pipelines that set spec.cluster"},
+		{name: "no-cluster", pipeline: pipeline("inline", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.ClusterSource, s.UserRef = nil, nil
+		})},
 		{name: "other-cluster", pipeline: pipeline("other", managed, func(s *redpandav1alpha2.PipelineSpec) {
 			s.ClusterSource.ClusterRef.Name = "other"
 		}), err: "may only set spec.cluster.clusterRef.name, to redpanda"},
@@ -513,6 +527,7 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 			s.ClusterSource = &redpandav1alpha2.ClusterSource{StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
 				Kafka: &redpandav1alpha2.KafkaAPISpec{Brokers: []string{"elsewhere:9092"}},
 			}}
+			s.UserRef = nil
 		}), err: "may only set spec.cluster.clusterRef.name, to redpanda"},
 	}
 	for _, tc := range creates {
@@ -545,8 +560,24 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("created", managed, func(s *redpandav1alpha2.PipelineSpec) {
 		s.ClusterSource.ClusterRef.Name = "elsewhere"
 	}), client.ForceOwnership, client.DryRunAll), "may only set spec.cluster.clusterRef.name, to redpanda")
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("created", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.UserRef = nil
+	}), client.ForceOwnership, client.DryRunAll), "must set spec.userRef.name to console-pipelines")
 
 	require.NoError(t, asConsole.Delete(t.Context(), created))
+
+	// allowBootstrapUser lets cluster-bound Pipelines omit userRef, which
+	// stays pinned when set.
+	cr.Spec.Pipelines.AllowBootstrapUser = ptr.To(true)
+	require.NoError(t, ctl.Apply(t.Context(), cr))
+	reconcileConsole()
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		assert.NoError(c, asConsole.Apply(t.Context(), pipeline("bootstrap", managed, func(s *redpandav1alpha2.PipelineSpec) { s.UserRef = nil }), client.ForceOwnership, client.DryRunAll))
+	}, 30*time.Second, 250*time.Millisecond)
+	require.NoError(t, asConsole.Apply(t.Context(), pipeline("pinned", managed, nil), client.ForceOwnership, client.DryRunAll))
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("other", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.UserRef.Name = "superuser"
+	}), client.ForceOwnership, client.DryRunAll), "may only set spec.userRef.name, to console-pipelines")
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels

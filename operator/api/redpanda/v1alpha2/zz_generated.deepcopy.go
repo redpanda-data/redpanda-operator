@@ -3721,6 +3721,16 @@ func (in *PipelinesConfig) DeepCopyInto(out *PipelinesConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.UserRef != nil {
+		in, out := &in.UserRef, &out.UserRef
+		*out = new(string)
+		**out = **in
+	}
+	if in.AllowBootstrapUser != nil {
+		in, out := &in.AllowBootstrapUser, &out.AllowBootstrapUser
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ImpersonateUser != nil {
 		in, out := &in.ImpersonateUser, &out.ImpersonateUser
 		*out = new(bool)

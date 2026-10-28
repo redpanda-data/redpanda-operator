@@ -1370,6 +1370,7 @@
           enabled: true
           impersonateUser: true
           namespace: test-ns
+          userRef: ""
   kind: ConfigMap
   metadata:
     labels:
@@ -1405,7 +1406,7 @@
     template:
       metadata:
         annotations:
-          checksum/config: 9860d596ec78af9146f3ef0bda31ee629ba0e4eac6493bae2a03e12be222e61d
+          checksum/config: 3b6c49d6181e246b910fda46de7ddd56edfc4c6ec0960b86a6d81aa147cd51bf
         labels:
           app.kubernetes.io/instance: console-pipelines-impersonate
           app.kubernetes.io/name: console
@@ -1574,6 +1575,7 @@
           enabled: true
           impersonateUser: false
           namespace: test-ns
+          userRef: console-pipelines
   kind: ConfigMap
   metadata:
     labels:
@@ -1609,7 +1611,7 @@
     template:
       metadata:
         annotations:
-          checksum/config: f3b0336d76af7233229b6649295c73194cda010e0f062bd42456bf30a2248e57
+          checksum/config: 10a410734a800a95c237812a997b8c77eeb422ef6f517341812e352ee75a8f2a
         labels:
           app.kubernetes.io/instance: console-pipelines-sa
           app.kubernetes.io/name: console
@@ -1875,11 +1877,21 @@
       messageExpression: 'variables.clusterRef == '''' ? ''Redpanda Console may not
         set spec.cluster'' : ''Redpanda Console may only set spec.cluster.clusterRef.name,
         to '' + variables.clusterRef'
+    - expression: '!(''userRef'' in variables.specFields) || (variables.userRef !=
+        '''' && dyn(variables.spec.userRef).all(f, f == ''name'') && has(variables.spec.userRef.name)
+        && variables.spec.userRef.name == variables.userRef)'
+      messageExpression: 'variables.userRef == '''' ? ''Redpanda Console may not set
+        spec.userRef'' : ''Redpanda Console may only set spec.userRef.name, to ''
+        + variables.userRef'
+    - expression: variables.allowBootstrapUser || !('cluster' in variables.specFields)
+        || 'userRef' in variables.specFields
+      messageExpression: '''Redpanda Console must set spec.userRef.name to '' + variables.userRef
+        + '' on Pipelines that set spec.cluster'''
     variables:
     - expression: 'request.operation == ''DELETE'' || !has(object.spec) ? {} : dyn(object.spec)'
       name: spec
     - expression: '[''configYaml'', ''displayName'', ''description'', ''tags'', ''resources'',
-        ''paused'', ''replicas'', ''cluster'']'
+        ''paused'', ''replicas'', ''cluster'', ''userRef'']'
       name: allowedSpecFields
     - expression: variables.spec.filter(f, true)
       name: specFields
@@ -1887,6 +1899,10 @@
       name: forbiddenSpecFields
     - expression: '"test-redpanda"'
       name: clusterRef
+    - expression: '"console-pipelines"'
+      name: userRef
+    - expression: "false"
+      name: allowBootstrapUser
   status: {}
 -- static-config --
 - apiVersion: v1

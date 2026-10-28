@@ -3233,7 +3233,8 @@ PipelinesAdmissionPolicy configures the ValidatingAdmissionPolicy that restricts
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Specifies whether the operator creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. +
-The policy rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`. +
+The policy rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, `cluster.clusterRef.name`, which must equal `clusterRef`, and `userRef.name`, which must equal `userRef`. +
+Unless `allowBootstrapUser` is `true`, it also requires `userRef` on Pipelines that set `cluster`. +
 It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`. +
 Requires Kubernetes 1.30 or later. +
 Has no effect when `impersonateUser` is `true`. +
@@ -3262,9 +3263,17 @@ PipelinesConfig configures Console to manage Redpanda Connect pipelines.
 Unless `impersonateUser` is `true`, the operator also grants Console's ServiceAccount access to Pipelines with a Role and RoleBinding whose names end in `-pipelines`. +
 Defaults to `false`. + |  | 
 | *`clusterRef`* __string__ | Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. +
-If unset, Console creates pipelines without a cluster reference. + |  | MaxLength: 253 +
+If unset, Console creates pipelines without a cluster reference. +
+Requires `userRef`, unless `allowBootstrapUser` is `true`. + |  | MaxLength: 253 +
 Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
 
+| *`userRef`* __string__ | Specifies the name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`. +
+The User must be in the Console resource's namespace and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use, plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs. + |  | MaxLength: 253 +
+Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
+
+| *`allowBootstrapUser`* __boolean__ | Specifies whether pipelines created in Console may run without `userRef`, in which case they authenticate as the cluster's bootstrap superuser if the cluster has SASL enabled. +
+Set it only for clusters without SASL. +
+Defaults to `false`. + |  | 
 | *`impersonateUser`* __boolean__ | Specifies whether Console forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using its ServiceAccount, so Kubernetes RBAC and audit logs apply to each user. +
 Requires the API server to trust Console's identity provider. +
 Console's ServiceAccount then gets no access to Pipelines. Instead, the operator creates two ClusterRoles, whose names end in `-pipeline-editor` and `-pipeline-viewer`, for you to bind to your identity provider's groups. +
