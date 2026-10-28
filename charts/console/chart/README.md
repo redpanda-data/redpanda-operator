@@ -241,6 +241,46 @@ Override `console.name` template.
 
 **Default:** `{}`
 
+### [pipelines](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines)
+
+Lets Console manage Redpanda Connect pipelines that run as Pipeline resources. When enabled, the chart sets `config.pipelines.kubernetes` from these values, overriding the same keys in `config`, and mounts the ServiceAccount token and cluster CA into the Console Pods so Console can call the Kubernetes API.
+
+**Default:**
+
+```
+{"admissionPolicy":{"enabled":true},"clusterRef":"","enabled":false,"impersonateUser":false,"namespace":""}
+```
+
+### [pipelines.admissionPolicy.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.admissionPolicy.enabled)
+
+Creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`. It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`. Requires Kubernetes 1.30 or later. Has no effect when `impersonateUser` is `true`.
+
+**Default:** `true`
+
+### [pipelines.clusterRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.clusterRef)
+
+Name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. The Redpanda resource must be in `namespace`. If empty, Console creates pipelines without a cluster reference.
+
+**Default:** `""`
+
+### [pipelines.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.enabled)
+
+Enables pipeline management in Console. Unless `impersonateUser` is `true`, the chart also grants Console's ServiceAccount access to Pipelines in `namespace` with a Role and RoleBinding named `<fullname>-pipelines`.
+
+**Default:** `false`
+
+### [pipelines.impersonateUser](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.impersonateUser)
+
+Forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using Console's ServiceAccount, so Kubernetes RBAC and audit logs apply to each user. Requires the API server to trust Console's identity provider. Console's ServiceAccount then gets no access to Pipelines. Instead, the chart creates the ClusterRoles `<fullname>-<release-namespace>-pipeline-editor` and `<fullname>-<release-namespace>-pipeline-viewer` for you to bind to your identity provider's groups, for example with a RoleBinding in `namespace`.
+
+**Default:** `false`
+
+### [pipelines.namespace](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.namespace)
+
+Namespace of the Pipelines that Console reads and writes. Defaults to the release namespace.
+
+**Default:** `""`
+
 ### [podAnnotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=podAnnotations)
 
 **Default:** `{}`

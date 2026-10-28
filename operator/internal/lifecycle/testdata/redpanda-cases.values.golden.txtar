@@ -103,6 +103,13 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      admissionPolicy:
+        enabled: true
+      clusterRef: ""
+      enabled: false
+      impersonateUser: false
+      namespace: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -716,6 +723,13 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      admissionPolicy:
+        enabled: true
+      clusterRef: ""
+      enabled: false
+      impersonateUser: false
+      namespace: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -1709,6 +1723,13 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      admissionPolicy:
+        enabled: true
+      clusterRef: ""
+      enabled: false
+      impersonateUser: false
+      namespace: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always

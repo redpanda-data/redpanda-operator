@@ -26,8 +26,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
@@ -111,7 +113,16 @@ func TestTemplate(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, obj := range objs {
-				assert.Equalf(t, "test-namespace", obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
+				namespace := "test-namespace"
+				switch obj.(type) {
+				case *rbacv1.ClusterRole, *admissionregistrationv1.ValidatingAdmissionPolicy, *admissionregistrationv1.ValidatingAdmissionPolicyBinding:
+					namespace = ""
+				case *rbacv1.Role, *rbacv1.RoleBinding:
+					if values.Pipelines != nil && ptr.Deref(values.Pipelines.Namespace, "") != "" {
+						namespace = *values.Pipelines.Namespace
+					}
+				}
+				assert.Equalf(t, namespace, obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
 			}
 
 			goldens.AssertGolden(t, testutil.YAML, fmt.Sprintf("testdata/%s.yaml.golden", tc.Name), out)
@@ -219,6 +230,15 @@ func TestGoHelmEquivalence(t *testing.T) {
 			},
 			Ingress: &console.PartialIngressConfig{
 				Enabled: ptr.To(true),
+			},
+			Pipelines: &console.PartialPipelinesConfig{
+				Enabled:    ptr.To(true),
+				ClusterRef: ptr.To("redpanda"),
+			},
+			Config: map[string]any{
+				"pipelines": map[string]any{
+					"kubernetes": map[string]any{"impersonateUser": true},
+				},
 			},
 		},
 	}

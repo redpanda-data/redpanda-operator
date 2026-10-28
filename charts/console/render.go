@@ -19,10 +19,12 @@ import (
 	"github.com/cockroachdb/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -189,6 +191,12 @@ func Render(state *RenderState) []kube.Object {
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
 		ServiceMonitor(state),
+		PipelinesRole(state),
+		PipelinesRoleBinding(state),
+		PipelineEditorClusterRole(state),
+		PipelineViewerClusterRole(state),
+		PipelinesAdmissionPolicy(state),
+		PipelinesAdmissionPolicyBinding(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -208,6 +216,11 @@ func Types() []kube.Object {
 		&appsv1.Deployment{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&rbacv1.ClusterRole{},
+		&admissionregistrationv1.ValidatingAdmissionPolicy{},
+		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
 	}
 }
 

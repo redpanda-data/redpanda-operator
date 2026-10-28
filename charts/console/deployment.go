@@ -104,9 +104,11 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 					Labels: helmette.Merge(state.SelectorLabels(), state.Values.PodLabels),
 				},
 				Spec: corev1.PodSpec{
-					ImagePullSecrets:             state.Values.ImagePullSecrets,
-					ServiceAccountName:           ServiceAccountName(state),
-					AutomountServiceAccountToken: &state.Values.AutomountServiceAccountToken,
+					ImagePullSecrets:   state.Values.ImagePullSecrets,
+					ServiceAccountName: ServiceAccountName(state),
+					// Pipelines are read through the Kubernetes API, which needs
+					// the mounted token and cluster CA even when impersonating.
+					AutomountServiceAccountToken: ptr.To(state.Values.AutomountServiceAccountToken || state.Values.Pipelines.Enabled),
 					SecurityContext:              &state.Values.PodSecurityContext,
 					NodeSelector:                 state.Values.NodeSelector,
 					Affinity:                     &state.Values.Affinity,

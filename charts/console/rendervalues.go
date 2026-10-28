@@ -64,6 +64,21 @@ type RenderValues struct {
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
 	Monitoring          MonitoringConfig          `json:"monitoring"`
+	Pipelines           PipelinesConfig           `json:"pipelines"`
+}
+
+// PipelinesConfig configures Console to manage Redpanda Connect pipelines
+// through Pipeline resources.
+type PipelinesConfig struct {
+	Enabled         bool                           `json:"enabled"`
+	Namespace       string                         `json:"namespace" jsonschema:"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63"`
+	ClusterRef      string                         `json:"clusterRef" jsonschema:"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253"`
+	ImpersonateUser bool                           `json:"impersonateUser"`
+	AdmissionPolicy PipelinesAdmissionPolicyConfig `json:"admissionPolicy"`
+}
+
+type PipelinesAdmissionPolicyConfig struct {
+	Enabled bool `json:"enabled"`
 }
 
 type DeploymentConfig struct {
