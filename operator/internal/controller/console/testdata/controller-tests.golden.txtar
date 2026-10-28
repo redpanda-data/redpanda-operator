@@ -1891,7 +1891,7 @@
     - expression: 'request.operation == ''DELETE'' || !has(object.spec) ? {} : dyn(object.spec)'
       name: spec
     - expression: '[''configYaml'', ''displayName'', ''description'', ''tags'', ''resources'',
-        ''paused'', ''replicas'', ''cluster'', ''userRef'']'
+        ''paused'', ''replicas'', ''updateStrategy'', ''cluster'', ''userRef'']'
       name: allowedSpecFields
     - expression: variables.spec.filter(f, true)
       name: specFields

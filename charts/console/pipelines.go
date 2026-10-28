@@ -208,9 +208,11 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 					Expression: "request.operation == 'DELETE' || !has(object.spec) ? {} : dyn(object.spec)",
 				},
 				{
-					// Includes replicas, which the CRD defaults.
+					// Includes replicas and updateStrategy, which the CRD defaults
+					// onto every write. TestPipelinesAdmissionPolicy checks that
+					// every defaulted PipelineSpec field is listed here.
 					Name:       "allowedSpecFields",
-					Expression: "['configYaml', 'displayName', 'description', 'tags', 'resources', 'paused', 'replicas', 'cluster', 'userRef']",
+					Expression: "['configYaml', 'displayName', 'description', 'tags', 'resources', 'paused', 'replicas', 'updateStrategy', 'cluster', 'userRef']",
 				},
 				{
 					Name:       "specFields",

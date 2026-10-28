@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -28,6 +29,7 @@ import (
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -436,6 +438,28 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 		require.NoError(t, err)
 	}
 	reconcileConsole()
+
+	// CRD defaulting adds fields to every write, so a defaulted PipelineSpec
+	// field missing from the allow-list rejects all of Console's creates.
+	var vap admissionregistrationv1.ValidatingAdmissionPolicy
+	require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: "rpcn-console-pipelines-pipelines"}, &vap))
+	var allowed []string
+	for _, v := range vap.Spec.Variables {
+		if v.Name == "allowedSpecFields" {
+			allowed = regexp.MustCompile(`'[A-Za-z]+'`).FindAllString(v.Expression, -1)
+		}
+	}
+	require.NotEmpty(t, allowed)
+	for _, crd := range crds.All() {
+		if crd.Name != "pipelines.cluster.redpanda.com" {
+			continue
+		}
+		for name, prop := range crd.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"].Properties {
+			if prop.Default != nil {
+				assert.Contains(t, allowed, "'"+name+"'", "CRD-defaulted spec.%s must be in the VAP allow-list", name)
+			}
+		}
+	}
 
 	// Act as Console does: as its ServiceAccount, applying with force.
 	cfg := rest.CopyConfig(ctl.RestConfig())
