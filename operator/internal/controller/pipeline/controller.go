@@ -576,6 +576,9 @@ func connectLogsTopicFor(pipeline *redpandav1alpha2.Pipeline) *redpandav1alpha2.
 		},
 		Spec: redpandav1alpha2.TopicSpec{
 			OverwriteTopicName: ptr.To(connectLogsTopic),
+			// The Topic controller fails every reconcile after creation when
+			// partitions is unset (#1126).
+			Partitions: ptr.To(1),
 			ClusterSource: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{Name: cluster},
 			},

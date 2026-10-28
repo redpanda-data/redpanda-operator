@@ -795,6 +795,7 @@ func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
 	require.NoError(t, ctl.Get(t.Context(), key, &topic))
 	assert.Empty(t, topic.OwnerReferences)
 	assert.Equal(t, ptr.To(connectLogsTopic), topic.Spec.OverwriteTopicName)
+	assert.Equal(t, ptr.To(1), topic.Spec.Partitions)
 	assert.Equal(t, "redpanda", topic.Spec.ClusterSource.ClusterRef.Name)
 	assert.Equal(t, map[string]*string{"retention.ms": ptr.To("86400000")}, topic.Spec.AdditionalConfig)
 
