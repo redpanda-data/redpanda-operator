@@ -26,6 +26,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -158,6 +159,37 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
 		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
 		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
+	})
+	t.Run("unset_partitions_and_replication_factor", func(t *testing.T) {
+		// Regression for #1126: reconciles after creation compared the topic
+		// against the -1 sentinel and failed forever.
+		topicName := "unset-partitions-topic"
+
+		createTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+				SynchronizationInterval: &metav1.Duration{Duration: time.Second * 5},
+			},
+		}
+		require.NoError(t, c.Create(ctx, &createTopic))
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := ctrl.Request{NamespacedName: key}
+		for range 2 {
+			_, err := tr.Reconcile(ctx, req)
+			require.NoError(t, err)
+		}
+
+		require.NoError(t, c.Get(ctx, key, &createTopic))
+		cond := apimeta.FindStatusCondition(createTopic.Status.Conditions, redpandav1alpha2.ReadyCondition)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
 	})
 	t.Run("overwrite_topic", func(t *testing.T) {
 		topicName := "overwrite-topic"
@@ -995,6 +1027,13 @@ func TestGenerateConf(t *testing.T) {
 			},
 			desiredReplicas:    1,
 			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"unset replication factor leaves the topic's alone": {
+			desiredReplicas:    -1,
+			actualReplicas:     3,
 			expectedSet:        map[string]string{},
 			expectedSpecialSet: map[string]string{},
 			expectedDelete:     map[string]any{},
