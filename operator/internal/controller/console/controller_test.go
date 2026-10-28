@@ -533,22 +533,16 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("gitops", managed, nil), client.ForceOwnership, client.DryRunAll), "may only update or delete Pipelines labeled")
 	require.ErrorContains(t, asConsole.Delete(t.Context(), gitops), "may only update or delete Pipelines labeled")
 
-	// Console may edit its Pipelines that carry fields it doesn't write, but
-	// may not add or change such fields.
+	// Once an admin adds a field Console doesn't write, Console can't edit the
+	// Pipeline, so a compromised Console can't reuse e.g. its valueSources.
 	augmented := pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
-		s.Image = ptr.To("custom")
-		s.ClusterSource.ClusterRef.Name = "other"
+		s.ValueSources = []redpandav1alpha2.NamedValueSource{{Name: "TOKEN", Source: redpandav1alpha2.ValueSource{Inline: ptr.To("x")}}}
 	})
 	require.NoError(t, ctl.Create(t.Context(), augmented))
-	require.NoError(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
-		s.Paused = true
-		s.ClusterSource.ClusterRef.Name = "other"
-	}), client.ForceOwnership, client.DryRunAll))
 	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
-		s.Image = ptr.To("evil")
-		s.ClusterSource.ClusterRef.Name = "other"
-	}), client.ForceOwnership, client.DryRunAll), "found image")
-	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.ConfigYAML = "input:\n  generate:\n    mapping: root = env(\"TOKEN\")\noutput:\n  stdout: {}\n"
+	}), client.ForceOwnership, client.DryRunAll), "found valueSources")
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("created", managed, func(s *redpandav1alpha2.PipelineSpec) {
 		s.ClusterSource.ClusterRef.Name = "elsewhere"
 	}), client.ForceOwnership, client.DryRunAll), "may only set spec.cluster.clusterRef.name, to redpanda")
 

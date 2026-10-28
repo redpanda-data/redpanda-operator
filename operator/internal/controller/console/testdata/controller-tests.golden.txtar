@@ -1863,12 +1863,12 @@
     - expression: size(variables.forbiddenSpecFields) == 0
       messageExpression: '''Redpanda Console may only set spec fields '' + variables.allowedSpecFields.join('',
         '') + ''; found '' + variables.forbiddenSpecFields.join('', '')'
-    - expression: '!(''resources'' in variables.changedSpecFields) || variables.spec.resources.all(k,
+    - expression: '!(''resources'' in variables.specFields) || variables.spec.resources.all(k,
         (k == ''requests'' || k == ''limits'') && dyn(variables.spec.resources[k]).all(r,
         r == ''cpu'' || r == ''memory''))'
       message: Redpanda Console may only set cpu and memory in spec.resources.requests
         and spec.resources.limits
-    - expression: '!(''cluster'' in variables.changedSpecFields) || (variables.clusterRef
+    - expression: '!(''cluster'' in variables.specFields) || (variables.clusterRef
         != '''' && variables.spec.cluster.all(f, f == ''clusterRef'') && has(variables.spec.cluster.clusterRef)
         && dyn(variables.spec.cluster.clusterRef).all(f, f == ''name'') && variables.spec.cluster.clusterRef.name
         == variables.clusterRef)'
@@ -1878,16 +1878,12 @@
     variables:
     - expression: 'request.operation == ''DELETE'' || !has(object.spec) ? {} : dyn(object.spec)'
       name: spec
-    - expression: 'request.operation != ''UPDATE'' || !has(oldObject.spec) ? {} :
-        dyn(oldObject.spec)'
-      name: oldSpec
     - expression: '[''configYaml'', ''displayName'', ''description'', ''tags'', ''resources'',
         ''paused'', ''replicas'', ''cluster'']'
       name: allowedSpecFields
-    - expression: variables.spec.filter(f, !(f in variables.oldSpec) || variables.oldSpec[f]
-        != variables.spec[f])
-      name: changedSpecFields
-    - expression: variables.changedSpecFields.filter(f, !(f in variables.allowedSpecFields))
+    - expression: variables.spec.filter(f, true)
+      name: specFields
+    - expression: variables.specFields.filter(f, !(f in variables.allowedSpecFields))
       name: forbiddenSpecFields
     - expression: '"test-redpanda"'
       name: clusterRef

@@ -148,8 +148,9 @@ func pipelinesClusterRole(state *RenderState, suffix string, verbs []string) *rb
 
 // PipelinesAdmissionPolicy limits the Pipelines that Console's ServiceAccount
 // may write to the fields Console sets, so a compromised Console can't run
-// arbitrary Pods. Adding or changing fields outside the allow-list, including
-// ones added to the Pipeline CRD later, is rejected.
+// arbitrary Pods. Any spec field outside the allow-list, including ones added
+// to the Pipeline CRD later, is rejected on create and update. Console can't
+// edit a Pipeline an admin has extended, e.g. with valueSources.
 func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.ValidatingAdmissionPolicy {
 	if !pipelinesViaServiceAccount(state) || !state.Values.Pipelines.AdmissionPolicy.Enabled {
 		return nil
@@ -157,10 +158,8 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 
 	username := fmt.Sprintf("system:serviceaccount:%s:%s", state.Namespace, ServiceAccountName(state))
 
-	// NB: Spec fields are compared against oldObject so that Console can edit
-	// Pipelines that already carry fields it doesn't write. dyn() keeps the
-	// policy type checker, which knows the Pipeline schema, from warning that
-	// a typed object can't be a comprehension range.
+	// NB: dyn() keeps the policy type checker, which knows the Pipeline
+	// schema, from warning that a typed object can't be a comprehension range.
 	return &admissionregistrationv1.ValidatingAdmissionPolicy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admissionregistration.k8s.io/v1",
@@ -202,21 +201,17 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 					Expression: "request.operation == 'DELETE' || !has(object.spec) ? {} : dyn(object.spec)",
 				},
 				{
-					Name:       "oldSpec",
-					Expression: "request.operation != 'UPDATE' || !has(oldObject.spec) ? {} : dyn(oldObject.spec)",
-				},
-				{
 					// Includes replicas, which the CRD defaults.
 					Name:       "allowedSpecFields",
 					Expression: "['configYaml', 'displayName', 'description', 'tags', 'resources', 'paused', 'replicas', 'cluster']",
 				},
 				{
-					Name:       "changedSpecFields",
-					Expression: "variables.spec.filter(f, !(f in variables.oldSpec) || variables.oldSpec[f] != variables.spec[f])",
+					Name:       "specFields",
+					Expression: "variables.spec.filter(f, true)",
 				},
 				{
 					Name:       "forbiddenSpecFields",
-					Expression: "variables.changedSpecFields.filter(f, !(f in variables.allowedSpecFields))",
+					Expression: "variables.specFields.filter(f, !(f in variables.allowedSpecFields))",
 				},
 				{
 					Name:       "clusterRef",
@@ -237,11 +232,11 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 					MessageExpression: "'Redpanda Console may only set spec fields ' + variables.allowedSpecFields.join(', ') + '; found ' + variables.forbiddenSpecFields.join(', ')",
 				},
 				{
-					Expression: "!('resources' in variables.changedSpecFields) || variables.spec.resources.all(k, (k == 'requests' || k == 'limits') && dyn(variables.spec.resources[k]).all(r, r == 'cpu' || r == 'memory'))",
+					Expression: "!('resources' in variables.specFields) || variables.spec.resources.all(k, (k == 'requests' || k == 'limits') && dyn(variables.spec.resources[k]).all(r, r == 'cpu' || r == 'memory'))",
 					Message:    "Redpanda Console may only set cpu and memory in spec.resources.requests and spec.resources.limits",
 				},
 				{
-					Expression:        "!('cluster' in variables.changedSpecFields) || (variables.clusterRef != '' && variables.spec.cluster.all(f, f == 'clusterRef') && has(variables.spec.cluster.clusterRef) && dyn(variables.spec.cluster.clusterRef).all(f, f == 'name') && variables.spec.cluster.clusterRef.name == variables.clusterRef)",
+					Expression:        "!('cluster' in variables.specFields) || (variables.clusterRef != '' && variables.spec.cluster.all(f, f == 'clusterRef') && has(variables.spec.cluster.clusterRef) && dyn(variables.spec.cluster.clusterRef).all(f, f == 'name') && variables.spec.cluster.clusterRef.name == variables.clusterRef)",
 					MessageExpression: "variables.clusterRef == '' ? 'Redpanda Console may not set spec.cluster' : 'Redpanda Console may only set spec.cluster.clusterRef.name, to ' + variables.clusterRef",
 				},
 			},
