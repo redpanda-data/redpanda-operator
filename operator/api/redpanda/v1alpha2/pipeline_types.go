@@ -219,9 +219,9 @@ type PipelineSpec struct {
 
 	// Lists manifest files for Redpanda Connect dynamic (RPC) plugins, which
 	// the pipeline loads with `--rpc-plugins`. Each entry is an absolute path
-	// or glob inside the pipeline pod, at most 64 characters long, and the
-	// list accepts at most 32 entries. When unset, the pipeline loads no
-	// plugins.
+	// or glob inside the pipeline pod (it must start with `/`), at most 64
+	// characters long, and the list accepts at most 32 entries. When unset,
+	// the pipeline loads no plugins.
 	//
 	// The built-in `lint` init container gets the same `--rpc-plugins`
 	// arguments, so the manifests must be readable there as well as in the
@@ -235,6 +235,7 @@ type PipelineSpec struct {
 	// +kubebuilder:validation:MaxItems=32
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=64
+	// +kubebuilder:validation:items:Pattern=`^/`
 	// +optional
 	RPCPlugins []string `json:"rpcPlugins,omitempty"`
 

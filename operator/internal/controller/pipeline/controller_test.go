@@ -378,6 +378,28 @@ func (s *ControllerSuite) TestScaleSubresource() {
 // TestUpdateStrategy switches a live Deployment between strategies. The API
 // server rejects a Recreate Deployment that still carries rollingUpdate, so
 // the apply must drop those fields on the way back.
+// TestRPCPluginsValidation checks the CRD only accepts absolute manifest
+// paths, so an entry can't resolve relative to the container's working
+// directory.
+func (s *ControllerSuite) TestRPCPluginsValidation() {
+	t := s.T()
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "plugin-validation",
+			Namespace: s.ns.Name,
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+			RPCPlugins: []string{"plugins/upper.yaml"},
+		},
+	}
+	require.ErrorContains(t, s.ctl.Apply(t.Context(), pipeline), "should match '^/'")
+
+	pipeline.Spec.RPCPlugins = []string{"/config/upper.yaml", "/plugins/manifests/*.yaml"}
+	require.NoError(t, s.ctl.Apply(t.Context(), pipeline))
+}
+
 func (s *ControllerSuite) TestUpdateStrategy() {
 	t := s.T()
 
