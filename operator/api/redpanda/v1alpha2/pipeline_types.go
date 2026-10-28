@@ -106,6 +106,11 @@ const (
 	// PipelineReasonUserInvalid means the userRef could not be found or its
 	// password Secret was missing.
 	PipelineReasonUserInvalid = "UserInvalid"
+	// PipelineReasonUserRefRequiresSASL means the referenced cluster's Kafka
+	// listener authenticates by client certificate (`mtls_identity`), so the
+	// userRef's SASL credentials would be ignored. The pipeline is scaled to
+	// zero until the listener uses `sasl` or userRef is removed.
+	PipelineReasonUserRefRequiresSASL = "UserRefRequiresSASL"
 	// PipelineReasonValueSourcesResolved means every entry in spec.valueSources
 	// was bound successfully.
 	PipelineReasonValueSourcesResolved = "ValueSourcesResolved"
@@ -469,7 +474,11 @@ type PipelineSpec struct {
 	//
 	// Set this when the cluster the pipeline talks to has SASL enabled.
 	// On unauthenticated clusters (and in clusterRef-only modes that
-	// only need broker discovery), leave it empty.
+	// only need broker discovery), leave it empty. The cluster's Kafka
+	// listener must authenticate with `sasl`: on an `mtls_identity`
+	// listener the mounted client certificate would decide the principal
+	// instead, so the operator scales the pipeline to zero and reports
+	// `UserRefRequiresSASL`.
 	//
 	// CEL restrictions:
 	//   - userRef must NOT be set alongside .cluster.staticConfiguration —

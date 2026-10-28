@@ -658,6 +658,90 @@ func (s *ControllerSuite) TestResolveClusterSource_RejectsCrossNamespaceAndForei
 // TestResolveUserRef_Validation covers userRef resolution incl. the password
 // Secret: previously a missing Secret still marked UserRef=True and the pod
 // later wedged in CreateContainerConfigError.
+// TestUserRefRequiresSASL checks that a userRef pipeline on an mtls_identity
+// cluster is scaled to zero and reports why, instead of running as the
+// mounted client certificate's principal.
+func (s *ControllerSuite) TestUserRefRequiresSASL() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	rp := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls", Namespace: ns.Name},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Listeners: &redpandav1alpha2.Listeners{
+					Kafka: &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{AuthenticationMethod: ptr.To("mtls_identity")}},
+				},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), rp))
+
+	mechanism := redpandav1alpha2.SASLMechanism("scram-sha-512")
+	require.NoError(t, ctl.Apply(t.Context(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-user-password", Namespace: ns.Name},
+		Data:       map[string][]byte{"password": []byte("hunter2")},
+	}))
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-user", Namespace: ns.Name},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "mtls"}},
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Type: &mechanism,
+				Password: redpandav1alpha2.Password{ValueFrom: &redpandav1alpha2.PasswordSource{SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "mtls-user-password"},
+					Key:                  "password",
+				}}},
+			},
+		},
+	}))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-pipeline", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML:    "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "mtls"}},
+			UserRef:       &redpandav1alpha2.PipelineUserRef{Name: "mtls-user"},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	c := &Controller{Ctl: ctl}
+	conn, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.True(t, conn.MTLSIdentity)
+
+	// A running Deployment, as left by an earlier operator version.
+	dp := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: pipeline.Name, Namespace: ns.Name},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To[int32](1),
+			Selector: &metav1.LabelSelector{MatchLabels: Labels(pipeline)},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: Labels(pipeline)},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "connect", Image: "connect"}}},
+			},
+		},
+	}
+	require.NoError(t, ctl.Create(t.Context(), dp))
+
+	for range 2 { // idempotent
+		_, err = c.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(pipeline)})
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	cond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionUserRef)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonUserRefRequiresSASL, cond.Reason)
+	assert.Contains(t, cond.Message, "mtls_identity")
+
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), dp))
+	assert.Equal(t, int32(0), ptr.Deref(dp.Spec.Replicas, -1), "the pipeline must not run as the certificate's principal")
+}
+
 func (s *ControllerSuite) TestResolveUserRef_Validation() {
 	t := s.T()
 

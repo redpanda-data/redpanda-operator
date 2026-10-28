@@ -109,6 +109,9 @@ type clusterConnection struct {
 	TLS *clusterTLS
 	// SASL holds SASL credentials if the cluster has authentication enabled.
 	SASL *clusterSASL
+	// MTLSIdentity is true when the internal Kafka listener authenticates by
+	// client certificate, so SASL credentials such as userRef are ignored.
+	MTLSIdentity bool
 }
 
 // clusterTLS holds TLS configuration resolved from a Redpanda cluster. A
@@ -370,7 +373,7 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 
 	cfg := state.AsStaticConfigSource()
 
-	conn := &clusterConnection{}
+	conn := &clusterConnection{MTLSIdentity: kafkaListenerUsesMTLSIdentity(&rp)}
 	if cfg.Kafka != nil {
 		conn.Brokers = cfg.Kafka.Brokers
 
@@ -609,4 +612,14 @@ func staticClientCert(tls *redpandav1alpha2.CommonTLS, out *clusterTLS) error {
 	out.ClientKeySecretRef = key.SecretKeyRef
 
 	return nil
+}
+
+// kafkaListenerUsesMTLSIdentity reports whether the cluster's internal Kafka
+// listener derives the principal from the client certificate.
+func kafkaListenerUsesMTLSIdentity(rp *redpandav1alpha2.Redpanda) bool {
+	if rp.Spec.ClusterSpec == nil || rp.Spec.ClusterSpec.Listeners == nil || rp.Spec.ClusterSpec.Listeners.Kafka == nil {
+		return false
+	}
+	method := rp.Spec.ClusterSpec.Listeners.Kafka.AuthenticationMethod
+	return method != nil && *method == "mtls_identity"
 }

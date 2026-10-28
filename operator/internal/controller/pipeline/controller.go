@@ -335,6 +335,21 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	// On an mtls_identity listener Redpanda takes the principal from the
+	// mounted client certificate and never runs SASL, so the pipeline would
+	// silently act as that (shared, privileged) identity instead of userRef.
+	// Fail closed: scale it to zero rather than run it as the wrong user.
+	if userCreds != nil && clusterConn != nil && clusterConn.MTLSIdentity {
+		if err := c.scaleToZero(ctx, pipeline); err != nil {
+			return ctrl.Result{}, err
+		}
+		msg := fmt.Sprintf("userRef %q is ignored because clusterRef %q's Kafka listener uses mtls_identity; the mounted client certificate would decide the principal. Use a sasl listener or remove userRef", pipeline.Spec.UserRef.Name, pipeline.Spec.ClusterSource.ClusterRef.Name)
+		if statusErr := c.failStatus(ctx, pipeline, redpandav1alpha2.PipelineConditionUserRef, redpandav1alpha2.PipelineReasonUserRefRequiresSASL, msg); statusErr != nil {
+			return ctrl.Result{}, statusErr
+		}
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
 	// Validate that every spec.valueSources entry resolves to an existing
 	// backing object + key. Without this, a typo'd Secret name would sync
 	// fine and only surface later as a pod stuck in
@@ -809,6 +824,23 @@ func (c *Controller) liveStatus(ctx context.Context, pipeline *redpandav1alpha2.
 // without touching its children: phase and workload conditions come from the
 // live Deployment (a Running pipeline stays Running — its data flow is
 // unaffected), and the failing condition is overlaid on top.
+// scaleToZero stops a pipeline's Deployment without deleting it. The next
+// full sync's apply restores the desired replica count.
+func (c *Controller) scaleToZero(ctx context.Context, pipeline *redpandav1alpha2.Pipeline) error {
+	var dp appsv1.Deployment
+	if err := c.Ctl.Get(ctx, kube.ObjectKey{Name: pipeline.Name, Namespace: pipeline.Namespace}, &dp); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return errors.Wrap(err, "getting pipeline deployment")
+	}
+	if ptr.Deref(dp.Spec.Replicas, 1) == 0 {
+		return nil
+	}
+	dp.Spec.Replicas = ptr.To[int32](0)
+	return errors.Wrap(c.Ctl.Update(ctx, &dp), "scaling pipeline deployment to zero")
+}
+
 func (c *Controller) failStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, conditionType, reason, message string) error {
 	phase, conditions := c.liveStatus(ctx, pipeline, reason, message)
 	conditions = append(conditions, metav1.Condition{

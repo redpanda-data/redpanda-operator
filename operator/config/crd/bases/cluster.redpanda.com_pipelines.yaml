@@ -7438,7 +7438,11 @@ spec:
 
                   Set this when the cluster the pipeline talks to has SASL enabled.
                   On unauthenticated clusters (and in clusterRef-only modes that
-                  only need broker discovery), leave it empty.
+                  only need broker discovery), leave it empty. The cluster's Kafka
+                  listener must authenticate with `sasl`: on an `mtls_identity`
+                  listener the mounted client certificate would decide the principal
+                  instead, so the operator scales the pipeline to zero and reports
+                  `UserRefRequiresSASL`.
 
                   CEL restrictions:
                     - userRef must NOT be set alongside .cluster.staticConfiguration —
