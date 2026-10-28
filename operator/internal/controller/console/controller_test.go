@@ -26,12 +26,15 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -184,6 +187,38 @@ func TestController(t *testing.T) {
 						ClusterRef: &redpandav1alpha2.ClusterRef{
 							Name: "test-stretch",
 							Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "pipelines-service-account",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-pipelines-sa",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Pipelines: &redpandav1alpha2.PipelinesConfig{
+							Enabled:    ptr.To(true),
+							ClusterRef: ptr.To("test-redpanda"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "pipelines-impersonate-user",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-pipelines-impersonate",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Pipelines: &redpandav1alpha2.PipelinesConfig{
+							Enabled:         ptr.To(true),
+							ImpersonateUser: ptr.To(true),
 						},
 					},
 				},
@@ -359,6 +394,165 @@ func TestController(t *testing.T) {
 			require.Empty(t, scrapeControllerObjects(t, ctl, console))
 		})
 	}
+}
+
+// TestPipelinesAdmissionPolicy runs the pipelines RBAC and
+// ValidatingAdmissionPolicy against a real API server, which compiles and
+// enforces the CEL, acting as Console's ServiceAccount.
+func TestPipelinesAdmissionPolicy(t *testing.T) {
+	ctl := kubetest.NewEnv(t, kube.Options{
+		Options: client.Options{
+			Scheme: controller.UnifiedScheme,
+		},
+	})
+
+	testutils.InstallCRDs(t, ctl, crds.All()...)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "pipelines"},
+	})
+	require.NoError(t, err)
+
+	cr := &redpandav1alpha2.Console{
+		ObjectMeta: metav1.ObjectMeta{Name: "rpcn", Namespace: ns.Name},
+		Spec: redpandav1alpha2.ConsoleSpec{
+			ConsoleValues: redpandav1alpha2.ConsoleValues{
+				Pipelines: &redpandav1alpha2.PipelinesConfig{
+					Enabled:    ptr.To(true),
+					ClusterRef: ptr.To("redpanda"),
+				},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), cr))
+
+	consoleCtrl := Controller{Ctl: ctl, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	_, err = consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
+	require.NoError(t, err)
+
+	// Act as Console does: as its ServiceAccount, applying with force.
+	cfg := rest.CopyConfig(ctl.RestConfig())
+	cfg.Impersonate = rest.ImpersonationConfig{UserName: "system:serviceaccount:pipelines:rpcn-console"}
+	asConsole, err := kube.FromRESTConfig(cfg, kube.Options{
+		Options:      client.Options{Scheme: controller.UnifiedScheme},
+		FieldManager: "redpanda-console",
+	})
+	require.NoError(t, err)
+
+	// pipeline returns the fields Console writes, plus any that mutate adds.
+	pipeline := func(name string, labels map[string]string, mutate func(*redpandav1alpha2.PipelineSpec)) *redpandav1alpha2.Pipeline {
+		p := &redpandav1alpha2.Pipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        name,
+				Namespace:   ns.Name,
+				Labels:      labels,
+				Annotations: map[string]string{"console.redpanda.com/created-by": "alice"},
+			},
+			Spec: redpandav1alpha2.PipelineSpec{
+				ConfigYAML:  "input:\n  generate:\n    mapping: root = \"hello\"\n",
+				DisplayName: "Hello",
+				Description: "Says hello",
+				Tags:        map[string]string{"team": "data"},
+				Resources: &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("100m"), corev1.ResourceMemory: resource.MustParse("128Mi")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1"), corev1.ResourceMemory: resource.MustParse("256Mi")},
+				},
+				ClusterSource: &redpandav1alpha2.ClusterSource{
+					ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+				},
+			},
+		}
+		if mutate != nil {
+			mutate(&p.Spec)
+		}
+		return p
+	}
+	managed := map[string]string{"console.redpanda.com/managed-by": "console"}
+
+	// The policy and RoleBinding take effect asynchronously.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		err := asConsole.Apply(t.Context(), pipeline("probe", managed, func(s *redpandav1alpha2.PipelineSpec) { s.Image = ptr.To("evil") }), client.ForceOwnership, client.DryRunAll)
+		assert.ErrorContains(c, err, "found image")
+	}, 30*time.Second, 250*time.Millisecond)
+
+	// Create, stop, and start a pipeline the way Console does. The CRD
+	// defaults spec.replicas, which Console doesn't write.
+	created := pipeline("created", managed, nil)
+	require.NoError(t, asConsole.Apply(t.Context(), created, client.ForceOwnership))
+	require.Equal(t, ptr.To[int32](1), created.Spec.Replicas)
+	for _, paused := range []bool{true, false} {
+		p := pipeline("created", managed, func(s *redpandav1alpha2.PipelineSpec) { s.Paused = paused })
+		require.NoError(t, asConsole.Apply(t.Context(), p, client.ForceOwnership))
+	}
+
+	creates := []struct {
+		name     string
+		pipeline *redpandav1alpha2.Pipeline
+		err      string
+	}{
+		{name: "safe-fields", pipeline: pipeline("safe", managed, func(s *redpandav1alpha2.PipelineSpec) { s.Paused = true; s.Replicas = ptr.To[int32](3) })},
+		{name: "gpu", pipeline: pipeline("gpu", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.Resources.Limits["nvidia.com/gpu"] = resource.MustParse("1")
+		}), err: "may only set cpu and memory"},
+		{name: "unlabeled", pipeline: pipeline("unlabeled", nil, nil), err: "may only write Pipelines labeled"},
+		{name: "image", pipeline: pipeline("image", managed, func(s *redpandav1alpha2.PipelineSpec) { s.Image = ptr.To("evil") }), err: "found image"},
+		{name: "service-account", pipeline: pipeline("sa", managed, func(s *redpandav1alpha2.PipelineSpec) { s.ServiceAccountName = "admin" }), err: "found serviceAccountName"},
+		{name: "host-path", pipeline: pipeline("hostpath", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.ExtraVolumes = []corev1.Volume{{Name: "root", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}}}}
+		}), err: "found extraVolumes"},
+		{name: "value-sources", pipeline: pipeline("secrets", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.ValueSources = []redpandav1alpha2.NamedValueSource{{Name: "TOKEN", Source: redpandav1alpha2.ValueSource{Inline: ptr.To("x")}}}
+		}), err: "found valueSources"},
+		{name: "user-ref", pipeline: pipeline("user", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.UserRef = &redpandav1alpha2.PipelineUserRef{Name: "superuser"}
+		}), err: "found userRef"},
+		{name: "other-cluster", pipeline: pipeline("other", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.ClusterSource.ClusterRef.Name = "other"
+		}), err: "may only set spec.cluster.clusterRef.name, to redpanda"},
+		{name: "static-configuration", pipeline: pipeline("static", managed, func(s *redpandav1alpha2.PipelineSpec) {
+			s.ClusterSource = &redpandav1alpha2.ClusterSource{StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+				Kafka: &redpandav1alpha2.KafkaAPISpec{Brokers: []string{"elsewhere:9092"}},
+			}}
+		}), err: "may only set spec.cluster.clusterRef.name, to redpanda"},
+	}
+	for _, tc := range creates {
+		t.Run("create-"+tc.name, func(t *testing.T) {
+			err := asConsole.Apply(t.Context(), tc.pipeline, client.ForceOwnership, client.DryRunAll)
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+
+	// Pipelines created outside Console are read-only to it, and the policy
+	// doesn't apply to anyone else.
+	gitops := pipeline("gitops", nil, func(s *redpandav1alpha2.PipelineSpec) { s.Image = ptr.To("custom") })
+	require.NoError(t, ctl.Create(t.Context(), gitops))
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("gitops", managed, nil), client.ForceOwnership, client.DryRunAll), "may only update or delete Pipelines labeled")
+	require.ErrorContains(t, asConsole.Delete(t.Context(), gitops), "may only update or delete Pipelines labeled")
+
+	// Console may edit its Pipelines that carry fields it doesn't write, but
+	// may not add or change such fields.
+	augmented := pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.Image = ptr.To("custom")
+		s.ClusterSource.ClusterRef.Name = "other"
+	})
+	require.NoError(t, ctl.Create(t.Context(), augmented))
+	require.NoError(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.Paused = true
+		s.ClusterSource.ClusterRef.Name = "other"
+	}), client.ForceOwnership, client.DryRunAll))
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.Image = ptr.To("evil")
+		s.ClusterSource.ClusterRef.Name = "other"
+	}), client.ForceOwnership, client.DryRunAll), "found image")
+	require.ErrorContains(t, asConsole.Apply(t.Context(), pipeline("augmented", managed, func(s *redpandav1alpha2.PipelineSpec) {
+		s.ClusterSource.ClusterRef.Name = "elsewhere"
+	}), client.ForceOwnership, client.DryRunAll), "may only set spec.cluster.clusterRef.name, to redpanda")
+
+	require.NoError(t, asConsole.Delete(t.Context(), created))
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels

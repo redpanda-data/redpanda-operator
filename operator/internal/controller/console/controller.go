@@ -23,6 +23,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -65,6 +66,10 @@ const (
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingadmissionpolicies;validatingadmissionpolicybindings,verbs=get;list;watch;create;update;patch;delete
+// RBAC escalation checks require holding every permission the pipelines Role and ClusterRoles grant.
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
 
 type Controller struct {
 	// Ctl is the kube.Ctl bound to the controller's local cluster. It is
@@ -112,22 +117,11 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
-	// NB: As of writing, all console types are namespace scoped.
-	for _, t := range console.Types() {
-		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
-		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
-		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
-		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
-			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
-				continue
-			}
-		}
-		// Skip HTTPRoute watch if Gateway API CRDs are not installed.
-		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
-			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
-				continue
-			}
-		}
+	ownedTypes, err := c.ownedTypes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, t := range ownedTypes {
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -180,17 +174,11 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 		}).
 		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
-	for _, t := range console.Types() {
-		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
-			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
-				continue
-			}
-		}
-		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
-			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
-				continue
-			}
-		}
+	ownedTypes, err := c.ownedTypes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, t := range ownedTypes {
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -205,6 +193,45 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 	}
 
 	return builder.Complete(c)
+}
+
+// ownedTypes returns the Console types that can be watched through their
+// owner references.
+func (c *Controller) ownedTypes(ctx context.Context) ([]kube.Object, error) {
+	var types []kube.Object
+	for _, t := range console.Types() {
+		gvk, err := kube.GVKFor(c.Ctl.Scheme(), t)
+		if err != nil {
+			return nil, err
+		}
+		scope, err := c.Ctl.ScopeOf(gvk)
+		if meta.IsNoMatchError(err) {
+			// e.g. ValidatingAdmissionPolicy before Kubernetes 1.30.
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		// Cluster scoped types carry no owner reference to map back to a Console.
+		if scope != meta.RESTScopeNameNamespace {
+			continue
+		}
+		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
+		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
+		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
+		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
+			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
+				continue
+			}
+		}
+		// Skip HTTPRoute watch if Gateway API CRDs are not installed.
+		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
+			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
+				continue
+			}
+		}
+		types = append(types, t)
+	}
+	return types, nil
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
@@ -227,9 +254,8 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 	}
 
 	// If we're being deleted, clean up any left over objects and remove the
-	// finalizer. As of writing, there are no Cluster scope resources deployed
-	// so we don't NEED to use a finalizer. It's here to prevent accidents if
-	// we need cluster scoped resources one day.
+	// finalizer. Cluster scoped resources, such as the pipelines
+	// ClusterRoles, have no owner references and rely on this cleanup.
 	if !cr.DeletionTimestamp.IsZero() {
 		log.Info(ctx, "GC'ing Console", "key", kube.AsKey(cr))
 
@@ -349,6 +375,9 @@ func (c *Controller) ownershipLabelsFor(cr *redpandav1alpha2.Console) map[string
 		"app.kubernetes.io/name":       console.ChartName,
 		"app.kubernetes.io/managed-by": managedByService,
 		"app.kubernetes.io/instance":   cr.Name,
+		// Cluster scoped resources are owned by labels alone, so the labels
+		// must tell apart same-named Consoles in different namespaces.
+		lifecycle.DefaultNamespaceLabel: cr.Namespace,
 	}
 }
 
@@ -494,11 +523,26 @@ func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
 		return nil, err
 	}
 
-	objs := console.Render(state)
-
-	return functional.Filter(objs, func(obj kube.Object) bool {
+	objs := functional.Filter(console.Render(state), func(obj kube.Object) bool {
 		return !reflect.ValueOf(obj).IsNil()
-	}), nil
+	})
+
+	// The syncer skips kinds the cluster doesn't serve. Refuse to grant
+	// Console access to Pipelines without the policy that restricts it.
+	for _, obj := range objs {
+		if _, ok := obj.(*admissionregistrationv1.ValidatingAdmissionPolicy); !ok {
+			continue
+		}
+		gvk, err := kube.GVKFor(r.ctl.Scheme(), obj)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := r.ctl.ScopeOf(gvk); err != nil {
+			return nil, errors.Wrap(err, "pipelines.admissionPolicy requires ValidatingAdmissionPolicy (Kubernetes 1.30 or later); disable it or upgrade Kubernetes")
+		}
+	}
+
+	return objs, nil
 }
 
 func (r *render) state(ctx context.Context) (*console.RenderState, error) {

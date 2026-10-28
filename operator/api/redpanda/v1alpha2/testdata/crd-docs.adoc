@@ -1248,6 +1248,8 @@ For details, see https://kubernetes.io/docs/concepts/workloads/controllers/deplo
 Each warning describes a field from the original configuration that was dropped, and why. +
 Setting this field has no effect. + |  | 
 | *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig[$$MonitoringConfig$$]__ | Configures a Prometheus ServiceMonitor that scrapes Console's metrics. + |  | 
+| *`pipelines`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig[$$PipelinesConfig$$]__ | Configures Console to manage Redpanda Connect pipelines that run as Pipeline resources in the Console resource's namespace. +
+When enabled, the operator sets `config.pipelines.kubernetes` from these fields, overriding the same keys in `config`, and mounts the ServiceAccount token and cluster CA into the Console Pods so Console can call the Kubernetes API. + |  | 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | Specifies the Redpanda cluster that Console connects to. +
 The operator generates the Kafka API, Admin API, and Schema Registry connection settings from this cluster and merges them into `config`. +
 If unset, you must configure the connection in `config` yourself. + |  | 
@@ -3210,6 +3212,64 @@ mechanism the pipeline will use to authenticate to Redpanda.
 | Field | Description | Default | Validation
 | *`name`* __string__ | Name of the User CR (in the same namespace as the Pipeline). + |  | Required: \{} +
 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesadmissionpolicy"]
+==== PipelinesAdmissionPolicy
+
+
+
+PipelinesAdmissionPolicy configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig[$$PipelinesConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the operator creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. +
+The policy rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`. +
+It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`. +
+Requires Kubernetes 1.30 or later. +
+Has no effect when `impersonateUser` is `true`. +
+Defaults to `true`. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig"]
+==== PipelinesConfig
+
+
+
+PipelinesConfig configures Console to manage Redpanda Connect pipelines.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether Console manages pipelines. +
+Unless `impersonateUser` is `true`, the operator also grants Console's ServiceAccount access to Pipelines with a Role and RoleBinding whose names end in `-pipelines`. +
+Defaults to `false`. + |  | 
+| *`clusterRef`* __string__ | Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. +
+If unset, Console creates pipelines without a cluster reference. + |  | MaxLength: 253 +
+Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
+
+| *`impersonateUser`* __boolean__ | Specifies whether Console forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using its ServiceAccount, so Kubernetes RBAC and audit logs apply to each user. +
+Requires the API server to trust Console's identity provider. +
+Console's ServiceAccount then gets no access to Pipelines. Instead, the operator creates two ClusterRoles, whose names end in `-pipeline-editor` and `-pipeline-viewer`, for you to bind to your identity provider's groups. +
+Defaults to `false`. + |  | 
+| *`admissionPolicy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesadmissionpolicy[$$PipelinesAdmissionPolicy$$]__ | Configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write. + |  | 
 |===
 
 

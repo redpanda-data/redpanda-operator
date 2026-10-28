@@ -1,0 +1,7 @@
+project: operator
+kind: Added
+body: |-
+    Added `spec.pipelines` to the Console resource to let Console manage Redpanda Connect pipelines in the Console resource's namespace. Set `spec.pipelines.enabled: true`, and optionally `spec.pipelines.clusterRef`, `spec.pipelines.impersonateUser`, and `spec.pipelines.admissionPolicy.enabled`. These match the `pipelines` values of the Console Helm chart, except that the pipelines namespace can't be changed.
+
+      The operator now needs permissions on Roles, RoleBindings, ClusterRoles, ValidatingAdmissionPolicies, ValidatingAdmissionPolicyBindings, and Pipelines, which the operator Helm chart grants. If you manage the operator's RBAC yourself, add them.
+time: 2026-10-27T12:00:00.000000-07:00

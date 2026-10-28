@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -370,6 +372,44 @@ func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 			require.Empty(t, operatorRoleRules, "all operator permissions should be created in the cluster scope")
 			assertRulesSuperSet(t, operatorClusterRoleRules, redpandaRoleRules)
 			assertRulesSuperSet(t, operatorClusterRoleRules, redpandaClusterRoleRules)
+		})
+	}
+}
+
+// TestRBACIsSuperSetOfConsolePipelines asserts that the operator holds every
+// permission that the pipelines Role and ClusterRoles it creates for Console
+// grant, as RBAC escalation checks require. The Connect controller is
+// disabled because its rules must not be needed.
+func TestRBACIsSuperSetOfConsolePipelines(t *testing.T) {
+	for _, impersonateUser := range []bool{false, true} {
+		t.Run(fmt.Sprintf("impersonateUser=%t", impersonateUser), func(t *testing.T) {
+			consoleObjs, err := consolechart.Chart.Render(nil, helmette.Release{}, consolechart.PartialValues{
+				PartialRenderValues: console.PartialRenderValues{
+					Pipelines: &console.PartialPipelinesConfig{
+						Enabled:         ptr.To(true),
+						ImpersonateUser: ptr.To(impersonateUser),
+					},
+				},
+			})
+			require.NoError(t, err)
+
+			operatorObjs, err := Chart.Render(nil, helmette.Release{}, PartialValues{
+				ConnectController: &PartialConnectController{Enabled: ptr.To(false)},
+			})
+			require.NoError(t, err)
+
+			consoleClusterRoleRules, consoleRoleRules := ExtractRules(consoleObjs)
+			operatorClusterRoleRules, _ := ExtractRules(operatorObjs)
+
+			// Guard against a vacuous pass.
+			granted := consoleRoleRules
+			if impersonateUser {
+				granted = consoleClusterRoleRules
+			}
+			require.Contains(t, granted, "cluster.redpanda.com#pipelines")
+
+			assertRulesSuperSet(t, operatorClusterRoleRules, consoleRoleRules)
+			assertRulesSuperSet(t, operatorClusterRoleRules, consoleClusterRoleRules)
 		})
 	}
 }

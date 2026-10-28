@@ -211,6 +211,41 @@ type ConsoleValues struct {
 
 	// Configures a Prometheus ServiceMonitor that scrapes Console's metrics.
 	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
+
+	// Configures Console to manage Redpanda Connect pipelines that run as Pipeline resources in the Console resource's namespace.
+	// When enabled, the operator sets `config.pipelines.kubernetes` from these fields, overriding the same keys in `config`, and mounts the ServiceAccount token and cluster CA into the Console Pods so Console can call the Kubernetes API.
+	Pipelines *PipelinesConfig `json:"pipelines,omitempty"`
+}
+
+// PipelinesConfig configures Console to manage Redpanda Connect pipelines.
+type PipelinesConfig struct {
+	// Specifies whether Console manages pipelines.
+	// Unless `impersonateUser` is `true`, the operator also grants Console's ServiceAccount access to Pipelines with a Role and RoleBinding whose names end in `-pipelines`.
+	// Defaults to `false`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`.
+	// If unset, Console creates pipelines without a cluster reference.
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$`
+	ClusterRef *string `json:"clusterRef,omitempty"`
+	// Specifies whether Console forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using its ServiceAccount, so Kubernetes RBAC and audit logs apply to each user.
+	// Requires the API server to trust Console's identity provider.
+	// Console's ServiceAccount then gets no access to Pipelines. Instead, the operator creates two ClusterRoles, whose names end in `-pipeline-editor` and `-pipeline-viewer`, for you to bind to your identity provider's groups.
+	// Defaults to `false`.
+	ImpersonateUser *bool `json:"impersonateUser,omitempty"`
+	// Configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write.
+	AdmissionPolicy *PipelinesAdmissionPolicy `json:"admissionPolicy,omitempty"`
+}
+
+// PipelinesAdmissionPolicy configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write.
+type PipelinesAdmissionPolicy struct {
+	// Specifies whether the operator creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods.
+	// The policy rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`.
+	// It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`.
+	// Requires Kubernetes 1.30 or later.
+	// Has no effect when `impersonateUser` is `true`.
+	// Defaults to `true`.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // AutoScaling configures a HorizontalPodAutoscaler for the Console Deployment.
