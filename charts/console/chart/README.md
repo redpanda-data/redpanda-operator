@@ -248,18 +248,24 @@ Lets Console manage Redpanda Connect pipelines that run as Pipeline resources. W
 **Default:**
 
 ```
-{"admissionPolicy":{"enabled":true},"clusterRef":"","enabled":false,"impersonateUser":false,"namespace":""}
+{"admissionPolicy":{"enabled":true},"allowBootstrapUser":false,"clusterRef":"","enabled":false,"impersonateUser":false,"namespace":"","userRef":""}
 ```
 
 ### [pipelines.admissionPolicy.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.admissionPolicy.enabled)
 
-Creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`. It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`. Requires Kubernetes 1.30 or later. Has no effect when `impersonateUser` is `true`.
+Creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, cpu and memory in `resources.requests` and `resources.limits`, `cluster.clusterRef.name`, which must equal `clusterRef`, and `userRef.name`, which must equal `userRef`. Unless `allowBootstrapUser` is `true`, it also requires `userRef` on Pipelines that set `cluster`. It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`. Requires Kubernetes 1.30 or later. Has no effect when `impersonateUser` is `true`.
 
 **Default:** `true`
 
+### [pipelines.allowBootstrapUser](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.allowBootstrapUser)
+
+Lets pipelines created in Console run without `userRef`, in which case they authenticate as the cluster's bootstrap superuser if the cluster has SASL enabled. Set it only for clusters without SASL.
+
+**Default:** `false`
+
 ### [pipelines.clusterRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.clusterRef)
 
-Name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. The Redpanda resource must be in `namespace`. If empty, Console creates pipelines without a cluster reference.
+Name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. The Redpanda resource must be in `namespace`. If empty, Console creates pipelines without a cluster reference. Requires `userRef`, unless `allowBootstrapUser` is `true`.
 
 **Default:** `""`
 
@@ -278,6 +284,12 @@ Forwards the logged-in user's OIDC ID token to the Kubernetes API instead of usi
 ### [pipelines.namespace](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.namespace)
 
 Namespace of the Pipelines that Console reads and writes. Defaults to the release namespace.
+
+**Default:** `""`
+
+### [pipelines.userRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.userRef)
+
+Name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`. The User must be in `namespace` and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use, plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs.
 
 **Default:** `""`
 

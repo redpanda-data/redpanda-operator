@@ -106,10 +106,12 @@ values:
     pipelines:
       admissionPolicy:
         enabled: true
+      allowBootstrapUser: false
       clusterRef: ""
       enabled: false
       impersonateUser: false
       namespace: ""
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -726,10 +728,12 @@ values:
     pipelines:
       admissionPolicy:
         enabled: true
+      allowBootstrapUser: false
       clusterRef: ""
       enabled: false
       impersonateUser: false
       namespace: ""
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -1726,10 +1730,12 @@ values:
     pipelines:
       admissionPolicy:
         enabled: true
+      allowBootstrapUser: false
       clusterRef: ""
       enabled: false
       impersonateUser: false
       namespace: ""
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always

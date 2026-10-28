@@ -40,10 +40,17 @@ func pipelinesConfig(state *RenderState) map[string]any {
 		return state.Values.Config
 	}
 
+	// Without a userRef, cluster-bound pipelines authenticate as the
+	// cluster's bootstrap superuser.
+	if state.Values.Pipelines.ClusterRef != "" && state.Values.Pipelines.UserRef == "" && !state.Values.Pipelines.AllowBootstrapUser {
+		panic("pipelines.clusterRef requires pipelines.userRef: set pipelines.userRef to a User with ACLs scoped to Console's pipelines, or set pipelines.allowBootstrapUser: true for clusters without SASL")
+	}
+
 	kubernetes := helmette.Merge(map[string]any{}, helmette.Dig(state.Values.Config, map[string]any{}, "pipelines", "kubernetes").(map[string]any))
 	kubernetes["enabled"] = true
 	kubernetes["namespace"] = PipelinesNamespace(state)
 	kubernetes["clusterRef"] = state.Values.Pipelines.ClusterRef
+	kubernetes["userRef"] = state.Values.Pipelines.UserRef
 	kubernetes["impersonateUser"] = state.Values.Pipelines.ImpersonateUser
 
 	pipelines := helmette.Merge(map[string]any{}, helmette.Dig(state.Values.Config, map[string]any{}, "pipelines").(map[string]any))
@@ -203,7 +210,7 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 				{
 					// Includes replicas, which the CRD defaults.
 					Name:       "allowedSpecFields",
-					Expression: "['configYaml', 'displayName', 'description', 'tags', 'resources', 'paused', 'replicas', 'cluster']",
+					Expression: "['configYaml', 'displayName', 'description', 'tags', 'resources', 'paused', 'replicas', 'cluster', 'userRef']",
 				},
 				{
 					Name:       "specFields",
@@ -216,6 +223,14 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 				{
 					Name:       "clusterRef",
 					Expression: fmt.Sprintf("%q", state.Values.Pipelines.ClusterRef),
+				},
+				{
+					Name:       "userRef",
+					Expression: fmt.Sprintf("%q", state.Values.Pipelines.UserRef),
+				},
+				{
+					Name:       "allowBootstrapUser",
+					Expression: fmt.Sprintf("%t", state.Values.Pipelines.AllowBootstrapUser),
 				},
 			},
 			Validations: []admissionregistrationv1.Validation{
@@ -238,6 +253,16 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 				{
 					Expression:        "!('cluster' in variables.specFields) || (variables.clusterRef != '' && variables.spec.cluster.all(f, f == 'clusterRef') && has(variables.spec.cluster.clusterRef) && dyn(variables.spec.cluster.clusterRef).all(f, f == 'name') && variables.spec.cluster.clusterRef.name == variables.clusterRef)",
 					MessageExpression: "variables.clusterRef == '' ? 'Redpanda Console may not set spec.cluster' : 'Redpanda Console may only set spec.cluster.clusterRef.name, to ' + variables.clusterRef",
+				},
+				{
+					Expression:        "!('userRef' in variables.specFields) || (variables.userRef != '' && dyn(variables.spec.userRef).all(f, f == 'name') && has(variables.spec.userRef.name) && variables.spec.userRef.name == variables.userRef)",
+					MessageExpression: "variables.userRef == '' ? 'Redpanda Console may not set spec.userRef' : 'Redpanda Console may only set spec.userRef.name, to ' + variables.userRef",
+				},
+				{
+					// Without a userRef, the pipeline authenticates as the
+					// cluster's bootstrap superuser.
+					Expression:        "variables.allowBootstrapUser || !('cluster' in variables.specFields) || 'userRef' in variables.specFields",
+					MessageExpression: "'Redpanda Console must set spec.userRef.name to ' + variables.userRef + ' on Pipelines that set spec.cluster'",
 				},
 			},
 		},

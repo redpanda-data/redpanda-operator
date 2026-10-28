@@ -316,7 +316,15 @@ pipelines:
   # -- Name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`.
   # The Redpanda resource must be in `namespace`.
   # If empty, Console creates pipelines without a cluster reference.
+  # Requires `userRef`, unless `allowBootstrapUser` is `true`.
   clusterRef: ""
+  # -- Name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`.
+  # The User must be in `namespace` and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use,
+  # plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs.
+  userRef: ""
+  # -- Lets pipelines created in Console run without `userRef`, in which case they authenticate as the cluster's bootstrap superuser
+  # if the cluster has SASL enabled. Set it only for clusters without SASL.
+  allowBootstrapUser: false
   # -- Forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using Console's ServiceAccount,
   # so Kubernetes RBAC and audit logs apply to each user. Requires the API server to trust Console's identity provider.
   # Console's ServiceAccount then gets no access to Pipelines. Instead, the chart creates the ClusterRoles
@@ -326,7 +334,8 @@ pipelines:
   admissionPolicy:
     # -- Creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods.
     # It rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`,
-    # cpu and memory in `resources.requests` and `resources.limits`, and `cluster.clusterRef.name`, which must equal `clusterRef`.
+    # cpu and memory in `resources.requests` and `resources.limits`, `cluster.clusterRef.name`, which must equal `clusterRef`,
+    # and `userRef.name`, which must equal `userRef`. Unless `allowBootstrapUser` is `true`, it also requires `userRef` on Pipelines that set `cluster`.
     # It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`.
     # Requires Kubernetes 1.30 or later. Has no effect when `impersonateUser` is `true`.
     enabled: true

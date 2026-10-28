@@ -23096,10 +23096,11 @@ data:
     # from .Values.config
     pipelines:
       kubernetes:
-        clusterRef: ""
+        clusterRef: redpanda
         enabled: true
         impersonateUser: true
         namespace: test-namespace
+        userRef: ""
 kind: ConfigMap
 metadata:
   labels:
@@ -23204,7 +23205,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: accf944252f80c8bb507db921c7c457ddab4949a22c9734edeaf0fa5b052ea3b
+        checksum/config: 19d6c3d0f7372f33d38870c51837024cc43318931c0e2823026ec7f022da5b74
       labels:
         app.kubernetes.io/instance: console
         app.kubernetes.io/name: console
@@ -23344,6 +23345,7 @@ data:
         enabled: true
         impersonateUser: false
         namespace: pipelines
+        userRef: console-pipelines
 kind: ConfigMap
 metadata:
   labels:
@@ -23449,7 +23451,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 1d2107efc7063ffaa0091dcce47d52bff6a7e125eed72278678d2986cae32f19
+        checksum/config: 6235ef69200140657b2102a214455d18e476aec183109cf209ab7aba2939dca7
       labels:
         app.kubernetes.io/instance: console
         app.kubernetes.io/name: console
@@ -23581,11 +23583,21 @@ spec:
     messageExpression: 'variables.clusterRef == '''' ? ''Redpanda Console may not
       set spec.cluster'' : ''Redpanda Console may only set spec.cluster.clusterRef.name,
       to '' + variables.clusterRef'
+  - expression: '!(''userRef'' in variables.specFields) || (variables.userRef != ''''
+      && dyn(variables.spec.userRef).all(f, f == ''name'') && has(variables.spec.userRef.name)
+      && variables.spec.userRef.name == variables.userRef)'
+    messageExpression: 'variables.userRef == '''' ? ''Redpanda Console may not set
+      spec.userRef'' : ''Redpanda Console may only set spec.userRef.name, to '' +
+      variables.userRef'
+  - expression: variables.allowBootstrapUser || !('cluster' in variables.specFields)
+      || 'userRef' in variables.specFields
+    messageExpression: '''Redpanda Console must set spec.userRef.name to '' + variables.userRef
+      + '' on Pipelines that set spec.cluster'''
   variables:
   - expression: 'request.operation == ''DELETE'' || !has(object.spec) ? {} : dyn(object.spec)'
     name: spec
   - expression: '[''configYaml'', ''displayName'', ''description'', ''tags'', ''resources'',
-      ''paused'', ''replicas'', ''cluster'']'
+      ''paused'', ''replicas'', ''cluster'', ''userRef'']'
     name: allowedSpecFields
   - expression: variables.spec.filter(f, true)
     name: specFields
@@ -23593,6 +23605,10 @@ spec:
     name: forbiddenSpecFields
   - expression: '"redpanda"'
     name: clusterRef
+  - expression: '"console-pipelines"'
+    name: userRef
+  - expression: "false"
+    name: allowBootstrapUser
 ---
 # Source: console/templates/entry-point.yaml
 apiVersion: admissionregistration.k8s.io/v1

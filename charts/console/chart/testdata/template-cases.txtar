@@ -222,6 +222,7 @@ pipelines:
   enabled: true
   namespace: pipelines
   clusterRef: redpanda
+  userRef: console-pipelines
 config:
   pipelines:
     kubernetes:
@@ -229,7 +230,9 @@ config:
       impersonateUser: true
 
 -- pipelines-impersonate-user --
-# pipelines through the logged-in user's identity.
+# pipelines through the logged-in user's identity, on a cluster without SASL.
 pipelines:
   enabled: true
+  clusterRef: redpanda
+  allowBootstrapUser: true
   impersonateUser: true

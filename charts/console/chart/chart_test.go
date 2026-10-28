@@ -234,6 +234,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 			Pipelines: &console.PartialPipelinesConfig{
 				Enabled:    ptr.To(true),
 				ClusterRef: ptr.To("redpanda"),
+				UserRef:    ptr.To("console-pipelines"),
 			},
 			Config: map[string]any{
 				"pipelines": map[string]any{
@@ -282,6 +283,34 @@ func TestGoHelmEquivalence(t *testing.T) {
 	for i := range helmObjs {
 		assert.Equal(t, helmObjs[i], goObjs[i])
 	}
+}
+
+// TestPipelinesRequireUserRef asserts that both renderers refuse to let
+// Console create cluster-bound pipelines that would run as the bootstrap
+// superuser.
+func TestPipelinesRequireUserRef(t *testing.T) {
+	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
+	require.NoError(t, err)
+
+	values := PartialValues{
+		PartialRenderValues: console.PartialRenderValues{
+			Pipelines: &console.PartialPipelinesConfig{
+				Enabled:    ptr.To(true),
+				ClusterRef: ptr.To("redpanda"),
+			},
+		},
+	}
+	const msg = "pipelines.clusterRef requires pipelines.userRef"
+
+	_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
+	require.ErrorContains(t, err, msg)
+
+	_, err = client.Template(t.Context(), ".", helm.TemplateOptions{Name: "console", Namespace: "console", Values: values})
+	require.ErrorContains(t, err, msg)
+
+	values.Pipelines.AllowBootstrapUser = ptr.To(true)
+	_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
+	require.NoError(t, err)
 }
 
 func TestSecrets(t *testing.T) {

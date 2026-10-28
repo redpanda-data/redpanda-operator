@@ -310,6 +310,9 @@
         "admissionPolicy": {
           "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelinesAdmissionPolicyConfig"
         },
+        "allowBootstrapUser": {
+          "type": "boolean"
+        },
         "clusterRef": {
           "maxLength": 253,
           "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$",
@@ -324,6 +327,11 @@
         "namespace": {
           "maxLength": 63,
           "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$",
+          "type": "string"
+        },
+        "userRef": {
+          "maxLength": 253,
+          "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$",
           "type": "string"
         }
       },
