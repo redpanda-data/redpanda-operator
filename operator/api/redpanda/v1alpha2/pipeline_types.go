@@ -44,6 +44,17 @@ const (
 	PipelinePhaseUnknown PipelinePhase = "Unknown"
 )
 
+// PipelineUpdateStrategy controls how pipeline pods are replaced on a restart.
+// +kubebuilder:validation:Enum=Recreate;Rolling
+type PipelineUpdateStrategy string
+
+const (
+	// PipelineUpdateStrategyRecreate stops the old pods before starting new ones.
+	PipelineUpdateStrategyRecreate PipelineUpdateStrategy = "Recreate"
+	// PipelineUpdateStrategyRolling starts a new pod before stopping an old one.
+	PipelineUpdateStrategyRolling PipelineUpdateStrategy = "Rolling"
+)
+
 // Pipeline condition types.
 const (
 	// PipelineConditionReady indicates whether the pipeline is fully
@@ -356,6 +367,24 @@ type PipelineSpec struct {
 	// and cluster autoscaler evictions. When not set, no PDB is created.
 	// +optional
 	Budget *PipelineBudget `json:"budget,omitempty"`
+
+	// Controls how pipeline pods are replaced when the pipeline restarts, for
+	// example after a configuration, image, or resource change. Defaults to
+	// `Recreate`.
+	//
+	//   - `Recreate`: stop the old pods, then start the new ones. An old pod
+	//     and a new pod never run at the same time, which inputs that need
+	//     exclusive ownership of their source, such as change data capture
+	//     (CDC) replication slots, require. Inputs that cannot replay, such as
+	//     core NATS, lose messages sent while no pod is running.
+	//   - `Rolling`: start a new pod and wait until it is ready before stopping
+	//     an old one. The operator sets `maxSurge: 1` and `maxUnavailable: 0`
+	//     on the pipeline Deployment's rolling update, so the pipeline is never
+	//     fully stopped, but old and new pods briefly run side by side and may
+	//     process some messages twice.
+	// +kubebuilder:default=Recreate
+	// +optional
+	UpdateStrategy PipelineUpdateStrategy `json:"updateStrategy,omitempty"`
 
 	// ClusterSource declaratively binds the pipeline's redpanda input/output
 	// to a Redpanda cluster. Mirrors the ClusterSource pattern used by the

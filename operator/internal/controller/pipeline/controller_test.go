@@ -36,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -372,6 +373,51 @@ func (s *ControllerSuite) TestScaleSubresource() {
 	pipeline.Spec.Replicas = ptr.To(int32(3))
 	pipeline.Spec.Paused = true
 	assert.Equal(t, int32(0), pipeline.GetReplicas())
+}
+
+// TestUpdateStrategy switches a live Deployment between strategies. The API
+// server rejects a Recreate Deployment that still carries rollingUpdate, so
+// the apply must drop those fields on the way back.
+func (s *ControllerSuite) TestUpdateStrategy() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "strategy-pipeline",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	assert.Equal(t, redpandav1alpha2.PipelineUpdateStrategyRecreate, pipeline.Spec.UpdateStrategy, "CRD should default updateStrategy")
+
+	c := &Controller{Ctl: ctl}
+	sync := func(strategy redpandav1alpha2.PipelineUpdateStrategy) appsv1.DeploymentStrategy {
+		pipeline.Spec.UpdateStrategy = strategy
+		syncer, err := c.syncerFor(pipeline, c.rendererFor(pipeline, nil, nil, nil, ""))
+		require.NoError(t, err)
+		_, err = syncer.Sync(t.Context())
+		require.NoError(t, err)
+
+		var dp appsv1.Deployment
+		require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: pipeline.Name, Namespace: ns.Name}, &dp))
+		return dp.Spec.Strategy
+	}
+
+	got := sync(redpandav1alpha2.PipelineUpdateStrategyRolling)
+	assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType, got.Type)
+	require.NotNil(t, got.RollingUpdate)
+	assert.Equal(t, intstr.FromInt32(1), *got.RollingUpdate.MaxSurge)
+	assert.Equal(t, intstr.FromInt32(0), *got.RollingUpdate.MaxUnavailable)
+
+	got = sync(redpandav1alpha2.PipelineUpdateStrategyRecreate)
+	assert.Equal(t, appsv1.RecreateDeploymentStrategyType, got.Type)
+	assert.Nil(t, got.RollingUpdate)
 }
 
 // TestSetupWithManager exercises the real registration path — scheme types,
@@ -887,6 +933,19 @@ func TestRender_GoldenFiles(t *testing.T) {
 					Annotations: map[string]string{
 						"ad.datadoghq.com/connect.checks": "openmetrics",
 					},
+				},
+			},
+		},
+		{
+			name: "rolling-update-strategy",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "rolling-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML:     "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+					UpdateStrategy: redpandav1alpha2.PipelineUpdateStrategyRolling,
 				},
 			},
 		},
