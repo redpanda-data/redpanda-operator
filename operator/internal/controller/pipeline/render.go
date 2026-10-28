@@ -89,6 +89,10 @@ const saslSecretSuffix = "-sasl"
 // saslSecretKey is the key inside the per-Pipeline SASL Secret.
 const saslSecretKey = "password"
 
+// connectLogsTopic is the topic that Redpanda Console's pipeline Logs tab
+// reads, keyed by pipeline ID.
+const connectLogsTopic = "__redpanda.connect.logs"
+
 // Types returns the set of Kubernetes resource types managed by the Pipeline
 // controller.
 func Types() []kube.Object {
@@ -315,11 +319,35 @@ func (r *render) renderConnectYAML() (string, error) {
 	// keys win.
 	mergeTopLevelRedpanda(userConfig, overlay)
 
+	// Send logs to the topic Console's Logs tab reads. Only for clusterRef
+	// pipelines, whose cluster the operator creates that topic on.
+	if cs := r.pipeline.Spec.ClusterSource; cs != nil && cs.ClusterRef != nil {
+		mergeTopLevelRedpanda(userConfig, map[string]any{
+			"pipeline_id": r.pipeline.Name,
+			"logs_topic":  connectLogsTopic,
+		})
+	}
+
 	out, err := yaml.Marshal(userConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling rendered connect.yaml")
 	}
 	return string(out), nil
+}
+
+// sendsConnectLogs reports whether the rendered connect.yaml sends logs to
+// [connectLogsTopic].
+func (r *render) sendsConnectLogs() (bool, error) {
+	rendered, err := r.renderConnectYAML()
+	if err != nil {
+		return false, err
+	}
+	var config map[string]any
+	if err := yaml.Unmarshal([]byte(rendered), &config); err != nil {
+		return false, errors.WithStack(err)
+	}
+	redpanda, _ := config["redpanda"].(map[string]any)
+	return redpanda["logs_topic"] == connectLogsTopic, nil
 }
 
 // redpandaPluginOverlay returns the connection fields the operator will

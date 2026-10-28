@@ -13,6 +13,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"reflect"
 	"slices"
@@ -31,7 +32,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -126,6 +129,7 @@ const defaultMaxConcurrentReconciles = 5
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics,verbs=get;list;watch;create
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
@@ -383,6 +387,10 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	renderer := c.rendererFor(pipeline, clusterConn, userCreds, licenseContent, credsChecksum)
 
+	// A missing logs topic costs Console the pipeline's logs, not the
+	// pipeline its data, so it doesn't block the sync.
+	logsTopicCondition := c.ensureConnectLogsTopic(ctx, pipeline, renderer)
+
 	// Refuse to adopt pre-existing objects this Pipeline didn't create: the
 	// SSA sync below force-applies, so without this check a Pipeline named
 	// after another workload's ConfigMap/Secret/Deployment would hijack that
@@ -456,6 +464,12 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		})
 	}
 
+	if logsTopicCondition != nil {
+		conditions = append(conditions, *logsTopicCondition)
+	} else {
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionLogsTopic)
+	}
+
 	// The license gate above passed for this reconcile.
 	conditions = append(conditions, metav1.Condition{
 		Type:    redpandav1alpha2.PipelineConditionLicense,
@@ -505,6 +519,87 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, renderer *re
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
 		OwnershipLabels: renderer.labels,
 	}, nil
+}
+
+// ensureConnectLogsTopic creates the Topic resource for [connectLogsTopic] on
+// a clusterRef pipeline's cluster unless it exists, and returns the LogsTopic
+// condition, or nil if the pipeline doesn't send logs there. An existing
+// Topic is left as is, so admins can tune it.
+func (c *Controller) ensureConnectLogsTopic(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, renderer *render) *metav1.Condition {
+	if pipeline.Spec.ClusterSource == nil || pipeline.Spec.ClusterSource.ClusterRef == nil {
+		return nil
+	}
+	// A render error fails the sync, which reports it.
+	if sends, err := renderer.sendsConnectLogs(); err != nil || !sends {
+		return nil
+	}
+
+	topic := connectLogsTopicFor(pipeline)
+	err := c.Ctl.Get(ctx, kube.AsKey(topic), &redpandav1alpha2.Topic{})
+	if apierrors.IsNotFound(err) {
+		err = c.Ctl.Create(ctx, topic)
+		// Pipelines on the same cluster reconcile concurrently.
+		if apierrors.IsAlreadyExists(err) {
+			err = nil
+		}
+	}
+	if err != nil {
+		log.Error(ctx, err, "failed to create the Topic for pipeline logs", "topic", kube.AsKey(topic))
+		return &metav1.Condition{
+			Type:    redpandav1alpha2.PipelineConditionLogsTopic,
+			Status:  metav1.ConditionFalse,
+			Reason:  redpandav1alpha2.PipelineReasonLogsTopicFailed,
+			Message: err.Error(),
+		}
+	}
+	return &metav1.Condition{
+		Type:    redpandav1alpha2.PipelineConditionLogsTopic,
+		Status:  metav1.ConditionTrue,
+		Reason:  redpandav1alpha2.PipelineReasonLogsTopicEnsured,
+		Message: fmt.Sprintf("Logs go to %s, managed by Topic %q", connectLogsTopic, topic.Name),
+	}
+}
+
+// connectLogsTopicFor returns the Topic for [connectLogsTopic] on the
+// pipeline's cluster. The cluster's pipelines share it, so it has no owner
+// reference and outlives them.
+func connectLogsTopicFor(pipeline *redpandav1alpha2.Pipeline) *redpandav1alpha2.Topic {
+	cluster := pipeline.Spec.ClusterSource.ClusterRef.Name
+	return &redpandav1alpha2.Topic{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      connectLogsTopicName(cluster),
+			Namespace: pipeline.Namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "redpanda-operator",
+				"app.kubernetes.io/component":  "connect-logs",
+			},
+		},
+		Spec: redpandav1alpha2.TopicSpec{
+			OverwriteTopicName: ptr.To(connectLogsTopic),
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: cluster},
+			},
+			// Console's Logs tab reads the last 5 hours.
+			AdditionalConfig: map[string]*string{"retention.ms": ptr.To(connectLogsRetentionMS)},
+		},
+	}
+}
+
+// connectLogsRetentionMS is 24 hours.
+const connectLogsRetentionMS = "86400000"
+
+// connectLogsTopicName names the logs Topic of cluster. Long cluster names are
+// shortened and hashed to keep the name within 63 characters.
+func connectLogsTopicName(cluster string) string {
+	const suffix = "-connect-logs"
+	if len(cluster)+len(suffix) <= validation.DNS1123LabelMaxLength {
+		return cluster + suffix
+	}
+	hash := fnv.New32a()
+	_, _ = hash.Write([]byte(cluster))
+	digest := fmt.Sprintf("%08x", hash.Sum32())
+	prefix := strings.TrimRight(cluster[:validation.DNS1123LabelMaxLength-len(suffix)-len(digest)-1], "-.")
+	return prefix + "-" + digest + suffix
 }
 
 // findOwnershipConflict renders the objects this Pipeline would sync and

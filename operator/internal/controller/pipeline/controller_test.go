@@ -762,6 +762,74 @@ func (s *ControllerSuite) TestFindOwnershipConflict() {
 	assert.Empty(t, conflict)
 }
 
+// TestEnsureConnectLogsTopic covers the Topic behind Console's pipeline logs:
+// created once per cluster without an owner reference, left alone once it
+// exists, and not deleted with the pipeline.
+func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "logs", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	c := &Controller{Ctl: ctl}
+	conn := &clusterConnection{Brokers: []string{"redpanda-0:9093"}}
+	renderer := c.rendererFor(pipeline, conn, nil, nil, "")
+	key := kube.ObjectKey{Namespace: ns.Name, Name: "redpanda-connect-logs"}
+
+	cond := c.ensureConnectLogsTopic(t.Context(), pipeline, renderer)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicEnsured, cond.Reason)
+
+	var topic redpandav1alpha2.Topic
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
+	assert.Empty(t, topic.OwnerReferences)
+	assert.Equal(t, ptr.To(connectLogsTopic), topic.Spec.OverwriteTopicName)
+	assert.Equal(t, "redpanda", topic.Spec.ClusterSource.ClusterRef.Name)
+	assert.Equal(t, map[string]*string{"retention.ms": ptr.To("86400000")}, topic.Spec.AdditionalConfig)
+
+	// Admins may tune the Topic, and later passes don't write to it.
+	topic.Spec.AdditionalConfig["retention.ms"] = ptr.To("3600000")
+	require.NoError(t, ctl.Update(t.Context(), &topic))
+	require.NotNil(t, c.ensureConnectLogsTopic(t.Context(), pipeline, renderer))
+	var tuned redpandav1alpha2.Topic
+	require.NoError(t, ctl.Get(t.Context(), key, &tuned))
+	assert.Equal(t, topic.ResourceVersion, tuned.ResourceVersion)
+
+	// The Topic outlives the pipeline's resources.
+	syncer, err := c.syncerFor(pipeline, renderer)
+	require.NoError(t, err)
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+	_, err = syncer.DeleteAll(t.Context())
+	require.NoError(t, err)
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
+
+	// Opting out creates nothing.
+	optOut := pipeline.DeepCopy()
+	optOut.Spec.ConfigYAML = "redpanda:\n  logs_topic: \"\"\n" + optOut.Spec.ConfigYAML
+	optOut.Spec.ClusterSource.ClusterRef.Name = "opted-out"
+	assert.Nil(t, c.ensureConnectLogsTopic(t.Context(), optOut, c.rendererFor(optOut, conn, nil, nil, "")))
+	err = ctl.Get(t.Context(), kube.ObjectKey{Namespace: ns.Name, Name: "opted-out-connect-logs"}, &topic)
+	assert.True(t, apierrors.IsNotFound(err), "expected no Topic, got %v", err)
+
+	// Long cluster names are hashed into the 63-character budget.
+	long := strings.Repeat("a", 60)
+	assert.Len(t, connectLogsTopicName(long), 63)
+	assert.True(t, strings.HasSuffix(connectLogsTopicName(long), "-connect-logs"))
+	assert.NotEqual(t, connectLogsTopicName(long), connectLogsTopicName(long+"a"))
+}
+
 // TestValidateValueSources covers reconcile-time resolution of valueSources
 // backing objects — previously a typo'd Secret name synced fine and only
 // surfaced as a wedged pod.
@@ -928,8 +996,10 @@ func TestRender_GoldenFiles(t *testing.T) {
 	golden := testutil.NewTxTar(t, "testdata/controller-tests.golden.txtar")
 
 	testCases := []struct {
-		name     string
-		pipeline *redpandav1alpha2.Pipeline
+		name            string
+		pipeline        *redpandav1alpha2.Pipeline
+		clusterConn     *clusterConnection
+		userCredentials *userCredentials
 	}{
 		{
 			name: "basic-pipeline",
@@ -987,14 +1057,43 @@ func TestRender_GoldenFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pipeline-with-cluster-ref",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "orders-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML: "input:\n  redpanda:\n    topics: [orders]\n    consumer_group: orders\noutput:\n  stdout: {}\n",
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+					},
+					UserRef: &redpandav1alpha2.PipelineUserRef{Name: "orders"},
+				},
+			},
+			clusterConn: &clusterConnection{
+				Brokers: []string{"redpanda-0.redpanda.default.svc.cluster.local.:9093"},
+			},
+			userCredentials: &userCredentials{
+				Mechanism: "SCRAM-SHA-512",
+				Username:  "orders",
+				PasswordRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "orders-password"},
+					Key:                  "password",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := Labels(tc.pipeline)
 			r := &render{
-				pipeline: tc.pipeline,
-				labels:   labels,
+				pipeline:        tc.pipeline,
+				labels:          labels,
+				clusterConn:     tc.clusterConn,
+				userCredentials: tc.userCredentials,
 			}
 
 			objs, err := r.Render(t.Context())

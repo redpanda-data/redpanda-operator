@@ -112,6 +112,12 @@ const (
 	// PipelineReasonValueSourceInvalid means at least one entry in
 	// spec.valueSources could not be resolved.
 	PipelineReasonValueSourceInvalid = "ValueSourceInvalid"
+	// PipelineReasonLogsTopicEnsured means the Topic for the pipeline's logs
+	// exists.
+	PipelineReasonLogsTopicEnsured = "LogsTopicEnsured"
+	// PipelineReasonLogsTopicFailed means the operator couldn't create the
+	// Topic for the pipeline's logs.
+	PipelineReasonLogsTopicFailed = "LogsTopicFailed"
 )
 
 // Pipeline status condition types added with the v2 spec.
@@ -122,6 +128,10 @@ const (
 	// PipelineConditionValueSourcesResolved indicates whether every
 	// spec.valueSources entry resolved to a backing value.
 	PipelineConditionValueSourcesResolved = "ValueSourcesResolved"
+	// PipelineConditionLogsTopic indicates whether the Topic that a
+	// clusterRef pipeline sends its logs to exists. A False status doesn't
+	// stop the pipeline, only its logs in Redpanda Console.
+	PipelineConditionLogsTopic = "LogsTopic"
 )
 
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.
@@ -157,6 +167,14 @@ type PipelineSpec struct {
 	// Any `redpanda_common` blocks the user authors are passed through
 	// unchanged — the operator does not inject connection fields into
 	// them.
+	//
+	// With .cluster.clusterRef, the operator also sets `pipeline_id` (the
+	// Pipeline's name) and `logs_topic: __redpanda.connect.logs` in the
+	// top-level `redpanda` block, so Redpanda Console can show the
+	// pipeline's logs, and creates the Topic resource `<cluster>-connect-logs`
+	// for that topic if it doesn't exist. The Topic is shared by the
+	// cluster's pipelines and isn't deleted with them. To opt out, set
+	// `redpanda.logs_topic: ""`.
 	// +kubebuilder:validation:Required
 	ConfigYAML string `json:"configYaml"`
 
@@ -450,7 +468,10 @@ type PipelineSpec struct {
 	//
 	// The referenced User CR is expected to live in the same namespace as
 	// the Pipeline and to declare ACLs scoped to the topics, schema
-	// subjects, and consumer groups this pipeline reads/writes. The
+	// subjects, and consumer groups this pipeline reads/writes. For
+	// Redpanda Console to show the pipeline's logs, the User also needs
+	// Write and Describe on the topic `__redpanda.connect.logs`; without
+	// them the pipeline still runs, but its logs don't reach Console. The
 	// operator does NOT auto-create or modify the User CR — ACL scoping
 	// stays an explicit, auditable user-controlled action.
 	// +optional

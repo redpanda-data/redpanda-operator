@@ -102530,6 +102530,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - podmonitors
@@ -103630,6 +103639,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - podmonitors
@@ -104505,6 +104523,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -105614,6 +105641,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - podmonitors
@@ -106489,6 +106525,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -107591,6 +107636,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
