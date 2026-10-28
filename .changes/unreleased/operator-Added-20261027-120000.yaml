@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: The CRD reference now documents the `Broker` resource, and `kubectl explain broker` shows a description of what a Broker is.
+time: 2026-10-27T12:00:00.000000+00:00

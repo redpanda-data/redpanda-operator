@@ -17,7 +17,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-// BrokerPhase describes the lifecycle phase of a Broker.
+// BrokerPhase describes the lifecycle phase of a Broker: Pending,
+// Provisioning, Running, Decommissioning, Decommissioned, Stuck, or DiskLost.
 type BrokerPhase string
 
 const (
@@ -81,6 +82,10 @@ const (
 	DefaultNodePoolName = "default"
 )
 
+// Broker represents a single Redpanda broker and owns its Pod and
+// PersistentVolumeClaims. The Redpanda Operator creates and deletes Brokers
+// for a cluster that has the operator.redpanda.com/use-broker-cr annotation,
+// in place of a StatefulSet.
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -155,9 +160,11 @@ type BrokerSpec struct {
 }
 
 // BrokerPodTemplate defines the pod metadata and spec for a broker.
-// Uses flattened labels/annotations instead of nested ObjectMeta to avoid
-// strict decoding issues with controller-gen's bare `metadata: type: object`.
 type BrokerPodTemplate struct {
+	// Labels and annotations are flattened instead of a nested ObjectMeta to
+	// avoid strict decoding issues with controller-gen's bare
+	// `metadata: type: object`.
+
 	// Labels to apply to the pod.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`

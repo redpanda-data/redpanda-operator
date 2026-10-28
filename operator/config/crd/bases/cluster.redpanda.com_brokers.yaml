@@ -40,6 +40,11 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
+        description: |-
+          Broker represents a single Redpanda broker and owns its Pod and
+          PersistentVolumeClaims. The Redpanda Operator creates and deletes Brokers
+          for a cluster that has the operator.redpanda.com/use-broker-cr annotation,
+          in place of a StatefulSet.
         properties:
           apiVersion:
             description: |-
