@@ -328,13 +328,9 @@ func (r *TopicReconciler) reconcilePartition(ctx context.Context, topic *redpand
 		return 0, r.recordErrorEvent(err, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "failed topic (%s) metadata retrieval library error", topic.GetTopicName())
 	}
 
-<<<<<<< HEAD
-	if len(respMetadata.Topics[0].Partitions) > partition {
-		return 0, r.recordErrorEvent(ErrScaleDownPartitionCount, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "unable to update topic (%s)", topic.GetTopicName())
-=======
 	partitions := respMetadata.Topics[0].Partitions
 	if len(partitions) == 0 {
-		return 0, r.recordErrorEvent(ErrEmptyMetadataPartitions, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "metadata topic (%s) returned no partitions", topic.GetTopicName())
+		return 0, r.recordErrorEvent(ErrEmptyMetadataPartitions, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "metadata topic (%s) returned no partitions", topic.GetTopicName())
 	}
 	replicas := int16(len(partitions[0].Replicas))
 
@@ -344,8 +340,7 @@ func (r *TopicReconciler) reconcilePartition(ctx context.Context, topic *redpand
 	}
 
 	if len(partitions) > partition {
-		return 0, r.recordErrorEvent(ErrScaleDownPartitionCount, recorder, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "unable to update topic (%s)", topic.GetTopicName())
->>>>>>> f499275f (operator: don't fail Topics with unset partitions or replicationFactor (#2028))
+		return 0, r.recordErrorEvent(ErrScaleDownPartitionCount, topic, redpandav1alpha2.EventTopicConfigurationDescribeFailure, "unable to update topic (%s)", topic.GetTopicName())
 	}
 
 	if len(partitions) == partition {

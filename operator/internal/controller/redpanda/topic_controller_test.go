@@ -180,7 +180,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		require.NoError(t, c.Create(ctx, &createTopic))
 
 		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
-		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+		req := ctrl.Request{NamespacedName: key}
 		for range 2 {
 			_, err := tr.Reconcile(ctx, req)
 			require.NoError(t, err)
