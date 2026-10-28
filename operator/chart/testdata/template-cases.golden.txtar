@@ -97,19 +97,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -137,7 +124,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -190,20 +176,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -1107,19 +1079,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -1147,7 +1106,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -1200,20 +1158,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -1892,19 +1836,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -1932,7 +1863,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -1985,20 +1915,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -2929,19 +2845,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -2969,7 +2872,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -3022,20 +2924,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -3734,19 +3622,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -3774,7 +3649,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -3827,20 +3701,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -4757,19 +4617,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -4797,7 +4644,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -4850,20 +4696,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -5548,19 +5380,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -5588,7 +5407,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -5641,20 +5459,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -6793,19 +6597,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -6833,7 +6624,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -6886,20 +6676,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -7864,19 +7640,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -7904,7 +7667,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -7957,20 +7719,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -8888,19 +8636,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -8928,7 +8663,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -8981,20 +8715,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -9677,19 +9397,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -9717,7 +9424,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -9770,20 +9476,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -10740,19 +10432,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -10780,7 +10459,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -10833,20 +10511,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -11622,19 +11286,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -11662,7 +11313,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -11715,20 +11365,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -12731,19 +12367,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -12771,7 +12394,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -12824,20 +12446,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -13648,19 +13256,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -13688,7 +13283,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -13741,20 +13335,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -14691,19 +14271,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -14731,7 +14298,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -14784,20 +14350,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -15485,19 +15037,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -15525,7 +15064,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -15578,20 +15116,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -16514,19 +16038,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -16554,7 +16065,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -16607,20 +16117,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -17308,19 +16804,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -17348,7 +16831,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -17401,20 +16883,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -18369,19 +17837,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -18409,7 +17864,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -18462,20 +17916,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -19206,19 +18646,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -19246,7 +18673,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -19299,20 +18725,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -20070,19 +19482,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -20110,7 +19509,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -20163,20 +19561,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -20879,19 +20263,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -20919,7 +20290,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -20972,20 +20342,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -21916,19 +21272,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -21956,7 +21299,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -22009,20 +21351,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -22727,19 +22055,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -22767,7 +22082,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -22820,20 +22134,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -23988,19 +23288,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -24028,7 +23315,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -24081,20 +23367,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -24965,19 +24237,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -25005,7 +24264,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -25058,20 +24316,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -25873,19 +25117,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -25913,7 +25144,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -25966,20 +25196,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -26653,19 +25869,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -26693,7 +25896,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -26746,20 +25948,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -27692,19 +26880,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -27732,7 +26907,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -27785,20 +26959,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -28493,19 +27653,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -28533,7 +27680,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -28586,20 +27732,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -29523,19 +28655,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -29563,7 +28682,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -29616,20 +28734,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -30797,19 +29901,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -30837,7 +29928,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -30890,20 +29980,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -32044,19 +31120,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -32084,7 +31147,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -32137,20 +31199,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -32901,19 +31949,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -32941,7 +31976,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -32994,20 +32028,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -33970,19 +32990,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -34010,7 +33017,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -34063,20 +33069,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -34762,19 +33754,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -34802,7 +33781,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -34855,20 +33833,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -35966,19 +34930,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -36006,7 +34957,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -36059,20 +35009,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -37326,19 +36262,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -37366,7 +36289,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -37419,20 +36341,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -38514,19 +37422,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -38554,7 +37449,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -38607,20 +37501,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -39311,19 +38191,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -39351,7 +38218,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -39404,20 +38270,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -40757,19 +39609,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -40797,7 +39636,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -40850,20 +39688,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -41832,19 +40656,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -41872,7 +40683,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -41925,20 +40735,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -42874,19 +41670,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -42914,7 +41697,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -42967,20 +41749,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -43686,19 +42454,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -43726,7 +42481,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -43779,20 +42533,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -45054,19 +43794,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -45094,7 +43821,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -45147,20 +43873,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -46550,19 +45262,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -46590,7 +45289,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -46643,20 +45341,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -47788,19 +46472,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -47828,7 +46499,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -47881,20 +46551,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -49414,19 +48070,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -49454,7 +48097,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -49507,20 +48149,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -50672,19 +49300,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -50712,7 +49327,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -50765,20 +49379,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -51603,19 +50203,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -51643,7 +50230,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -51696,20 +50282,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -52848,19 +51420,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -52888,7 +51447,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -52941,20 +51499,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -53812,19 +52356,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -53852,7 +52383,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -53905,20 +52435,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -55096,19 +53612,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -55136,7 +53639,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -55189,20 +53691,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -57040,19 +55528,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -57080,7 +55555,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -57133,20 +55607,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -58472,19 +56932,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -58512,7 +56959,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -58565,20 +57011,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -59706,19 +58138,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -59746,7 +58165,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -59799,20 +58217,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -60764,19 +59168,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -60804,7 +59195,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -60857,20 +59247,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -62037,19 +60413,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -62077,7 +60440,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -62130,20 +60492,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -63542,19 +61890,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -63582,7 +61917,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -63635,20 +61969,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -66590,19 +64910,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -66630,7 +64937,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -66683,20 +64989,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -68209,19 +66501,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -68249,7 +66528,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -68302,20 +66580,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -71414,19 +69678,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -71454,7 +69705,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -71507,20 +69757,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -72743,19 +70979,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -72783,7 +71006,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -72836,20 +71058,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -76528,19 +74736,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -76568,7 +74763,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -76621,20 +74815,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -78103,19 +76283,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -78143,7 +76310,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -78196,20 +76362,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -79462,19 +77614,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -79502,7 +77641,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -79555,20 +77693,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -81074,19 +79198,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -81114,7 +79225,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -81167,20 +79277,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -83602,19 +81698,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -83642,7 +81725,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -83695,20 +81777,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -84931,19 +82999,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -84971,7 +83026,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -85024,20 +83078,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -87386,19 +85426,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -87426,7 +85453,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -87479,20 +85505,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -88965,19 +86977,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -89005,7 +87004,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -89058,20 +87056,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -90512,19 +88496,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -90552,7 +88523,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -90605,20 +88575,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -91898,19 +89854,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -91938,7 +89881,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -91991,20 +89933,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -93538,19 +91466,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -93578,7 +91493,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -93631,20 +91545,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -95182,19 +93082,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -95222,7 +93109,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -95275,20 +93161,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -97003,19 +94875,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -97043,7 +94902,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -97096,20 +94954,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -98536,19 +96380,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -98576,7 +96407,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -98629,20 +96459,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -100266,19 +98082,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -100306,7 +98109,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -100359,20 +98161,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -101469,19 +99257,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -101509,7 +99284,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -101562,20 +99336,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -102231,6 +99991,45 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -102252,19 +100051,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -102294,7 +100080,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -102347,20 +100132,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -103340,6 +101111,45 @@ metadata:
   name: operator-migration-job-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -103361,19 +101171,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -103403,7 +101200,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -103456,20 +101252,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -104225,6 +102007,45 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -104246,19 +102067,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -104288,7 +102096,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -104341,20 +102148,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -105342,6 +103135,45 @@ metadata:
   name: operator-migration-job-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -105363,19 +103195,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -105405,7 +103224,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -105458,20 +103276,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -106227,6 +104031,45 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -106248,19 +104091,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -106290,7 +104120,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -106343,20 +104172,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -107338,6 +105153,45 @@ metadata:
   name: operator-migration-job-default
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingadmissionpolicies
+  - validatingadmissionpolicybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -107359,19 +105213,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
@@ -107401,7 +105242,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -107454,20 +105294,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -108246,19 +106072,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -108286,7 +106099,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -108339,20 +106151,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -109257,19 +107055,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -109297,7 +107082,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -109350,20 +107134,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -110042,19 +107812,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -110082,7 +107839,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -110135,20 +107891,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -111095,19 +108837,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -111135,7 +108864,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -111188,20 +108916,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -111976,19 +109690,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -112016,7 +109717,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -112069,20 +109769,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -113030,19 +110716,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -113070,7 +110743,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -113123,20 +110795,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -113910,19 +111568,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -113950,7 +111595,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -114003,20 +111647,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -114919,19 +112549,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -114959,7 +112576,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -115012,20 +112628,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -115704,19 +113306,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -115744,7 +113333,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -115797,20 +113385,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -116730,19 +114304,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -116770,7 +114331,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -116823,20 +114383,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -117533,19 +115079,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -117573,7 +115106,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -117626,20 +115158,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -118542,19 +116060,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -118582,7 +116087,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -118635,20 +116139,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -119327,19 +116817,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -119367,7 +116844,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -119420,20 +116896,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -120336,19 +117798,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -120376,7 +117825,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -120429,20 +117877,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -121121,19 +118555,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -121161,7 +118582,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -121214,20 +118634,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -122130,19 +119536,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -122170,7 +119563,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -122223,20 +119615,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -122915,19 +120293,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -122955,7 +120320,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -123008,20 +120372,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -123932,19 +121282,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -123972,7 +121309,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -124025,20 +121361,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -124717,19 +122039,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -124757,7 +122066,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -124810,20 +122118,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -125734,19 +123028,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -125774,7 +123055,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -125827,20 +123107,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -126519,19 +123785,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -126559,7 +123812,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -126612,20 +123864,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -127565,19 +124803,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -127605,7 +124830,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -127658,20 +124882,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -128350,19 +125560,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -128390,7 +125587,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -128443,20 +125639,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -129392,19 +126574,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -129432,7 +126601,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -129485,20 +126653,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -130155,19 +127309,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -130195,7 +127336,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -130248,20 +127388,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -131201,19 +128327,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -131241,7 +128354,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -131294,20 +128406,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -131986,19 +129084,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -132026,7 +129111,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -132079,20 +129163,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -133029,19 +130099,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -133069,7 +130126,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -133122,20 +130178,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -133814,19 +130856,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -133854,7 +130883,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -133907,20 +130935,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -134983,19 +131997,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -135023,7 +132024,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -135076,20 +132076,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -135768,19 +132754,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -135808,7 +132781,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -135861,20 +132833,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -136813,19 +133771,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -136853,7 +133798,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -136906,20 +133850,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -137598,19 +134528,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -137638,7 +134555,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -137691,20 +134607,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -138643,19 +135545,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -138683,7 +135572,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -138736,20 +135624,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -139428,19 +136302,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -139468,7 +136329,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -139521,20 +136381,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -140472,19 +137318,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -140512,7 +137345,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -140565,20 +137397,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -141257,19 +138075,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -141297,7 +138102,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -141350,20 +138154,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -142331,19 +139121,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -142371,7 +139148,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -142424,20 +139200,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -143190,19 +139952,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -143230,7 +139979,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -143283,20 +140031,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -144319,19 +141053,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -144359,7 +141080,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -144412,20 +141132,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -145178,19 +141884,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -145218,7 +141911,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -145271,20 +141963,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -146301,19 +142979,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -146341,7 +143006,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -146394,20 +143058,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -147160,19 +143810,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -147200,7 +143837,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -147253,20 +143889,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -148216,19 +144838,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -148256,7 +144865,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -148309,20 +144917,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -149075,19 +145669,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -149115,7 +145696,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -149168,20 +145748,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -150123,19 +146689,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -150163,7 +146716,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -150216,20 +146768,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -150982,19 +147520,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -151022,7 +147547,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -151075,20 +147599,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -152122,19 +148632,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -152162,7 +148659,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -152215,20 +148711,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -152907,19 +149389,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -152947,7 +149416,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -153000,20 +149468,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -153923,19 +150377,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -153963,7 +150404,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -154016,20 +150456,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -154714,19 +151140,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -154754,7 +151167,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -154807,20 +151219,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -155772,19 +152170,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -155812,7 +152197,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -155865,20 +152249,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -156662,19 +153032,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -156702,7 +153059,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -156755,20 +153111,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete
@@ -157672,19 +154014,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingadmissionpolicies
-  - validatingadmissionpolicybindings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -157712,7 +154041,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles
-  - pipelines
   verbs:
   - create
   - delete
@@ -157765,20 +154093,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  - rolebindings
-  - roles
   verbs:
   - create
   - delete

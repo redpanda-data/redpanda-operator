@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -66,10 +67,8 @@ const (
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingadmissionpolicies;validatingadmissionpolicybindings,verbs=get;list;watch;create;update;patch;delete
-// RBAC escalation checks require holding every permission the pipelines Role and ClusterRoles grant.
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
+//
+// The RBAC for console.PipelinesTypes lives in ./pipelinesrbac.
 
 type Controller struct {
 	// Ctl is the kube.Ctl bound to the controller's local cluster. It is
@@ -91,6 +90,12 @@ type Controller struct {
 	// whose brokers exist are exactly the ones it deploys, and the NodePool
 	// CRD may not be installed otherwise.
 	UseNodePools bool
+
+	// EnablePipelines lets Consoles set spec.pipelines.enabled. The operator
+	// chart grants the RBAC for console.PipelinesTypes only with
+	// connectController.enabled, which also runs the Pipelines, so Consoles
+	// don't watch or list those kinds without it.
+	EnablePipelines bool
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
@@ -199,7 +204,7 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 // owner references.
 func (c *Controller) ownedTypes(ctx context.Context) ([]kube.Object, error) {
 	var types []kube.Object
-	for _, t := range console.Types() {
+	for _, t := range c.types() {
 		gvk, err := kube.GVKFor(c.Ctl.Scheme(), t)
 		if err != nil {
 			return nil, err
@@ -235,6 +240,19 @@ func (c *Controller) ownedTypes(ctx context.Context) ([]kube.Object, error) {
 		types = append(types, t)
 	}
 	return types, nil
+}
+
+// types returns the kinds that the Console controller manages.
+func (c *Controller) types() []kube.Object {
+	if c.EnablePipelines {
+		return console.Types()
+	}
+	pipelinesTypes := console.PipelinesTypes()
+	return functional.Filter(console.Types(), func(t kube.Object) bool {
+		return !slices.ContainsFunc(pipelinesTypes, func(p kube.Object) bool {
+			return reflect.TypeOf(p) == reflect.TypeOf(t)
+		})
+	})
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
@@ -401,11 +419,13 @@ func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *r
 	}
 
 	return &render{
-		ctl:          ctl,
-		console:      cr,
-		labels:       c.ownershipLabelsFor(cr),
-		metrics:      metrics,
-		useNodePools: c.UseNodePools,
+		ctl:             ctl,
+		console:         cr,
+		labels:          c.ownershipLabelsFor(cr),
+		metrics:         metrics,
+		useNodePools:    c.UseNodePools,
+		enablePipelines: c.EnablePipelines,
+		types:           c.types(),
 	}
 }
 
@@ -509,21 +529,27 @@ func (c *Controller) skipWatchIfNotInstalled(ctx context.Context, list client.Ob
 
 // render implements [kube.Renderer].
 type render struct {
-	ctl          *kube.Ctl
-	labels       map[string]string
-	console      *redpandav1alpha2.Console
-	metrics      console.MetricsState
-	useNodePools bool
+	ctl             *kube.Ctl
+	labels          map[string]string
+	console         *redpandav1alpha2.Console
+	metrics         console.MetricsState
+	useNodePools    bool
+	enablePipelines bool
+	types           []kube.Object
 }
 
 func (r *render) Types() []kube.Object {
-	return console.Types()
+	return r.types
 }
 
 func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
 	state, err := r.state(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if state.Values.Pipelines.Enabled && !r.enablePipelines {
+		return nil, errors.New("spec.pipelines.enabled requires the operator to run with connectController.enabled, which runs the Pipelines and grants the operator the permissions Console's pipelines need")
 	}
 
 	objs := functional.Filter(console.Render(state), func(obj kube.Object) bool {

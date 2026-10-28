@@ -93,6 +93,7 @@ tasks:
     - { task: generate:rbac:bundle, vars: { NAME: v2-manager, PACKAGE: ./internal/controller/redpanda } }
     - { task: generate:rbac:bundle, vars: { NAME: endpoint-steering, PACKAGE: ./internal/controller/endpointsteering } }
     - { task: generate:rbac:bundle, vars: { NAME: console, PACKAGE: ./internal/controller/console } }
+    - { task: generate:rbac:bundle, vars: { NAME: console-pipelines, PACKAGE: ./internal/controller/console/pipelinesrbac } }
     - { task: generate:rbac:bundle, vars: { NAME: pipeline, PACKAGE: ./internal/controller/pipeline } }
     - { task: generate:rbac:bundle, vars: { NAME: v1-manager, PACKAGE: ./internal/controller/vectorized } }
     - { task: generate:rbac:bundle, vars: { NAME: decommission, PACKAGE: ./internal/controller/decommissioning } }
@@ -166,7 +167,8 @@ tasks:
         ./config/rbac/itemized/v1-manager.yaml \
         ./config/rbac/itemized/v2-manager.yaml \
         ./config/rbac/itemized/endpoint-steering.yaml \
-        ./config/rbac/itemized/console.yaml
+        ./config/rbac/itemized/console.yaml \
+        ./config/rbac/itemized/console-pipelines.yaml
 
   # Some integration tests use their RBAC declarations but generally
   # require some additional permissions (e.g. leader election, running

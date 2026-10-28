@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -337,9 +338,10 @@ func TestController(t *testing.T) {
 			_, _ = seed.Write([]byte(tc.name))
 
 			consoleCtrl := Controller{
-				Ctl:          ctl,
-				UseNodePools: true,
-				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+				Ctl:             ctl,
+				UseNodePools:    true,
+				EnablePipelines: true,
+				rng:             rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
 			}
 
 			// Create console CR with namespace set
@@ -439,7 +441,7 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 	cr.Spec.ServiceAccount = nil
 	require.NoError(t, ctl.Apply(t.Context(), cr))
 
-	consoleCtrl := Controller{Ctl: ctl, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	consoleCtrl := Controller{Ctl: ctl, EnablePipelines: true, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
 	reconcile := func(cr *redpandav1alpha2.Console) error {
 		_, err := consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
 		return err
@@ -681,6 +683,75 @@ func TestPipelinesAdmissionPolicy(t *testing.T) {
 	var roles rbacv1.RoleList
 	require.NoError(t, ctl.List(t.Context(), otherNS.Name, &roles))
 	assert.Empty(t, roles.Items)
+}
+
+// TestControllerWithoutPipelinesRBAC asserts that, without the operator's
+// pipelines RBAC, Consoles that don't use pipelines reconcile and delete, and
+// Consoles that do are refused.
+func TestControllerWithoutPipelinesRBAC(t *testing.T) {
+	ctl := kubetest.NewEnv(t, kube.Options{
+		Options: client.Options{
+			Scheme: controller.UnifiedScheme,
+		},
+	})
+
+	testutils.InstallCRDs(t, ctl, crds.All()...)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "console"}})
+	require.NoError(t, err)
+
+	// Grant exactly the Console controller's own bundle.
+	bundle, err := os.ReadFile("../../../config/rbac/itemized/console.yaml")
+	require.NoError(t, err)
+	var role rbacv1.ClusterRole
+	require.NoError(t, yaml.Unmarshal(bundle, &role))
+	require.NoError(t, ctl.Create(t.Context(), &role))
+	require.NoError(t, ctl.Create(t.Context(), &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: role.Name},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: role.Name},
+		Subjects:   []rbacv1.Subject{{APIGroup: rbacv1.GroupName, Kind: rbacv1.UserKind, Name: "console-controller"}},
+	}))
+
+	cfg := rest.CopyConfig(ctl.RestConfig())
+	cfg.Impersonate = rest.ImpersonationConfig{UserName: "console-controller"}
+	limited, err := kube.FromRESTConfig(cfg, kube.Options{
+		Options:      client.Options{Scheme: controller.UnifiedScheme},
+		FieldManager: "redpanda-operator",
+	})
+	require.NoError(t, err)
+
+	consoleCtrl := Controller{Ctl: limited, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	reconcile := func(cr *redpandav1alpha2.Console) error {
+		_, err := consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
+		return err
+	}
+
+	cr := &redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "no-pipelines", Namespace: ns.Name}}
+	require.NoError(t, ctl.Apply(t.Context(), cr))
+	// The ClusterRoleBinding takes effect asynchronously.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		assert.NoError(c, reconcile(cr))
+	}, 30*time.Second, 250*time.Millisecond)
+	require.NoError(t, reconcile(cr))
+
+	// Guard against a vacuous pass: listing the pipelines kinds is forbidden.
+	withPipelinesKinds := Controller{Ctl: limited, EnablePipelines: true, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	_, err = withPipelinesKinds.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
+	require.True(t, apierrors.IsForbidden(err), "expected Forbidden, got %v", err)
+
+	withPipelines := &redpandav1alpha2.Console{
+		ObjectMeta: metav1.ObjectMeta{Name: "with-pipelines", Namespace: ns.Name},
+		Spec: redpandav1alpha2.ConsoleSpec{ConsoleValues: redpandav1alpha2.ConsoleValues{
+			Pipelines: &redpandav1alpha2.PipelinesConfig{Enabled: ptr.To(true)},
+		}},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), withPipelines))
+	require.ErrorContains(t, reconcile(withPipelines), "requires the operator to run with connectController.enabled")
+
+	require.NoError(t, ctl.Delete(t.Context(), cr))
+	require.NoError(t, reconcile(cr))
+	err = ctl.Get(t.Context(), kube.AsKey(cr), cr)
+	require.True(t, apierrors.IsNotFound(err), "expected the Console to be gone, got %v", err)
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels

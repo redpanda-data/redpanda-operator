@@ -376,10 +376,10 @@ func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 	}
 }
 
-// TestRBACIsSuperSetOfConsolePipelines asserts that the operator holds every
-// permission that the pipelines Role and ClusterRoles it creates for Console
-// grant, as RBAC escalation checks require. The Connect controller is
-// disabled because its rules must not be needed.
+// TestRBACIsSuperSetOfConsolePipelines asserts that, with the Connect
+// controller, the operator holds every permission that the pipelines Role and
+// ClusterRoles it creates for Console grant, as RBAC escalation checks
+// require. Without it, the operator gets none of the pipelines permissions.
 func TestRBACIsSuperSetOfConsolePipelines(t *testing.T) {
 	for _, impersonateUser := range []bool{false, true} {
 		t.Run(fmt.Sprintf("impersonateUser=%t", impersonateUser), func(t *testing.T) {
@@ -394,7 +394,7 @@ func TestRBACIsSuperSetOfConsolePipelines(t *testing.T) {
 			require.NoError(t, err)
 
 			operatorObjs, err := Chart.Render(nil, helmette.Release{}, PartialValues{
-				ConnectController: &PartialConnectController{Enabled: ptr.To(false)},
+				ConnectController: &PartialConnectController{Enabled: ptr.To(true)},
 			})
 			require.NoError(t, err)
 
@@ -412,6 +412,23 @@ func TestRBACIsSuperSetOfConsolePipelines(t *testing.T) {
 			assertRulesSuperSet(t, operatorClusterRoleRules, consoleClusterRoleRules)
 		})
 	}
+
+	t.Run("connectController disabled", func(t *testing.T) {
+		operatorObjs, err := Chart.Render(nil, helmette.Release{}, PartialValues{
+			ConnectController: &PartialConnectController{Enabled: ptr.To(false)},
+		})
+		require.NoError(t, err)
+
+		operatorClusterRoleRules, operatorRoleRules := ExtractRules(operatorObjs)
+		for _, resource := range []string{
+			"cluster.redpanda.com#pipelines",
+			"admissionregistration.k8s.io#validatingadmissionpolicies",
+			"admissionregistration.k8s.io#validatingadmissionpolicybindings",
+		} {
+			assert.NotContains(t, operatorClusterRoleRules, resource)
+			assert.NotContains(t, operatorRoleRules, resource)
+		}
+	})
 }
 
 // TestValues asserts that the chart's values.yaml file can be losslessly
