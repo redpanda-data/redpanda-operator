@@ -217,14 +217,16 @@ type PipelineSpec struct {
 	// +optional
 	Image *string `json:"image,omitempty"`
 
-	// RPCPlugins lists manifest files for Redpanda Connect dynamic (RPC)
-	// plugins, which the pipeline loads with `--rpc-plugins`. Each entry is an
-	// absolute path or glob inside the pipeline pod.
+	// Lists manifest files for Redpanda Connect dynamic (RPC) plugins, which
+	// the pipeline loads with `--rpc-plugins`. Each entry is an absolute path
+	// or glob inside the pipeline pod, and the list accepts at most 32
+	// entries.
 	//
 	// The manifests and the plugin executables they launch must already be in
-	// the pod. For example, put a manifest in .configFiles (mounted under
-	// /config), and bake the plugin and its runtime into a custom .image, or
-	// copy a static binary onto .extraVolumes with .extraInitContainers.
+	// the pod. For example, put a manifest in `.configFiles` (mounted under
+	// `/config`), and bake the plugin and its runtime into a custom `.image`,
+	// or copy a static binary onto `.extraVolumes` with
+	// `.extraInitContainers`.
 	// +kubebuilder:validation:MaxItems=32
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=1024
