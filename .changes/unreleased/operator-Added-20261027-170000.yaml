@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Pipeline CRD: new `spec.updateStrategy` field. `Recreate` (the default and existing behavior) stops old pods before starting new ones. `Rolling` starts a new pod and waits for it to be ready before stopping an old one (maxSurge 1, maxUnavailable 0), so inputs that cannot replay, such as core NATS, no longer drop messages during restarts. With `Rolling`, old and new pods briefly overlap and may process some messages twice; keep `Recreate` for inputs that need exclusive ownership, such as CDC replication slots.'
+time: 2026-10-27T17:00:00.000000000-07:00
