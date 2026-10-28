@@ -276,3 +276,109 @@
             name: rolling-pipeline
           name: config
   status: {}
+-- rpc-plugins --
+- apiVersion: v1
+  data:
+    connect.yaml: |
+      input:
+        generate:
+          mapping: 'root = "hello"'
+      pipeline:
+        processors:
+          - upper: {}
+      output:
+        stdout: {}
+    upper.yaml: |
+      name: upper
+      type: processor
+      command: ["/plugins/upper"]
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: plugin-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: plugin-pipeline
+    namespace: default
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: plugin-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: plugin-pipeline
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: connect-pipeline
+        app.kubernetes.io/instance: plugin-pipeline
+        app.kubernetes.io/managed-by: redpanda-operator
+        app.kubernetes.io/name: redpanda-connect
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          cluster.redpanda.com/config-checksum: fafa18a71d241281cfbdc996eec40e0e009f3c4955a425ea548e0b7fd9e68bf2
+        labels:
+          app.kubernetes.io/component: connect-pipeline
+          app.kubernetes.io/instance: plugin-pipeline
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda-connect
+      spec:
+        containers:
+        - command:
+          - /redpanda-connect
+          - run
+          - --rpc-plugins
+          - /config/upper.yaml
+          - --rpc-plugins
+          - /plugins/manifests/*.yaml
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: connect
+          ports:
+          - containerPort: 4195
+            name: http
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4195
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        initContainers:
+        - command:
+          - /redpanda-connect
+          - lint
+          - --rpc-plugins
+          - /config/upper.yaml
+          - --rpc-plugins
+          - /plugins/manifests/*.yaml
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: lint
+          resources: {}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        volumes:
+        - configMap:
+            name: plugin-pipeline
+          name: config
+  status: {}

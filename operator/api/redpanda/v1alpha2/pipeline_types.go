@@ -217,6 +217,28 @@ type PipelineSpec struct {
 	// +optional
 	Image *string `json:"image,omitempty"`
 
+	// Lists manifest files for Redpanda Connect dynamic (RPC) plugins, which
+	// the pipeline loads with `--rpc-plugins`. Each entry is an absolute path
+	// or glob inside the pipeline pod (it must start with `/`), at most 64
+	// characters long, and the list accepts at most 32 entries. When unset,
+	// the pipeline loads no plugins.
+	//
+	// The built-in `lint` init container gets the same `--rpc-plugins`
+	// arguments, so the manifests must be readable there as well as in the
+	// pipeline container. Only the pipeline container launches the
+	// executables the manifests name. Baking both into a custom `.image`
+	// works. So does a manifest in `.configFiles` (mounted under `/config`)
+	// naming an executable that an `.extraInitContainers` step copies into an
+	// `.extraVolumes` volume. In that case also mount the volume with
+	// `.extraVolumeMounts`, which is what makes it visible to the `lint` and
+	// pipeline containers.
+	// +kubebuilder:validation:MaxItems=32
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:MaxLength=64
+	// +kubebuilder:validation:items:Pattern=`^/`
+	// +optional
+	RPCPlugins []string `json:"rpcPlugins,omitempty"`
+
 	// ServiceAccountName is the ServiceAccount to bind to the pipeline pod.
 	// When unset, the namespace's default ServiceAccount is used.
 	//
