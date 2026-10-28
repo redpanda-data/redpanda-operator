@@ -106,8 +106,9 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:   state.Values.ImagePullSecrets,
 					ServiceAccountName: ServiceAccountName(state),
-					// Pipelines are read through the Kubernetes API, which needs
-					// the mounted token and cluster CA even when impersonating.
+					// Console calls the Kubernetes API for pipelines. With
+					// impersonateUser it sends the user's token instead, but
+					// still reads the cluster CA from this mount.
 					AutomountServiceAccountToken: ptr.To(state.Values.AutomountServiceAccountToken || state.Values.Pipelines.Enabled),
 					SecurityContext:              &state.Values.PodSecurityContext,
 					NodeSelector:                 state.Values.NodeSelector,

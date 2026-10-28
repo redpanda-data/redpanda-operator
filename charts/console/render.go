@@ -19,12 +19,10 @@ import (
 	"github.com/cockroachdb/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -182,6 +180,11 @@ func (s *RenderState) Labels(labels map[string]string) map[string]string {
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func Render(state *RenderState) []kube.Object {
 	manifests := []kube.Object{
+		// The operator applies in order and stops at the first error, so the
+		// policy comes before anything that grants Console access to
+		// Pipelines. Helm installs these kinds last regardless.
+		PipelinesAdmissionPolicy(state),
+		PipelinesAdmissionPolicyBinding(state),
 		ServiceAccount(state),
 		Secret(state),
 		ConfigMap(state),
@@ -195,8 +198,6 @@ func Render(state *RenderState) []kube.Object {
 		PipelinesRoleBinding(state),
 		PipelineEditorClusterRole(state),
 		PipelineViewerClusterRole(state),
-		PipelinesAdmissionPolicy(state),
-		PipelinesAdmissionPolicyBinding(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -205,8 +206,9 @@ func Render(state *RenderState) []kube.Object {
 	return manifests
 }
 
+// Types returns every kind that [Render] may return.
 func Types() []kube.Object {
-	return []kube.Object{
+	types := []kube.Object{
 		&corev1.ServiceAccount{},
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
@@ -216,12 +218,8 @@ func Types() []kube.Object {
 		&appsv1.Deployment{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},
-		&rbacv1.Role{},
-		&rbacv1.RoleBinding{},
-		&rbacv1.ClusterRole{},
-		&admissionregistrationv1.ValidatingAdmissionPolicy{},
-		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
 	}
+	return append(types, PipelinesTypes()...)
 }
 
 func cleanForK8s(s string) string {

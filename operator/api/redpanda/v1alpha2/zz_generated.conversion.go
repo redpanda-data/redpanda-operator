@@ -261,7 +261,11 @@ func init() {
 				xbool3 := *(*source).ImpersonateUser
 				consolePartialPipelinesConfig.ImpersonateUser = &xbool3
 			}
-			consolePartialPipelinesConfig.AdmissionPolicy = pV1alpha2PipelinesAdmissionPolicyToPConsolePartialPipelinesAdmissionPolicyConfig((*source).AdmissionPolicy)
+			if (*source).AllowUnauthenticated != nil {
+				xbool4 := *(*source).AllowUnauthenticated
+				consolePartialPipelinesConfig.AllowUnauthenticated = &xbool4
+			}
+			consolePartialPipelinesConfig.AdmissionPolicy = pV1alpha2PipelinesAdmissionPolicyConfigToPConsolePartialPipelinesAdmissionPolicyConfig((*source).AdmissionPolicy)
 			pConsolePartialPipelinesConfig = &consolePartialPipelinesConfig
 		}
 		return pConsolePartialPipelinesConfig
@@ -1375,7 +1379,7 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 	}
 	return pConsolePartialOIDCLoginSecrets
 }
-func pV1alpha2PipelinesAdmissionPolicyToPConsolePartialPipelinesAdmissionPolicyConfig(source *PipelinesAdmissionPolicy) *v3.PartialPipelinesAdmissionPolicyConfig {
+func pV1alpha2PipelinesAdmissionPolicyConfigToPConsolePartialPipelinesAdmissionPolicyConfig(source *PipelinesAdmissionPolicyConfig) *v3.PartialPipelinesAdmissionPolicyConfig {
 	var pConsolePartialPipelinesAdmissionPolicyConfig *v3.PartialPipelinesAdmissionPolicyConfig
 	if source != nil {
 		var consolePartialPipelinesAdmissionPolicyConfig v3.PartialPipelinesAdmissionPolicyConfig

@@ -313,6 +313,9 @@
         "allowBootstrapUser": {
           "type": "boolean"
         },
+        "allowUnauthenticated": {
+          "type": "boolean"
+        },
         "clusterRef": {
           "maxLength": 253,
           "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$",

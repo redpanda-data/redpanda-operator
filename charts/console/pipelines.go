@@ -12,6 +12,7 @@ package console
 import (
 	"fmt"
 
+	"github.com/redpanda-data/common-go/kube"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,12 +47,23 @@ func pipelinesConfig(state *RenderState) map[string]any {
 		panic("pipelines.clusterRef requires pipelines.userRef: set pipelines.userRef to a User with ACLs scoped to Console's pipelines, or set pipelines.allowBootstrapUser: true for clusters without SASL")
 	}
 
+	// Pipeline Pods without a serviceAccountName run as the namespace's
+	// default ServiceAccount, so they'd inherit the Role granted to it.
+	if pipelinesViaServiceAccount(state) && ServiceAccountName(state) == "default" {
+		panic("pipelines.enabled requires a dedicated ServiceAccount for Console: the chart grants Console's ServiceAccount access to Pipelines, and the namespace's default ServiceAccount is shared with every Pod that doesn't name one. Set serviceAccount.create: true or serviceAccount.name, or set pipelines.impersonateUser: true")
+	}
+
 	kubernetes := helmette.Merge(map[string]any{}, helmette.Dig(state.Values.Config, map[string]any{}, "pipelines", "kubernetes").(map[string]any))
 	kubernetes["enabled"] = true
 	kubernetes["namespace"] = PipelinesNamespace(state)
 	kubernetes["clusterRef"] = state.Values.Pipelines.ClusterRef
 	kubernetes["userRef"] = state.Values.Pipelines.UserRef
+	kubernetes["allowBootstrapUser"] = state.Values.Pipelines.AllowBootstrapUser
 	kubernetes["impersonateUser"] = state.Values.Pipelines.ImpersonateUser
+	kubernetes["allowUnauthenticated"] = state.Values.Pipelines.AllowUnauthenticated
+	// Console refuses to start through its ServiceAccount if a dry-run
+	// create of a Pipeline with spec.image succeeds, i.e. without the policy.
+	kubernetes["skipAdmissionCheck"] = pipelinesViaServiceAccount(state) && !state.Values.Pipelines.AdmissionPolicy.Enabled
 
 	pipelines := helmette.Merge(map[string]any{}, helmette.Dig(state.Values.Config, map[string]any{}, "pipelines").(map[string]any))
 	pipelines["kubernetes"] = kubernetes
@@ -62,6 +74,20 @@ func pipelinesConfig(state *RenderState) map[string]any {
 	return config
 }
 
+// PipelinesTypes returns the kinds that [Render] returns only when
+// pipelines.enabled is true.
+func PipelinesTypes() []kube.Object {
+	return []kube.Object{
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&rbacv1.ClusterRole{},
+		&admissionregistrationv1.ValidatingAdmissionPolicy{},
+		&admissionregistrationv1.ValidatingAdmissionPolicyBinding{},
+	}
+}
+
+// PipelinesRole grants Console's ServiceAccount access to the Pipelines in
+// the pipelines namespace, unless Console impersonates its users.
 func PipelinesRole(state *RenderState) *rbacv1.Role {
 	if !pipelinesViaServiceAccount(state) {
 		return nil
@@ -87,6 +113,7 @@ func PipelinesRole(state *RenderState) *rbacv1.Role {
 	}
 }
 
+// PipelinesRoleBinding binds [PipelinesRole] to Console's ServiceAccount.
 func PipelinesRoleBinding(state *RenderState) *rbacv1.RoleBinding {
 	if !pipelinesViaServiceAccount(state) {
 		return nil
@@ -118,7 +145,9 @@ func PipelinesRoleBinding(state *RenderState) *rbacv1.RoleBinding {
 }
 
 // PipelineEditorClusterRole is for admins to bind to the groups whose members
-// may manage pipelines when Console forwards their identity.
+// may manage pipelines when Console forwards their identity. No admission
+// policy applies to them, so it amounts to creating Pods and reading Secrets
+// in the namespace it's bound in.
 func PipelineEditorClusterRole(state *RenderState) *rbacv1.ClusterRole {
 	return pipelinesClusterRole(state, "pipeline-editor", []string{"get", "list", "watch", "create", "update", "patch", "delete"})
 }
@@ -165,8 +194,6 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 
 	username := fmt.Sprintf("system:serviceaccount:%s:%s", state.Namespace, ServiceAccountName(state))
 
-	// NB: dyn() keeps the policy type checker, which knows the Pipeline
-	// schema, from warning that a typed object can't be a comprehension range.
 	return &admissionregistrationv1.ValidatingAdmissionPolicy{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admissionregistration.k8s.io/v1",
@@ -204,8 +231,19 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 			},
 			Variables: []admissionregistrationv1.Variable{
 				{
+					// NB: dyn() keeps the policy type checker, which knows the
+					// Pipeline schema, from warning that a typed object can't
+					// be a comprehension range.
 					Name:       "spec",
 					Expression: "request.operation == 'DELETE' || !has(object.spec) ? {} : dyn(object.spec)",
+				},
+				{
+					Name:       "finalizers",
+					Expression: "request.operation == 'DELETE' || !has(object.metadata.finalizers) ? [] : dyn(object.metadata.finalizers)",
+				},
+				{
+					Name:       "oldFinalizers",
+					Expression: "request.operation != 'UPDATE' || !has(oldObject.metadata.finalizers) ? [] : dyn(oldObject.metadata.finalizers)",
 				},
 				{
 					// Includes replicas and updateStrategy, which the CRD defaults
@@ -245,6 +283,16 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 					Message:    "Redpanda Console may only update or delete Pipelines labeled console.redpanda.com/managed-by=console",
 				},
 				{
+					Expression: "request.operation == 'DELETE' || !has(object.metadata.ownerReferences) || size(object.metadata.ownerReferences) == 0",
+					Message:    "Redpanda Console may not set metadata.ownerReferences on Pipelines",
+				},
+				{
+					// The pipeline controller manages its own finalizer as the
+					// operator, which this policy doesn't match.
+					Expression: "request.operation == 'DELETE' || variables.finalizers == variables.oldFinalizers",
+					Message:    "Redpanda Console may not add or remove metadata.finalizers on Pipelines",
+				},
+				{
 					Expression:        "size(variables.forbiddenSpecFields) == 0",
 					MessageExpression: "'Redpanda Console may only set spec fields ' + variables.allowedSpecFields.join(', ') + '; found ' + variables.forbiddenSpecFields.join(', ')",
 				},
@@ -271,6 +319,8 @@ func PipelinesAdmissionPolicy(state *RenderState) *admissionregistrationv1.Valid
 	}
 }
 
+// PipelinesAdmissionPolicyBinding enforces [PipelinesAdmissionPolicy] on every
+// namespace.
 func PipelinesAdmissionPolicyBinding(state *RenderState) *admissionregistrationv1.ValidatingAdmissionPolicyBinding {
 	if !pipelinesViaServiceAccount(state) || !state.Values.Pipelines.AdmissionPolicy.Enabled {
 		return nil
@@ -292,10 +342,12 @@ func PipelinesAdmissionPolicyBinding(state *RenderState) *admissionregistrationv
 	}
 }
 
-// pipelinesClusterScopedName folds the namespace into cluster-scoped names so
-// that releases of the same name in different namespaces don't collide.
+// pipelinesClusterScopedName names a cluster-scoped object after a hash of the
+// release's namespace and name, so no other release can render the same name.
+// FullName is shortened to keep the name within 63 characters.
 func pipelinesClusterScopedName(state *RenderState, suffix string) string {
-	// NB: Not truncated to 63. These names are DNS subdomains or path
-	// segments, and truncating could drop the suffix.
-	return fmt.Sprintf("%s-%s-%s", state.FullName(), state.Namespace, suffix)
+	// NB: sha256 rather than FNV, which Helm templates can't compute.
+	hash := helmette.Trunc(8, helmette.Sha256Sum(fmt.Sprintf("%s/%s", state.Namespace, state.ReleaseName)))
+	tail := fmt.Sprintf("-%s-%s", hash, suffix)
+	return helmette.TrimSuffix("-", helmette.Trunc(63-len(tail), state.FullName())) + tail
 }

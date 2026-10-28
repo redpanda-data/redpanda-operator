@@ -1328,7 +1328,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
       cluster.redpanda.com/namespace: test-ns
-    name: console-pipelines-impersonate-console-test-ns-pipeline-editor
+    name: console-pipelines-impersonate-console-c1e16e6f-pipeline-editor
   rules:
   - apiGroups:
     - cluster.redpanda.com
@@ -1350,7 +1350,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
       cluster.redpanda.com/namespace: test-ns
-    name: console-pipelines-impersonate-console-test-ns-pipeline-viewer
+    name: console-pipelines-impersonate-console-c1e16e6f-pipeline-viewer
   rules:
   - apiGroups:
     - cluster.redpanda.com
@@ -1366,10 +1366,13 @@
       # from .Values.config
       pipelines:
         kubernetes:
+          allowBootstrapUser: false
+          allowUnauthenticated: true
           clusterRef: ""
           enabled: true
           impersonateUser: true
           namespace: test-ns
+          skipAdmissionCheck: false
           userRef: ""
   kind: ConfigMap
   metadata:
@@ -1406,7 +1409,7 @@
     template:
       metadata:
         annotations:
-          checksum/config: 3b6c49d6181e246b910fda46de7ddd56edfc4c6ec0960b86a6d81aa147cd51bf
+          checksum/config: 595ae925ad36d0ff4cd36a7eefb3f42376ebb10b71eaae853f9b1e7e461e1da6
         labels:
           app.kubernetes.io/instance: console-pipelines-impersonate
           app.kubernetes.io/name: console
@@ -1571,10 +1574,13 @@
       # from .Values.config
       pipelines:
         kubernetes:
+          allowBootstrapUser: false
+          allowUnauthenticated: false
           clusterRef: test-redpanda
           enabled: true
           impersonateUser: false
           namespace: test-ns
+          skipAdmissionCheck: false
           userRef: console-pipelines
   kind: ConfigMap
   metadata:
@@ -1611,7 +1617,7 @@
     template:
       metadata:
         annotations:
-          checksum/config: 10a410734a800a95c237812a997b8c77eeb422ef6f517341812e352ee75a8f2a
+          checksum/config: 3bd9630a76663cf450cd1ded5c0d4b0c1368806267638a188e43642b5fad1c60
         labels:
           app.kubernetes.io/instance: console-pipelines-sa
           app.kubernetes.io/name: console
@@ -1818,9 +1824,9 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
       cluster.redpanda.com/namespace: test-ns
-    name: console-pipelines-sa-console-test-ns-pipelines
+    name: console-pipelines-sa-console-dc3f659f-pipelines
   spec:
-    policyName: console-pipelines-sa-console-test-ns-pipelines
+    policyName: console-pipelines-sa-console-dc3f659f-pipelines
     validationActions:
     - Deny
 - apiVersion: admissionregistration.k8s.io/v1
@@ -1831,7 +1837,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
       cluster.redpanda.com/namespace: test-ns
-    name: console-pipelines-sa-console-test-ns-pipelines
+    name: console-pipelines-sa-console-dc3f659f-pipelines
   spec:
     failurePolicy: Fail
     matchConditions:
@@ -1862,6 +1868,11 @@
         && 'console.redpanda.com/managed-by' in oldObject.metadata.labels && oldObject.metadata.labels['console.redpanda.com/managed-by']
         == 'console')
       message: Redpanda Console may only update or delete Pipelines labeled console.redpanda.com/managed-by=console
+    - expression: request.operation == 'DELETE' || !has(object.metadata.ownerReferences)
+        || size(object.metadata.ownerReferences) == 0
+      message: Redpanda Console may not set metadata.ownerReferences on Pipelines
+    - expression: request.operation == 'DELETE' || variables.finalizers == variables.oldFinalizers
+      message: Redpanda Console may not add or remove metadata.finalizers on Pipelines
     - expression: size(variables.forbiddenSpecFields) == 0
       messageExpression: '''Redpanda Console may only set spec fields '' + variables.allowedSpecFields.join('',
         '') + ''; found '' + variables.forbiddenSpecFields.join('', '')'
@@ -1890,6 +1901,12 @@
     variables:
     - expression: 'request.operation == ''DELETE'' || !has(object.spec) ? {} : dyn(object.spec)'
       name: spec
+    - expression: 'request.operation == ''DELETE'' || !has(object.metadata.finalizers)
+        ? [] : dyn(object.metadata.finalizers)'
+      name: finalizers
+    - expression: 'request.operation != ''UPDATE'' || !has(oldObject.metadata.finalizers)
+        ? [] : dyn(oldObject.metadata.finalizers)'
+      name: oldFinalizers
     - expression: '[''configYaml'', ''displayName'', ''description'', ''tags'', ''resources'',
         ''paused'', ''replicas'', ''updateStrategy'', ''cluster'', ''userRef'']'
       name: allowedSpecFields

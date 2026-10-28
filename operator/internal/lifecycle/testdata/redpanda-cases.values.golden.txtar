@@ -107,6 +107,7 @@ values:
       admissionPolicy:
         enabled: true
       allowBootstrapUser: false
+      allowUnauthenticated: false
       clusterRef: ""
       enabled: false
       impersonateUser: false
@@ -729,6 +730,7 @@ values:
       admissionPolicy:
         enabled: true
       allowBootstrapUser: false
+      allowUnauthenticated: false
       clusterRef: ""
       enabled: false
       impersonateUser: false
@@ -1731,6 +1733,7 @@ values:
       admissionPolicy:
         enabled: true
       allowBootstrapUser: false
+      allowUnauthenticated: false
       clusterRef: ""
       enabled: false
       impersonateUser: false

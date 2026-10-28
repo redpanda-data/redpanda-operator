@@ -313,6 +313,39 @@ func TestPipelinesRequireUserRef(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// TestPipelinesRequireDedicatedServiceAccount asserts that both renderers
+// refuse to grant Pipeline access to the namespace's default ServiceAccount,
+// which pipeline Pods without a serviceAccountName run as.
+func TestPipelinesRequireDedicatedServiceAccount(t *testing.T) {
+	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
+	require.NoError(t, err)
+
+	const msg = "pipelines.enabled requires a dedicated ServiceAccount for Console"
+
+	for _, sa := range []*console.PartialServiceAccountConfig{
+		{Create: ptr.To(false)},
+		{Name: ptr.To("default")},
+	} {
+		values := PartialValues{
+			PartialRenderValues: console.PartialRenderValues{
+				ServiceAccount: sa,
+				Pipelines:      &console.PartialPipelinesConfig{Enabled: ptr.To(true)},
+			},
+		}
+
+		_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
+		require.ErrorContains(t, err, msg)
+
+		_, err = client.Template(t.Context(), ".", helm.TemplateOptions{Name: "console", Namespace: "console", Values: values})
+		require.ErrorContains(t, err, msg)
+
+		// Console's ServiceAccount gets no access when impersonating.
+		values.Pipelines.ImpersonateUser = ptr.To(true)
+		_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
+		require.NoError(t, err)
+	}
+}
+
 func TestSecrets(t *testing.T) {
 	values := PartialValues{
 		PartialRenderValues: console.PartialRenderValues{

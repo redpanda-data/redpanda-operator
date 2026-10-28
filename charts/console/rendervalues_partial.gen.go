@@ -144,13 +144,14 @@ type PartialMonitoringConfig struct {
 }
 
 type PartialPipelinesConfig struct {
-	Enabled            *bool                                  "json:\"enabled,omitempty\""
-	Namespace          *string                                "json:\"namespace,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63\""
-	ClusterRef         *string                                "json:\"clusterRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
-	UserRef            *string                                "json:\"userRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
-	AllowBootstrapUser *bool                                  "json:\"allowBootstrapUser,omitempty\""
-	ImpersonateUser    *bool                                  "json:\"impersonateUser,omitempty\""
-	AdmissionPolicy    *PartialPipelinesAdmissionPolicyConfig "json:\"admissionPolicy,omitempty\""
+	Enabled              *bool                                  "json:\"enabled,omitempty\""
+	Namespace            *string                                "json:\"namespace,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63\""
+	ClusterRef           *string                                "json:\"clusterRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
+	UserRef              *string                                "json:\"userRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
+	AllowBootstrapUser   *bool                                  "json:\"allowBootstrapUser,omitempty\""
+	ImpersonateUser      *bool                                  "json:\"impersonateUser,omitempty\""
+	AllowUnauthenticated *bool                                  "json:\"allowUnauthenticated,omitempty\""
+	AdmissionPolicy      *PartialPipelinesAdmissionPolicyConfig "json:\"admissionPolicy,omitempty\""
 }
 
 type PartialSecretMount struct {

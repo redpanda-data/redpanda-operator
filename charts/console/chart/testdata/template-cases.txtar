@@ -236,3 +236,12 @@ pipelines:
   clusterRef: redpanda
   allowBootstrapUser: true
   impersonateUser: true
+
+-- pipelines-unauthenticated-no-admission-policy --
+# pipelines without the admission policy, so Console skips its startup check,
+# for a Console whose authentication is handled in front of it.
+pipelines:
+  enabled: true
+  allowUnauthenticated: true
+  admissionPolicy:
+    enabled: false

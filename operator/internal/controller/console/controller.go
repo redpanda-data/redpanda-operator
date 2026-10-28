@@ -215,6 +215,9 @@ func (c *Controller) ownedTypes(ctx context.Context) ([]kube.Object, error) {
 		if scope != meta.RESTScopeNameNamespace {
 			continue
 		}
+		// ScopeOf already skips kinds the cluster doesn't serve. These checks
+		// also skip a served kind the operator can't list, whose informer
+		// would otherwise never sync.
 		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
 		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
 		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
@@ -527,18 +530,39 @@ func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
 		return !reflect.ValueOf(obj).IsNil()
 	})
 
-	// The syncer skips kinds the cluster doesn't serve. Refuse to grant
-	// Console access to Pipelines without the policy that restricts it.
 	for _, obj := range objs {
-		if _, ok := obj.(*admissionregistrationv1.ValidatingAdmissionPolicy); !ok {
-			continue
-		}
 		gvk, err := kube.GVKFor(r.ctl.Scheme(), obj)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := r.ctl.ScopeOf(gvk); err != nil {
-			return nil, errors.Wrap(err, "pipelines.admissionPolicy requires ValidatingAdmissionPolicy (Kubernetes 1.30 or later); disable it or upgrade Kubernetes")
+		scope, err := r.ctl.ScopeOf(gvk)
+		if meta.IsNoMatchError(err) {
+			// The syncer skips kinds the cluster doesn't serve. Refuse to
+			// grant Console access to Pipelines without the policy that
+			// restricts it.
+			if _, ok := obj.(*admissionregistrationv1.ValidatingAdmissionPolicy); ok {
+				return nil, errors.Wrap(err, "spec.pipelines.admissionPolicy requires ValidatingAdmissionPolicy (Kubernetes 1.30 or later); set spec.pipelines.impersonateUser: true or upgrade Kubernetes")
+			}
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+
+		// Cluster scoped objects are owned by labels alone and the syncer
+		// force-applies, so refuse to take over one this Console didn't
+		// create, e.g. another Console's.
+		if scope == meta.RESTScopeNameRoot {
+			existing := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(kube.Object)
+			if err := r.ctl.Get(ctx, kube.AsKey(obj), existing); apierrors.IsNotFound(err) {
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			for key, value := range r.labels {
+				if existing.GetLabels()[key] != value {
+					return nil, errors.Newf("%s %q already exists and isn't owned by this Console; refusing to adopt it", gvk.Kind, obj.GetName())
+				}
+			}
 		}
 	}
 

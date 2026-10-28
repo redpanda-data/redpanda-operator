@@ -70,15 +70,18 @@ type RenderValues struct {
 // PipelinesConfig configures Console to manage Redpanda Connect pipelines
 // through Pipeline resources.
 type PipelinesConfig struct {
-	Enabled            bool                           `json:"enabled"`
-	Namespace          string                         `json:"namespace" jsonschema:"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63"`
-	ClusterRef         string                         `json:"clusterRef" jsonschema:"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253"`
-	UserRef            string                         `json:"userRef" jsonschema:"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253"`
-	AllowBootstrapUser bool                           `json:"allowBootstrapUser"`
-	ImpersonateUser    bool                           `json:"impersonateUser"`
-	AdmissionPolicy    PipelinesAdmissionPolicyConfig `json:"admissionPolicy"`
+	Enabled              bool                           `json:"enabled"`
+	Namespace            string                         `json:"namespace" jsonschema:"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63"`
+	ClusterRef           string                         `json:"clusterRef" jsonschema:"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253"`
+	UserRef              string                         `json:"userRef" jsonschema:"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253"`
+	AllowBootstrapUser   bool                           `json:"allowBootstrapUser"`
+	ImpersonateUser      bool                           `json:"impersonateUser"`
+	AllowUnauthenticated bool                           `json:"allowUnauthenticated"`
+	AdmissionPolicy      PipelinesAdmissionPolicyConfig `json:"admissionPolicy"`
 }
 
+// PipelinesAdmissionPolicyConfig configures the ValidatingAdmissionPolicy
+// that limits the Pipelines Console's ServiceAccount can write.
 type PipelinesAdmissionPolicyConfig struct {
 	Enabled bool `json:"enabled"`
 }
