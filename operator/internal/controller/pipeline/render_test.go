@@ -222,6 +222,62 @@ func TestRender_ClusterRefSASLFallback(t *testing.T) {
 	assert.Equal(t, "rp-superuser", env["REDPANDA_SASL_PASSWORD"].ValueFrom.SecretKeyRef.Name)
 }
 
+// TestRender_UserRefReplacesClusterSASL verifies that with a userRef no env
+// var carries the cluster source's (bootstrap superuser) credentials.
+func TestRender_UserRefReplacesClusterSASL(t *testing.T) {
+	p := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "withref", Namespace: "default"},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = {}'\noutput:\n  redpanda_common:\n    topic: t\n",
+		},
+	}
+	r := &render{
+		pipeline: p,
+		labels:   Labels(p),
+		clusterConn: &clusterConnection{
+			Brokers: []string{"rp-0:9093"},
+			SASL: &clusterSASL{
+				Mechanism: "SCRAM-SHA-256",
+				Username:  "kubernetes-controller",
+				PasswordRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "rp-superuser"},
+					Key:                  "password",
+				},
+			},
+		},
+		userCredentials: &userCredentials{
+			Mechanism: "SCRAM-SHA-512",
+			Username:  "scoped",
+			PasswordRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "scoped-password"},
+				Key:                  "password",
+			},
+		},
+	}
+
+	dp := r.deployment()
+	env := map[string]corev1.EnvVar{}
+	for _, container := range append(dp.Spec.Template.Spec.InitContainers, dp.Spec.Template.Spec.Containers...) {
+		for _, e := range container.Env {
+			assert.NotEqual(t, "kubernetes-controller", e.Value, "container %s, env %s", container.Name, e.Name)
+			if e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil {
+				assert.NotEqual(t, "rp-superuser", e.ValueFrom.SecretKeyRef.Name, "container %s, env %s", container.Name, e.Name)
+			}
+			env[e.Name] = e
+		}
+	}
+	for _, prefix := range []string{"REDPANDA_SASL_", "RPK_SASL_"} {
+		user := "USERNAME"
+		if prefix == "RPK_SASL_" {
+			user = "USER"
+		}
+		assert.Equal(t, "scoped", env[prefix+user].Value)
+		assert.Equal(t, "SCRAM-SHA-512", env[prefix+"MECHANISM"].Value)
+		require.NotNil(t, env[prefix+"PASSWORD"].ValueFrom)
+		assert.Equal(t, "scoped-password", env[prefix+"PASSWORD"].ValueFrom.SecretKeyRef.Name)
+	}
+}
+
 // TestRender_ConfigChecksumAnnotation covers fix #2: the Deployment pod template
 // carries a config checksum that changes with the rendered config, so a
 // configYaml change rolls the Deployment.
