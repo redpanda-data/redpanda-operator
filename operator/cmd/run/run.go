@@ -562,17 +562,7 @@ func Run(
 
 		// Console Reconciler.
 		if opts.enableConsoleController {
-			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
-					// need to set the cache as well.
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			ctl, err := consolecontroller.NewCtl(mgr.GetConfig(), mgr.GetScheme(), mgr.GetCache())
 			if err != nil {
 				return err
 			}

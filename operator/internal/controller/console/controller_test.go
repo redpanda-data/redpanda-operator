@@ -26,6 +26,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -628,10 +630,29 @@ func TestPipelineAPI(t *testing.T) {
 		require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(cr)}, &rbacv1.ClusterRoleBinding{}))
 	}
 
+	// Garbage collection reads through a manager's cache, as in production,
+	// which a List by namespace can't find cluster-scoped objects in.
+	informers, err := cache.New(ctl.RestConfig(), cache.Options{Scheme: controller.UnifiedScheme})
+	require.NoError(t, err)
+	go func() { _ = informers.Start(t.Context()) }()
+	require.True(t, informers.WaitForCacheSync(t.Context()))
+	cachedCtl, err := NewCtl(ctl.RestConfig(), controller.UnifiedScheme, informers)
+	require.NoError(t, err)
+	cachedCtrl := &Controller{Ctl: cachedCtl, EnablePipelines: true, PipelineAPIImage: testPipelineAPIImage, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	bindingGone := func(cr *redpandav1alpha2.Console) func(*assert.CollectT) {
+		return func(c *assert.CollectT) {
+			assert.NoError(c, reconcile(cachedCtrl, cr))
+			assert.True(c, apierrors.IsNotFound(ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(cr)}, &rbacv1.ClusterRoleBinding{})))
+		}
+	}
+
 	// Disabling pipelines removes the binding.
 	a.Spec.Pipelines.Enabled = ptr.To(false)
 	require.NoError(t, ctl.Apply(t.Context(), a))
-	require.NoError(t, reconcile(consoleCtrl, a))
-	require.True(t, apierrors.IsNotFound(ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(a)}, &rbacv1.ClusterRoleBinding{})))
+	require.EventuallyWithT(t, bindingGone(a), 30*time.Second, 200*time.Millisecond)
 	require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(b)}, &rbacv1.ClusterRoleBinding{}))
+
+	// So does deleting a Console.
+	require.NoError(t, ctl.Delete(t.Context(), b))
+	require.EventuallyWithT(t, bindingGone(b), 30*time.Second, 200*time.Millisecond)
 }

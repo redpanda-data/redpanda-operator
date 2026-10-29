@@ -27,9 +27,12 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -364,17 +367,28 @@ func (c *Controller) ctlFor(ctx context.Context, clusterName string) (*kube.Ctl,
 		return nil, fmt.Errorf("looking up cluster %q: %w", clusterName, err)
 	}
 
-	ctl, err := kube.FromRESTConfig(cluster.GetConfig(), kube.Options{
-		Options: client.Options{
-			Scheme: cluster.GetScheme(),
-			Cache:  &client.CacheOptions{Reader: cluster.GetCache()},
-		},
-		FieldManager: string(lifecycle.DefaultFieldOwner),
-	})
+	ctl, err := NewCtl(cluster.GetConfig(), cluster.GetScheme(), cluster.GetCache())
 	if err != nil {
 		return nil, fmt.Errorf("building kube.Ctl for cluster %q: %w", clusterName, err)
 	}
 	return ctl, nil
+}
+
+// NewCtl returns the kube.Ctl the Console controller works with, which reads
+// from reader, a manager's cache, except for cluster-scoped kinds. The cache
+// filters a List by the Console's namespace even for those, so the syncer
+// would never find them to garbage collect.
+func NewCtl(cfg *rest.Config, scheme *runtime.Scheme, reader client.Reader) (*kube.Ctl, error) {
+	return kube.FromRESTConfig(cfg, kube.Options{
+		Options: client.Options{
+			Scheme: scheme,
+			Cache: &client.CacheOptions{
+				Reader:     reader,
+				DisableFor: []client.Object{&rbacv1.ClusterRoleBinding{}},
+			},
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
 }
 
 func (c *Controller) syncerFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) (*kube.Syncer, error) {
