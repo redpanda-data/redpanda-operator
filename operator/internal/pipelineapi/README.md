@@ -19,9 +19,8 @@ Browser ──► Console (enterprise) ──gRPC──► pipeline-api ──�
 - It only changes Pipelines labeled `console.redpanda.com/managed-by: console`
   whose stored spec has nothing outside those fields. Pipelines from kubectl
   or GitOps are listed read-only.
-- `configYaml` is checked against the same denylist as the Console prototype
-  (`command`, `subprocess`, `file`, `socket_server`, Bloblang `env()`/`file()`,
-  `${REDPANDA_*}`/`${RPK_*}`).
+- `configYaml` is checked against a denylist (`command`, `subprocess`, `file`,
+  `socket_server`, Bloblang `env()`/`file()`, `${REDPANDA_*}`/`${RPK_*}`).
 - Callers authenticate with a bearer token, checked with TokenReview for the
   `redpanda-pipeline-api` audience, and must be in `--allowed-caller`.
   `X-Redpanda-Principal` (the Console user) is recorded for audit and
@@ -95,8 +94,8 @@ cloud:
     address: redpanda-pipeline-api.redpanda.svc.cluster.local:8080
 ```
 
-The Console CR and chart would render all of this, and set the address,
-instead of the Console-ServiceAccount Role and admission policy.
+The Console CR and chart should render all of this and set the address
+(not done yet).
 
 ## Open items
 

@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Added the `pipeline-api` subcommand (preview), which serves Redpanda Connect's `PipelineService` from Pipeline resources so that Redpanda Console can list and manage them.
+time: 2026-10-29T13:00:00.000000000-07:00
