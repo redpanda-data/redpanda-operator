@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -490,6 +491,15 @@ func (r *ClusterReconciler) setPodNodeIDAnnotation(
 	var combinedErrors error
 	for i := range pods.Items {
 		pod := &pods.Items[i]
+		// A Broker-owned pod has one writer of this key, the Broker
+		// controller: it records the identity once and never changes it, so
+		// a pod that re-registered under a new node_id stays pinned to the
+		// recorded one (its data-dir guard depends on that). Overwriting it
+		// with whatever the admin API reports now would paper over exactly
+		// that event.
+		if owner := metav1.GetControllerOf(pod); owner != nil && owner.Kind == redpandav1alpha2.BrokerKind {
+			continue
+		}
 		if pod.Annotations == nil {
 			pod.Annotations = make(map[string]string)
 		}

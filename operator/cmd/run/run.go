@@ -506,7 +506,7 @@ func Run(
 		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
 	}
 
-	sidecarImage := lifecycle.Image{
+	operatorImage := lifecycle.Image{
 		Repository: opts.configuratorBaseImage,
 		Tag:        opts.configuratorTag,
 	}
@@ -520,11 +520,12 @@ func Run(
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			Manager:                        mcmanager,
-			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets), opts.enableBrokerController).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, operatorImage, cloudSecrets), opts.enableBrokerController).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
 			BrokerCREnabled:                opts.enableBrokerController,
+			OperatorImage:                  operatorImage.String(),
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
 			WaitForSchemaRegistrySync:      opts.waitForSchemaRegistrySync,
 			MaintenanceModeClearThreshold:  opts.clearMaintenanceModeAfter,

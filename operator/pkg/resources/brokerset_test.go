@@ -79,6 +79,16 @@ func brokerSetTestCluster() *vectorizedv1alpha1.Cluster {
 	}
 }
 
+// newTestBrokerSetResource builds the resource through NewBrokerSet, so the
+// tests see the same wiring production does (including the StatefulSet that
+// supplies the detect-disk-lost image). Tests that need a double for the StatefulSet
+// replace stsResource after construction.
+func newTestBrokerSetResource(c k8sclient.Client, scheme *runtime.Scheme, cluster *vectorizedv1alpha1.Cluster, nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted) *BrokerSetResource {
+	return NewBrokerSet(c, cluster, scheme, "", "", types.NamespacedName{}, nil, nil, "",
+		ConfiguratorSettings{ConfiguratorBaseImage: "redpandadata/redpanda-operator", ConfiguratorTag: "latest"},
+		nil, nil, nil, nil, 0, ctrl.Log, 0, nodePool, false, 0, nil, nil)
+}
+
 type testGrant struct {
 	checksum string
 	deadline time.Time
@@ -221,14 +231,9 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 		},
 	}
 
-	return &BrokerSetResource{
-		Client:       c,
-		scheme:       scheme,
-		pandaCluster: cluster,
-		stsResource:  sts,
-		nodePool:     vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default"}},
-		logger:       ctrl.Log.WithName("test"),
-	}, c
+	r := newTestBrokerSetResource(c, scheme, cluster, vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default"}})
+	r.stsResource = sts
+	return r, c
 }
 
 func runtimeObjects(objs []k8sclient.Object) []k8sclient.Object {
@@ -650,7 +655,7 @@ func TestRenderedPodsCarryRestartMarker(t *testing.T) {
 			nodePool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
 				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(2))},
 			}
-			r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+			r := newTestBrokerSetResource(nil, scheme, cluster, nodePool)
 
 			rendered, err := r.core(ctrl.Log).RenderBrokers(sts, 2, false)
 			require.NoError(t, err)
@@ -814,14 +819,9 @@ func buildMigrationBrokerSet(t *testing.T, healthy bool, cluster *vectorizedv1al
 			return adminAPI, nil
 		},
 	}
-	return &BrokerSetResource{
-		Client:       c,
-		scheme:       scheme,
-		pandaCluster: cluster,
-		stsResource:  sts,
-		nodePool:     sts.nodePool,
-		logger:       ctrl.Log.WithName("test"),
-	}
+	r := newTestBrokerSetResource(c, scheme, cluster, sts.nodePool)
+	r.stsResource = sts
+	return r
 }
 
 func requireMigrationBlocked(t *testing.T, err error, reason string) {
@@ -973,14 +973,8 @@ func TestEnsureDeletedPoolWaitsForTerminatingStatefulSet(t *testing.T) {
 		WithObjects(cluster, terminating, broker).
 		Build()
 
-	r := &BrokerSetResource{
-		Client:       c,
-		scheme:       scheme,
-		pandaCluster: cluster,
-		stsResource:  &StatefulSetResource{Client: c, pandaCluster: cluster, nodePool: pool, logger: ctrl.Log.WithName("test")},
-		nodePool:     pool,
-		logger:       ctrl.Log.WithName("test"),
-	}
+	r := newTestBrokerSetResource(c, scheme, cluster, pool)
+	r.stsResource = &StatefulSetResource{Client: c, pandaCluster: cluster, nodePool: pool, logger: ctrl.Log.WithName("test")}
 
 	err := r.Ensure(context.Background())
 	var requeue *RequeueAfterError
@@ -1190,7 +1184,7 @@ func TestBrokersFromStatefulSetPodNameConsistency(t *testing.T) {
 				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: tc.pool, Replicas: ptr.To(int32(2))},
 			}
 
-			r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+			r := newTestBrokerSetResource(nil, scheme, cluster, nodePool)
 			brokers, err := r.core(ctrl.Log).RenderBrokers(sts, ptr.Deref(nodePool.Replicas, 0), false)
 			require.NoError(t, err)
 			require.Len(t, brokers, 2)
@@ -1248,7 +1242,7 @@ func TestBrokersFromStatefulSetNormalizesDefaults(t *testing.T) {
 		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(1))},
 	}
 
-	r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+	r := newTestBrokerSetResource(nil, scheme, cluster, nodePool)
 	brokers, err := r.core(ctrl.Log).RenderBrokers(sts, ptr.Deref(nodePool.Replicas, 0), false)
 	require.NoError(t, err)
 	require.Len(t, brokers, 1)
@@ -1761,22 +1755,17 @@ func buildArbitrationHarness(t *testing.T, poolNames []string) (map[string]*arbi
 			}
 		}
 
-		r := &BrokerSetResource{
+		r := newTestBrokerSetResource(nil, scheme, cluster, vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: pool, Replicas: ptr.To(int32(3))},
+		})
+		r.stsResource = &StatefulSetResource{
 			pandaCluster: cluster,
-			scheme:       scheme,
-			nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
-				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: pool, Replicas: ptr.To(int32(3))},
+			logger:       ctrl.Log.WithName("test"),
+			adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+				adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
+				adminAPI.SetClusterHealth(true)
+				return adminAPI, nil
 			},
-			stsResource: &StatefulSetResource{
-				pandaCluster: cluster,
-				logger:       ctrl.Log.WithName("test"),
-				adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
-					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
-					adminAPI.SetClusterHealth(true)
-					return adminAPI, nil
-				},
-			},
-			logger: ctrl.Log.WithName("test"),
 		}
 
 		rendered, err := r.core(ctrl.Log).RenderBrokers(mkSTS(3), 3, false)
@@ -2002,14 +1991,8 @@ func TestEnsureLoadsNodePortService(t *testing.T) {
 				noTLSVolumes{}, nil, "",
 				ConfiguratorSettings{ConfiguratorBaseImage: "redpandadata/redpanda-operator", ConfiguratorTag: "latest"},
 				cfg, adminAPIFactory, nil, nil, time.Second, ctrl.Log.WithName("test"), time.Hour, nodePool, true, 0)
-			r := &BrokerSetResource{
-				Client:       c,
-				scheme:       scheme,
-				pandaCluster: cluster,
-				stsResource:  sts,
-				nodePool:     nodePool,
-				logger:       ctrl.Log.WithName("test"),
-			}
+			r := newTestBrokerSetResource(c, scheme, cluster, nodePool)
+			r.stsResource = sts
 
 			ensureErr := r.Ensure(ctx)
 
@@ -2031,3 +2014,11 @@ func containerByName(t *testing.T, containers []corev1.Container, name string) c
 type noTLSVolumes struct{}
 
 func (noTLSVolumes) Volumes() ([]corev1.Volume, []corev1.VolumeMount) { return nil, nil }
+
+// TestBrokerIDAnnotationIsTheV1NodeIDKey: the Broker API redeclares the key
+// because it cannot import pkg/labels. Were the two to drift, V1 and the
+// Broker controller would stamp two different node_id records on one pod.
+func TestBrokerIDAnnotationIsTheV1NodeIDKey(t *testing.T) {
+	require.Equal(t, PodAnnotationNodeIDKey, redpandav1alpha2.BrokerIDAnnotation)
+	require.Equal(t, labels.PodNodeIDKey, redpandav1alpha2.BrokerIDAnnotation)
+}

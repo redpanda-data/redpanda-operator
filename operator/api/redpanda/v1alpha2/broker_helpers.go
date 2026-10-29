@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -121,6 +122,12 @@ func (b *Broker) BuildPod(podName string) *corev1.Pod {
 			Labels:      tpl.Labels,
 		},
 	}
+	if b.Status.BrokerID != nil {
+		if pod.Annotations == nil {
+			pod.Annotations = map[string]string{}
+		}
+		pod.Annotations[BrokerIDAnnotation] = b.BrokerIDAsString()
+	}
 	return pod
 }
 
@@ -145,4 +152,11 @@ func (b *Broker) PodNameBase() string {
 		return ""
 	}
 	return strings.TrimSuffix(b.PodName(), fmt.Sprintf("-%d", *b.Spec.NetworkIndex))
+}
+
+func (b *Broker) BrokerIDAsString() string {
+	if b.Status.BrokerID == nil {
+		return ""
+	}
+	return strconv.FormatInt(int64(*b.Status.BrokerID), 10)
 }
