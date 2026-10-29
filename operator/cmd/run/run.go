@@ -36,6 +36,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -578,7 +579,17 @@ func Run(
 
 			setupLog.Info("starting Console controller")
 
-			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig(), UseNodePools: opts.enableV2NodepoolController}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+			if err := (&consolecontroller.Controller{
+				Ctl:             ctl,
+				Config:          mgr.GetConfig(),
+				UseNodePools:    opts.enableV2NodepoolController,
+				EnablePipelines: opts.enableConnectController,
+				PipelineAPIImage: console.PipelineAPIImage{
+					Repository: opts.configuratorBaseImage,
+					Tag:        opts.configuratorTag,
+					PullPolicy: corev1.PullPolicy(opts.configuratorImagePullPolicy),
+				},
+			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}

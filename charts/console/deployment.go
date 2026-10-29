@@ -77,6 +77,10 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 		})
 	}
 
+	if state.Values.Pipelines.Enabled {
+		volumeMounts = append(volumeMounts, pipelineAPITokenVolumeMount())
+	}
+
 	volumeMounts = append(volumeMounts, state.Values.ExtraVolumeMounts...)
 
 	return &appsv1.Deployment{
@@ -436,6 +440,10 @@ func consolePodVolumes(state *RenderState) []corev1.Volume {
 				},
 			},
 		})
+	}
+
+	if state.Values.Pipelines.Enabled {
+		volumes = append(volumes, pipelineAPITokenVolume())
 	}
 
 	return append(volumes, state.Values.ExtraVolumes...)

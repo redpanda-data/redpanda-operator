@@ -10,7 +10,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $data := (dict "config.yaml" (printf "# from .Values.config\n%s\n" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list (toYaml $state.Values.config)))))) "r"))) -}}
+{{- $data := (dict "config.yaml" (printf "# from .Values.config\n%s\n" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list (toYaml (get (fromJson (include "console.consoleConfig" (dict "a" (list $state)))) "r"))))))) "r"))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ConfigMap")) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "name" (get (fromJson (include "console.RenderState.FullName" (dict "a" (list $state)))) "r") "namespace" $state.Namespace)) "data" $data))) | toJson -}}
 {{- break -}}

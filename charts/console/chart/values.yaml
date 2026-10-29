@@ -301,3 +301,19 @@ monitoring:
   enabled: false
   scrapeInterval: "1m"
   labels: {}
+
+# -- Runs the Redpanda Operator's pipeline API, which serves Console's Redpanda Connect pipelines from the Pipeline resources in the release namespace.
+# Console (enterprise) proxies its pipeline calls to it with a token of its own ServiceAccount, so Console itself gets no access to the Kubernetes API.
+# Requires the Redpanda Operator with `connectController.enabled: true` to run the Pipelines, and a dedicated ServiceAccount for Console.
+pipelines:
+  enabled: false
+  # -- Name of the Redpanda resource that pipelines created in Console connect to. Requires `userRef`.
+  clusterRef: ""
+  # -- Name of the User resource that every pipeline created in Console authenticates as. Keep its ACLs narrow.
+  userRef: ""
+  image:
+    repository: docker.redpanda.com/redpandadata/redpanda-operator
+    # -- Redpanda Operator version that serves the pipeline API. Required.
+    tag: ""
+    pullPolicy: IfNotPresent
+  resources: {}

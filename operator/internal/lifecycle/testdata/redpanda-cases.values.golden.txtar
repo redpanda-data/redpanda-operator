@@ -103,6 +103,15 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      clusterRef: ""
+      enabled: false
+      image:
+        pullPolicy: IfNotPresent
+        repository: docker.redpanda.com/redpandadata/redpanda-operator
+        tag: ""
+      resources: {}
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -716,6 +725,15 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      clusterRef: ""
+      enabled: false
+      image:
+        pullPolicy: IfNotPresent
+        repository: docker.redpanda.com/redpandadata/redpanda-operator
+        tag: ""
+      resources: {}
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always
@@ -1709,6 +1727,15 @@ values:
       enabled: false
       scrapeInterval: 1m
     nameOverride: ""
+    pipelines:
+      clusterRef: ""
+      enabled: false
+      image:
+        pullPolicy: IfNotPresent
+        repository: docker.redpanda.com/redpandadata/redpanda-operator
+        tag: ""
+      resources: {}
+      userRef: ""
     podSecurityContext:
       fsGroup: 99
       fsGroupChangePolicy: Always

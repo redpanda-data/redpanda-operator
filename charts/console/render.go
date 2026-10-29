@@ -189,6 +189,12 @@ func Render(state *RenderState) []kube.Object {
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
 		ServiceMonitor(state),
+		PipelineAPIServiceAccount(state),
+		PipelineAPIRole(state),
+		PipelineAPIRoleBinding(state),
+		PipelineAPIClusterRoleBinding(state),
+		PipelineAPIDeployment(state),
+		PipelineAPIService(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -197,8 +203,9 @@ func Render(state *RenderState) []kube.Object {
 	return manifests
 }
 
+// Types returns every kind that [Render] may return.
 func Types() []kube.Object {
-	return []kube.Object{
+	types := []kube.Object{
 		&corev1.ServiceAccount{},
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
@@ -209,6 +216,7 @@ func Types() []kube.Object {
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},
 	}
+	return append(types, PipelinesTypes()...)
 }
 
 func cleanForK8s(s string) string {

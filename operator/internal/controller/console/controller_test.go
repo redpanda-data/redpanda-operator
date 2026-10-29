@@ -29,7 +29,9 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -46,6 +48,12 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
+
+var testPipelineAPIImage = console.PipelineAPIImage{
+	Repository: "redpandadata/redpanda-operator",
+	Tag:        "v0.0.0-test",
+	PullPolicy: corev1.PullIfNotPresent,
+}
 
 func TestController(t *testing.T) {
 	golden := testutil.NewTxTar(t, "testdata/controller-tests.golden.txtar")
@@ -190,6 +198,23 @@ func TestController(t *testing.T) {
 			},
 		},
 		{
+			name: "pipelines",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-pipelines",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Pipelines: &redpandav1alpha2.PipelinesConfig{
+							Enabled:    ptr.To(true),
+							ClusterRef: ptr.To("test-redpanda"),
+							UserRef:    ptr.To("console-pipelines"),
+						},
+					},
+				},
+			},
+		},
+		{
 			// test-redpanda-pools is in the end state of a NodePool
 			// migration: its own StatefulSet is drained and every broker
 			// lives in a NodePool.
@@ -297,9 +322,11 @@ func TestController(t *testing.T) {
 			_, _ = seed.Write([]byte(tc.name))
 
 			consoleCtrl := Controller{
-				Ctl:          ctl,
-				UseNodePools: true,
-				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+				Ctl:              ctl,
+				UseNodePools:     true,
+				EnablePipelines:  true,
+				PipelineAPIImage: testPipelineAPIImage,
+				rng:              rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
 			}
 
 			// Create console CR with namespace set
@@ -495,4 +522,98 @@ func cleanObjectForGolden(scheme *runtime.Scheme, obj client.Object) {
 			}
 		}
 	}
+}
+
+// TestPipelineAPI covers what the goldens can't: the CRD's validation, the
+// connectController gate, and ownership of the cluster-scoped
+// ClusterRoleBinding, which carries no owner reference.
+func TestPipelineAPI(t *testing.T) {
+	ctl := kubetest.NewEnv(t, kube.Options{
+		Options: client.Options{
+			Scheme: controller.UnifiedScheme,
+		},
+	})
+
+	testutils.InstallCRDs(t, ctl, crds.All()...)
+
+	newConsole := func(namespace string) *redpandav1alpha2.Console {
+		ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: namespace},
+		})
+		require.NoError(t, err)
+		return &redpandav1alpha2.Console{
+			ObjectMeta: metav1.ObjectMeta{Name: "rpcn", Namespace: ns.Name},
+			Spec: redpandav1alpha2.ConsoleSpec{
+				ConsoleValues: redpandav1alpha2.ConsoleValues{
+					Pipelines: &redpandav1alpha2.PipelinesConfig{
+						Enabled:    ptr.To(true),
+						ClusterRef: ptr.To("redpanda"),
+					},
+				},
+			},
+		}
+	}
+
+	consoleCtrl := &Controller{Ctl: ctl, EnablePipelines: true, PipelineAPIImage: testPipelineAPIImage, rng: rand.New(rand.NewSource(0))} //nolint:gosec // test-only determinism, not cryptographic
+	reconcile := func(c *Controller, cr *redpandav1alpha2.Console) error {
+		_, err := c.Reconcile(t.Context(), mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(cr)}, ClusterName: mcmanager.LocalCluster})
+		return err
+	}
+	bindingName := func(cr *redpandav1alpha2.Console) string {
+		state, err := console.NewRenderState(cr.Namespace, cr.Name, nil, console.PartialRenderValues{
+			Pipelines: &console.PartialPipelinesConfig{Enabled: ptr.To(true)},
+		})
+		require.NoError(t, err)
+		return console.PipelineAPIClusterRoleBinding(state).Name
+	}
+
+	a := newConsole("a")
+	// Cluster-bound pipelines must not silently run as the bootstrap user.
+	require.ErrorContains(t, ctl.Apply(t.Context(), a), "clusterRef requires userRef")
+	a.Spec.Pipelines.UserRef = ptr.To("console-pipelines")
+	// The pipeline API trusts tokens of Console's ServiceAccount.
+	a.Spec.ServiceAccount = &redpandav1alpha2.ServiceAccountConfig{Name: ptr.To("default")}
+	require.ErrorContains(t, ctl.Apply(t.Context(), a), "pipelines.enabled requires a dedicated ServiceAccount")
+	a.Spec.ServiceAccount = nil
+	require.NoError(t, ctl.Apply(t.Context(), a))
+
+	// Without connectController, the operator lacks the RBAC to create the
+	// pipeline API's Role.
+	require.ErrorContains(t, reconcile(&Controller{Ctl: ctl, PipelineAPIImage: testPipelineAPIImage, rng: rand.New(rand.NewSource(0))}, a), "requires the operator to run with connectController.enabled") //nolint:gosec // test-only determinism, not cryptographic
+
+	// A chart validation failure, here a dev build without a version, is a
+	// reconcile error rather than a panic.
+	require.ErrorContains(t, reconcile(&Controller{Ctl: ctl, EnablePipelines: true, rng: rand.New(rand.NewSource(0))}, a), "pipelines.image.tag is required") //nolint:gosec // test-only determinism, not cryptographic
+
+	// Refuse to adopt a ClusterRoleBinding this Console didn't create.
+	squatter := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: bindingName(a)},
+		RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "system:auth-delegator"},
+	}
+	require.NoError(t, ctl.Create(t.Context(), squatter))
+	require.ErrorContains(t, reconcile(consoleCtrl, a), "isn't owned by this Console; refusing to adopt it")
+	require.NoError(t, ctl.Delete(t.Context(), squatter))
+
+	require.NoError(t, reconcile(consoleCtrl, a))
+	var deployment appsv1.Deployment
+	require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Namespace: a.Namespace, Name: "rpcn-console-pipeline-api"}, &deployment))
+	require.Equal(t, "redpandadata/redpanda-operator:v0.0.0-test", deployment.Spec.Template.Spec.Containers[0].Image)
+
+	// A same-named Console in another namespace gets its own binding and
+	// doesn't garbage collect a's.
+	b := newConsole("b")
+	b.Spec.Pipelines.UserRef = ptr.To("console-pipelines")
+	require.NoError(t, ctl.Apply(t.Context(), b))
+	require.NoError(t, reconcile(consoleCtrl, b))
+	require.NotEqual(t, bindingName(a), bindingName(b))
+	for _, cr := range []*redpandav1alpha2.Console{a, b} {
+		require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(cr)}, &rbacv1.ClusterRoleBinding{}))
+	}
+
+	// Disabling pipelines removes the binding.
+	a.Spec.Pipelines.Enabled = ptr.To(false)
+	require.NoError(t, ctl.Apply(t.Context(), a))
+	require.NoError(t, reconcile(consoleCtrl, a))
+	require.True(t, apierrors.IsNotFound(ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(a)}, &rbacv1.ClusterRoleBinding{})))
+	require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: bindingName(b)}, &rbacv1.ClusterRoleBinding{}))
 }

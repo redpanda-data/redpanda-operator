@@ -169,6 +169,7 @@ func init() {
 			consolePartialRenderValues.Deployment = autoconv_DeploymentConfig_console_PartialDeploymentConfig((*source).Deployment)
 			consolePartialRenderValues.Strategy = pV1DeploymentStrategyToPV1DeploymentStrategy((*source).Strategy)
 			consolePartialRenderValues.Monitoring = pV1alpha2MonitoringConfigToPConsolePartialMonitoringConfig((*source).Monitoring)
+			consolePartialRenderValues.Pipelines = autoconv_PipelinesConfig_To_console_PartialPipelinesConfig((*source).Pipelines)
 			pConsolePartialRenderValues = &consolePartialRenderValues
 		}
 		return pConsolePartialRenderValues, nil
@@ -235,6 +236,27 @@ func init() {
 			pConsolePartialDeploymentConfig = &consolePartialDeploymentConfig
 		}
 		return pConsolePartialDeploymentConfig
+	}
+	autoconv_PipelinesConfig_To_console_PartialPipelinesConfig = func(source *PipelinesConfig) *v3.PartialPipelinesConfig {
+		var pConsolePartialPipelinesConfig *v3.PartialPipelinesConfig
+		if source != nil {
+			var consolePartialPipelinesConfig v3.PartialPipelinesConfig
+			if (*source).Enabled != nil {
+				xbool := *(*source).Enabled
+				consolePartialPipelinesConfig.Enabled = &xbool
+			}
+			if (*source).ClusterRef != nil {
+				xstring := *(*source).ClusterRef
+				consolePartialPipelinesConfig.ClusterRef = &xstring
+			}
+			if (*source).UserRef != nil {
+				xstring2 := *(*source).UserRef
+				consolePartialPipelinesConfig.UserRef = &xstring2
+			}
+			consolePartialPipelinesConfig.Resources = pV1ResourceRequirementsToPV1ResourceRequirements((*source).Resources)
+			pConsolePartialPipelinesConfig = &consolePartialPipelinesConfig
+		}
+		return pConsolePartialPipelinesConfig
 	}
 	autoconv_RedpandaConsole_To_ConsoleValues = func(source *RedpandaConsole) (*ConsoleValues, error) {
 		var pV1alpha2ConsoleValues *ConsoleValues

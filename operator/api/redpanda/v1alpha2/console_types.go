@@ -61,6 +61,9 @@ func (c *ConsoleList) GetItems() []*Console {
 
 // ConsoleSpec defines the desired state of a Redpanda Console deployment.
 // The operator renders these fields with the same logic as the Redpanda Console Helm chart, so fields left unset take the chart's default values.
+// Writing Console resources is a privileged operation: they set the Console image, containers, volumes, and ServiceAccount,
+// and with `pipelines.enabled` they make the operator create a ClusterRoleBinding to `system:auth-delegator`.
+// +kubebuilder:validation:XValidation:message="pipelines.enabled requires a dedicated ServiceAccount for Console: the pipeline API accepts tokens of Console's ServiceAccount, and the namespace's default ServiceAccount is shared with every Pod that doesn't name one. Unset serviceAccount.name",rule="!has(self.pipelines) || !has(self.pipelines.enabled) || !self.pipelines.enabled || !has(self.serviceAccount) || !has(self.serviceAccount.name) || self.serviceAccount.name != 'default'"
 type ConsoleSpec struct {
 	ConsoleValues `json:",inline"`
 	// Specifies the Redpanda cluster that Console connects to.
@@ -211,6 +214,37 @@ type ConsoleValues struct {
 
 	// Configures a Prometheus ServiceMonitor that scrapes Console's metrics.
 	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
+
+	// Configures Console to manage Redpanda Connect pipelines that run as Pipeline resources in the Console resource's namespace.
+	// When enabled, the operator deploys its pipeline API, a Deployment whose name ends in `-pipeline-api`, and sets `config.cloud.redpandaConnect` so that Console proxies its pipeline calls there with a token of its own ServiceAccount. Console itself gets no access to the Kubernetes API.
+	// Requires Console enterprise with pipeline API support.
+	// Anyone who can create pipelines in Console can run code in the namespace through Connect configs, within the limits the pipeline API enforces. Enforce the Pod Security Admission `restricted` level on the namespace and set a ResourceQuota there.
+	// Run one Console per namespace: every Console labels its Pipelines `console.redpanda.com/managed-by: console`, so Consoles that share a namespace can edit and delete each other's pipelines.
+	Pipelines *PipelinesConfig `json:"pipelines,omitempty"`
+}
+
+// PipelinesConfig configures Console to manage Redpanda Connect pipelines.
+// +kubebuilder:validation:XValidation:message="clusterRef requires userRef: set userRef to a User with ACLs scoped to Console's pipelines",rule="!has(self.enabled) || !self.enabled || !has(self.clusterRef) || has(self.userRef)"
+type PipelinesConfig struct {
+	// Specifies whether Console manages pipelines.
+	// The operator must run with the Helm value `connectController.enabled: true`, which runs the Pipelines and grants the operator the permissions the pipeline API needs.
+	// Defaults to `false`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`.
+	// The Redpanda resource must be in the Console resource's namespace.
+	// If unset, Console creates pipelines without a cluster reference.
+	// Requires `userRef`.
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$`
+	ClusterRef *string `json:"clusterRef,omitempty"`
+	// Specifies the name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`.
+	// The User must be in the Console resource's namespace and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use, plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs.
+	// Every pipeline created in Console runs as this User, so its ACLs bound what anyone who can create pipelines in Console can read and write. Keep them narrow.
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$`
+	UserRef *string `json:"userRef,omitempty"`
+	// Sets the pipeline API container's resource requests and limits.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // AutoScaling configures a HorizontalPodAutoscaler for the Console Deployment.

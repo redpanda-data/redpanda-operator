@@ -28,82 +28,44 @@ Browser ──► Console (enterprise) ──gRPC──► pipeline-api ──�
 
 ## Deploying
 
+The Console resource and the Console Helm chart deploy it with `pipelines`:
+
 ```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata: {name: redpanda-pipeline-api, namespace: redpanda}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata: {name: redpanda-pipeline-api, namespace: redpanda}
-rules:
-- apiGroups: [cluster.redpanda.com]
-  resources: [pipelines]
-  verbs: [get, list, create, update, delete]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata: {name: redpanda-pipeline-api, namespace: redpanda}
-roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: redpanda-pipeline-api}
-subjects: [{kind: ServiceAccount, name: redpanda-pipeline-api, namespace: redpanda}]
----
-# TokenReview, to authenticate Console.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata: {name: redpanda-pipeline-api-auth-delegator}
-roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: system:auth-delegator}
-subjects: [{kind: ServiceAccount, name: redpanda-pipeline-api, namespace: redpanda}]
----
-apiVersion: apps/v1
-kind: Deployment
-metadata: {name: redpanda-pipeline-api, namespace: redpanda}
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Console
 spec:
-  selector: {matchLabels: {app: redpanda-pipeline-api}}
-  template:
-    metadata: {labels: {app: redpanda-pipeline-api}}
-    spec:
-      serviceAccountName: redpanda-pipeline-api
-      containers:
-      - name: pipeline-api
-        image: docker.redpanda.com/redpandadata/redpanda-operator:<operator version>
-        # The image's default entrypoint runs the controller manager.
-        command: [/redpanda-operator]
-        args:
-        - pipeline-api
-        - --namespace=redpanda
-        - --cluster-ref=redpanda
-        - --user-ref=console-pipelines
-        - --allowed-caller=system:serviceaccount:redpanda:redpanda-console
-        ports: [{name: http, containerPort: 8080}]
-        readinessProbe: {httpGet: {path: /healthz, port: http}}
----
-apiVersion: v1
-kind: Service
-metadata: {name: redpanda-pipeline-api, namespace: redpanda}
-spec:
-  selector: {app: redpanda-pipeline-api}
-  ports: [{name: http, port: 8080, targetPort: http}]
+  cluster: {clusterRef: {name: redpanda}}
+  pipelines:
+    enabled: true
+    clusterRef: redpanda        # pinned on every Console pipeline
+    userRef: console-pipelines  # User every Console pipeline runs as; required with clusterRef
 ```
 
-Console config:
+That renders, in Console's namespace, a ServiceAccount, Role (Pipelines get,
+list, create, update, delete), RoleBinding, Deployment and Service named
+`<fullname>-pipeline-api`, plus a ClusterRoleBinding to
+`system:auth-delegator` for TokenReview. The Console Pods get a projected
+ServiceAccount token for the `redpanda-pipeline-api` audience, and Console's
+config gets:
 
 ```yaml
 cloud:
   redpandaConnect:
     enabled: true
-    address: redpanda-pipeline-api.redpanda.svc.cluster.local:8080
+    address: <fullname>-pipeline-api.<namespace>.svc:8080
+    tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
 ```
 
-The Console CR and chart should render all of this and set the address
-(not done yet).
+The operator runs it from its own image and needs `connectController.enabled`
+for the RBAC to create the Role. Helm installs of the Console chart set
+`pipelines.image.tag` to an operator version.
 
 ## Open items
 
-- **Console enterprise**: its proxy (`pkg/api/connect/pipeline/v1`) forwards
-  the incoming request headers as is. It needs to send its own projected
-  ServiceAccount token (audience `redpanda-pipeline-api`) as `Authorization`,
-  send the logged-in user as `X-Redpanda-Principal`, and stop forwarding
-  cookies. TLS: wire `CreateSecurePipelineAPIClient` and `--tls-cert-file`.
+- **Console enterprise**: `cloud.redpandaConnect.tokenFile` (sends Console's
+  token, the user as `X-Redpanda-Principal`, and no cookies) is in
+  console-enterprise#844. Until a release ships it, Console's calls get 401.
+  TLS: wire `CreateSecurePipelineAPIClient` and `--tls-cert-file`.
 - **ListComponents, LintPipelineConfig, GetPipelineServiceConfigSchema**
   return Unimplemented. Console bundles the Connect schema, so it should serve
   these locally rather than proxying them.

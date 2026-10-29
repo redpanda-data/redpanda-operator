@@ -64,6 +64,23 @@ type RenderValues struct {
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
 	Monitoring          MonitoringConfig          `json:"monitoring"`
+	Pipelines           PipelinesConfig           `json:"pipelines"`
+}
+
+// PipelinesConfig runs the operator's pipeline API, which Console proxies its
+// pipeline calls to.
+type PipelinesConfig struct {
+	Enabled    bool                        `json:"enabled"`
+	ClusterRef string                      `json:"clusterRef"`
+	UserRef    string                      `json:"userRef"`
+	Image      PipelineAPIImage            `json:"image"`
+	Resources  corev1.ResourceRequirements `json:"resources"`
+}
+
+type PipelineAPIImage struct {
+	Repository string            `json:"repository"`
+	Tag        string            `json:"tag"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 }
 
 type DeploymentConfig struct {

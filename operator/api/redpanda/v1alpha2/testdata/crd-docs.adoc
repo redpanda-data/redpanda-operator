@@ -1168,6 +1168,8 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 
 ConsoleSpec defines the desired state of a Redpanda Console deployment.
 The operator renders these fields with the same logic as the Redpanda Console Helm chart, so fields left unset take the chart's default values.
+Writing Console resources is a privileged operation: they set the Console image, containers, volumes, and ServiceAccount,
+and with `pipelines.enabled` they make the operator create a ClusterRoleBinding to `system:auth-delegator`.
 
 
 
@@ -1248,6 +1250,11 @@ For details, see https://kubernetes.io/docs/concepts/workloads/controllers/deplo
 Each warning describes a field from the original configuration that was dropped, and why. +
 Setting this field has no effect. + |  | 
 | *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig[$$MonitoringConfig$$]__ | Configures a Prometheus ServiceMonitor that scrapes Console's metrics. + |  | 
+| *`pipelines`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig[$$PipelinesConfig$$]__ | Configures Console to manage Redpanda Connect pipelines that run as Pipeline resources in the Console resource's namespace. +
+When enabled, the operator deploys its pipeline API, a Deployment whose name ends in `-pipeline-api`, and sets `config.cloud.redpandaConnect` so that Console proxies its pipeline calls there with a token of its own ServiceAccount. Console itself gets no access to the Kubernetes API. +
+Requires Console enterprise with pipeline API support. +
+Anyone who can create pipelines in Console can run code in the namespace through Connect configs, within the limits the pipeline API enforces. Enforce the Pod Security Admission `restricted` level on the namespace and set a ResourceQuota there. +
+Run one Console per namespace: every Console labels its Pipelines `console.redpanda.com/managed-by: console`, so Consoles that share a namespace can edit and delete each other's pipelines. + |  | 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | Specifies the Redpanda cluster that Console connects to. +
 The operator generates the Kafka API, Admin API, and Schema Registry connection settings from this cluster and merges them into `config`. +
 If unset, you must configure the connection in `config` yourself. + |  | 
@@ -3210,6 +3217,41 @@ mechanism the pipeline will use to authenticate to Redpanda.
 | Field | Description | Default | Validation
 | *`name`* __string__ | Name of the User CR (in the same namespace as the Pipeline). + |  | Required: \{} +
 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig"]
+==== PipelinesConfig
+
+
+
+PipelinesConfig configures Console to manage Redpanda Connect pipelines.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether Console manages pipelines. +
+The operator must run with the Helm value `connectController.enabled: true`, which runs the Pipelines and grants the operator the permissions the pipeline API needs. +
+Defaults to `false`. + |  | 
+| *`clusterRef`* __string__ | Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. +
+The Redpanda resource must be in the Console resource's namespace. +
+If unset, Console creates pipelines without a cluster reference. +
+Requires `userRef`. + |  | MaxLength: 253 +
+Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
+
+| *`userRef`* __string__ | Specifies the name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`. +
+The User must be in the Console resource's namespace and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use, plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs. +
+Every pipeline created in Console runs as this User, so its ACLs bound what anyone who can create pipelines in Console can read and write. Keep them narrow. + |  | MaxLength: 253 +
+Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
+
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Sets the pipeline API container's resource requests and limits. + |  | 
 |===
 
 

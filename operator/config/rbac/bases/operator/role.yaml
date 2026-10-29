@@ -157,6 +157,7 @@ rules:
   - brokers
   - consoles
   - nodepools
+  - pipelines
   - redpandabrokerpools
   - redpandas
   verbs:
@@ -208,7 +209,6 @@ rules:
   - cluster.redpanda.com
   resources:
   - groups
-  - pipelines
   - redpandaroles
   - schemas
   - shadowlinks

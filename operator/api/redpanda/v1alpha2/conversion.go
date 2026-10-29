@@ -57,6 +57,7 @@ var (
 	// goverter:ignore Config
 	// goverter:ignore Warnings
 	// goverter:ignore ExtraContainerPorts
+	// goverter:ignore Pipelines
 	autoconv_RedpandaConsole_To_ConsoleValues func(*RedpandaConsole) (*ConsoleValues, error)
 
 	// goverter:ignore Create
@@ -66,6 +67,10 @@ var (
 	// goverter:ignore Create
 	// Ability to disable creation of service account is not exposed through the Console CRD.
 	autoconv_ServiceAccountConfig_To_console_PartialServiceAccountConfig func(*ServiceAccountConfig) *console.PartialServiceAccountConfig
+
+	// goverter:ignore Image
+	// The operator runs the pipeline API from its own image.
+	autoconv_PipelinesConfig_To_console_PartialPipelinesConfig func(*PipelinesConfig) *console.PartialPipelinesConfig
 
 	// goverter:map Namespace | getNamespace
 	// goverter:context namespace

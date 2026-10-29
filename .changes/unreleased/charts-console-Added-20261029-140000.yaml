@@ -1,0 +1,4 @@
+project: charts/console
+kind: Added
+body: Added `pipelines`, which deploys the Redpanda Operator's pipeline API in the release namespace and points Console's `cloud.redpandaConnect` at it with a projected ServiceAccount token, so that Console (enterprise) can manage Pipeline resources without Kubernetes API access of its own. Requires `pipelines.image.tag` and a dedicated Console ServiceAccount.
+time: 2026-10-29T14:00:00.000000000-07:00
