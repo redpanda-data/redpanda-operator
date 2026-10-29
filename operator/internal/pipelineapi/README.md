@@ -106,7 +106,7 @@ instead of the Console-ServiceAccount Role and admission policy.
 - **ListComponents, LintPipelineConfig, GetPipelineServiceConfigSchema**
   return Unimplemented. Console bundles the Connect schema, so it should serve
   these locally rather than proxying them.
-- **Proto pin**: the operator's `console/backend` pin predates `created_by`,
+- **Proto pin**: the BSR dataplane module the operator links predates `created_by`,
   `create_time`, `update_time`, the `states` list filter and `draft`. Bump it
   to populate them; the fields are wire-compatible either way.
 - **Per-user Kubernetes RBAC** (the old `impersonateUser`): add a

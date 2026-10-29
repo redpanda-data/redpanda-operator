@@ -15,9 +15,9 @@ import (
 	"net/http"
 	"time"
 
+	"buf.build/gen/go/redpandadata/dataplane/connectrpc/go/redpanda/api/dataplane/v1/dataplanev1connect"
 	"connectrpc.com/connect"
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/console/backend/pkg/protogen/redpanda/api/dataplane/v1/dataplanev1connect"
 )
 
 // Handler serves svc, and an unauthenticated /healthz for probes.
