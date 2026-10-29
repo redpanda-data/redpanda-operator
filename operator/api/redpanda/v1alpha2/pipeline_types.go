@@ -166,19 +166,20 @@ type PipelineSpec struct {
 	// the pipeline.
 	//
 	// When `cluster` is set, the operator merges the connection fields
-	// `seed_brokers`, `tls`, and `sasl` into any `input.redpanda` and
-	// `output.redpanda` blocks in this YAML, derived from the resolved
-	// cluster connection and `userRef`. Write only the per-plugin fields,
-	// such as `topic`, `key`, and `consumer_group`; the operator fills in
-	// the brokers, TLS, and SASL.
+	// `seed_brokers`, `tls`, and `sasl`, derived from the resolved cluster
+	// connection and `userRef`, into any `input.redpanda` and
+	// `output.redpanda` blocks in this YAML and into the top-level
+	// `redpanda` block, which it adds if this YAML has none. Write only
+	// the per-plugin fields, such as `topic`, `key`, and `consumer_group`;
+	// the operator fills in the brokers, TLS, and SASL.
 	//
 	// Keys set here win on conflict. For example, a `seed_brokers` that
 	// points at a different cluster skips the operator's generated value
 	// for that key.
 	//
-	// The merge targets the `redpanda` input and output plugins
-	// specifically. Any `redpanda_common` blocks stay as written: the
-	// operator injects no connection fields into them.
+	// The operator adds nothing inside a `redpanda_common` block, which
+	// needs no connection fields of its own: `redpanda_common` and the
+	// other shared-client plugins read the top-level `redpanda` block.
 	//
 	// With `cluster.clusterRef`, the operator also sets `pipeline_id`, to
 	// the Pipeline's name and overriding any value set here, and
@@ -476,10 +477,11 @@ type PipelineSpec struct {
 	//
 	// Set this when the cluster the pipeline talks to has SASL enabled.
 	// On unauthenticated clusters, and in `clusterRef`-only modes that
-	// only need broker discovery, leave it empty. The cluster's Kafka
-	// listener must authenticate with `sasl`: on an `mtls_identity`
-	// listener the mounted client certificate decides the principal
-	// instead, so the operator scales the pipeline to zero and reports
+	// only need broker discovery, leave it empty. The referenced
+	// cluster's internal Kafka listener must use `sasl` as its
+	// `listeners.kafka.authenticationMethod`: with `mtls_identity` the
+	// mounted client certificate decides the principal instead, so the
+	// operator scales the pipeline to zero and reports
 	// `UserRefRequiresSASL`.
 	//
 	// Validation rejects:
