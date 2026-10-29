@@ -310,9 +310,33 @@
       },
       "type": "object"
     },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPINetworkPolicyConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPITLS": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "secretName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelinesConfig": {
       "additionalProperties": false,
       "properties": {
+        "allowUnauthenticated": {
+          "type": "boolean"
+        },
         "clusterRef": {
           "type": "string"
         },
@@ -322,8 +346,14 @@
         "image": {
           "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPIImage"
         },
+        "networkPolicy": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPINetworkPolicyConfig"
+        },
         "resources": {
           "$ref": "#/$defs/k8s.io.api.core.v1.ResourceRequirements"
+        },
+        "tls": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPITLS"
         },
         "userRef": {
           "type": "string"

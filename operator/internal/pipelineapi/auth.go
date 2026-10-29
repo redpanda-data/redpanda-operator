@@ -136,7 +136,9 @@ func (a *authenticator) authenticate(ctx context.Context, req connect.AnyRequest
 
 	token, ok := strings.CutPrefix(req.Header().Get("Authorization"), "Bearer ")
 	if !ok || token == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("a bearer token is required"))
+		// Consoles without cloud.redpandaConnect.tokenFile forward the
+		// user's request headers instead of sending Console's token.
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("a bearer token is required: Console must send its ServiceAccount token with cloud.redpandaConnect.tokenFile"))
 	}
 	username, err := a.review(ctx, token)
 	if errors.Is(err, errUnauthenticated) {

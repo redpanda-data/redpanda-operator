@@ -41,12 +41,19 @@ spec:
     userRef: console-pipelines  # User every Console pipeline runs as; required with clusterRef
 ```
 
-That renders, in Console's namespace, a ServiceAccount, Role (Pipelines get,
-list, create, update, delete), RoleBinding, Deployment and Service named
-`<fullname>-pipeline-api`, plus a ClusterRoleBinding to
-`system:auth-delegator` for TokenReview. The Console Pods get a projected
-ServiceAccount token for the `redpanda-pipeline-api` audience, and Console's
-config gets:
+That renders, in Console's namespace:
+
+- a ServiceAccount, Role (Pipelines get, list, create, update, delete),
+  RoleBinding, Deployment and Service named `<fullname>-pipeline-api`;
+- a ClusterRoleBinding to `system:auth-delegator`, for TokenReview;
+- a NetworkPolicy that admits only Console's Pods (`networkPolicy.enabled`);
+- with `tls.enabled` (the default) and no `tls.secretName`, cert-manager
+  Issuers and Certificates for a self-signed CA (five years) and the API's
+  serving certificate. The API reloads renewed certificates; Console reads
+  the CA at startup.
+
+The Console Pods get a projected ServiceAccount token for the
+`redpanda-pipeline-api` audience and the CA, and Console's config gets:
 
 ```yaml
 cloud:
@@ -54,7 +61,17 @@ cloud:
     enabled: true
     address: <fullname>-pipeline-api.<namespace>.svc:8080
     tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
+    tls:
+      enabled: true
+      caFilepath: /etc/console/pipeline-api-ca/ca.crt
 ```
+
+Console rejects unknown config keys at startup, so versions that predate
+`tokenFile` and `tls` (console-enterprise#844) don't start with this config.
+For those, set `allowUnauthenticated: true` and `tls.enabled: false`: the
+chart then renders only `enabled` and `address`, runs the API with
+`--allow-unauthenticated`, and leaves the NetworkPolicy as the only guard,
+which needs a CNI that enforces NetworkPolicies.
 
 The operator runs it from its own image and needs `connectController.enabled`
 for the RBAC to create the Role. Helm installs of the Console chart set
@@ -62,13 +79,13 @@ for the RBAC to create the Role. Helm installs of the Console chart set
 
 ## Open items
 
-- **Console enterprise**: `cloud.redpandaConnect.tokenFile` (sends Console's
-  token, the user as `X-Redpanda-Principal`, and no cookies) is in
-  console-enterprise#844. Until a release ships it, Console's calls get 401.
-  TLS: wire `CreateSecurePipelineAPIClient` and `--tls-cert-file`.
-- **ListComponents, LintPipelineConfig, GetPipelineServiceConfigSchema**
-  return Unimplemented. Console bundles the Connect schema, so it should serve
-  these locally rather than proxying them.
+- **Console enterprise**: `cloud.redpandaConnect.tokenFile` and `.tls` are in
+  console-enterprise#844, which also serves `ListComponents` and
+  `GetPipelineServiceConfigSchema` from Console's bundled Connect schema when
+  this API returns Unimplemented. The editor's components then match
+  Console's bundled Connect version, not the pipelines' image.
+- **LintPipelineConfig** returns Unimplemented, and the editor shows no
+  server-side lint hints.
 - **Proto pin**: the BSR dataplane module the operator links predates `created_by`,
   `create_time`, `update_time`, the `states` list filter and `draft`. Bump it
   to populate them; the fields are wire-compatible either way.

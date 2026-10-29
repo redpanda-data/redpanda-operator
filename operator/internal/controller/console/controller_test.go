@@ -32,6 +32,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -209,6 +210,8 @@ func TestController(t *testing.T) {
 							Enabled:    ptr.To(true),
 							ClusterRef: ptr.To("test-redpanda"),
 							UserRef:    ptr.To("console-pipelines"),
+							// envtest has no cert-manager.
+							TLS: &redpandav1alpha2.PipelineAPITLS{SecretName: ptr.To("console-pipelines-tls")},
 						},
 					},
 				},
@@ -412,6 +415,10 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, c *redpandav1alpha2.Co
 			list,
 			client.MatchingLabels(ownershipLabels),
 		)
+		// envtest doesn't serve cert-manager's kinds.
+		if meta.IsNoMatchError(err) {
+			continue
+		}
 		require.NoError(t, err)
 
 		objs, err := kube.Items[kube.Object](list)
@@ -585,6 +592,16 @@ func TestPipelineAPI(t *testing.T) {
 	// reconcile error rather than a panic.
 	require.ErrorContains(t, reconcile(&Controller{Ctl: ctl, EnablePipelines: true, rng: rand.New(rand.NewSource(0))}, a), "pipelines.image.tag is required") //nolint:gosec // test-only determinism, not cryptographic
 
+	// Without cert-manager, the chart-managed certificate would never be
+	// issued.
+	require.ErrorContains(t, reconcile(consoleCtrl, a), "spec.pipelines.tls requires cert-manager")
+	// Consoles that can't send a token can't use TLS either.
+	a.Spec.Pipelines.AllowUnauthenticated = ptr.To(true)
+	require.ErrorContains(t, ctl.Apply(t.Context(), a), "allowUnauthenticated is for Consoles that can't send a token")
+	a.Spec.Pipelines.AllowUnauthenticated = nil
+	a.Spec.Pipelines.TLS = &redpandav1alpha2.PipelineAPITLS{SecretName: ptr.To("rpcn-pipeline-api-tls")}
+	require.NoError(t, ctl.Apply(t.Context(), a))
+
 	// Refuse to adopt a ClusterRoleBinding this Console didn't create.
 	squatter := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: bindingName(a)},
@@ -603,6 +620,7 @@ func TestPipelineAPI(t *testing.T) {
 	// doesn't garbage collect a's.
 	b := newConsole("b")
 	b.Spec.Pipelines.UserRef = ptr.To("console-pipelines")
+	b.Spec.Pipelines.TLS = &redpandav1alpha2.PipelineAPITLS{Enabled: ptr.To(false)}
 	require.NoError(t, ctl.Apply(t.Context(), b))
 	require.NoError(t, reconcile(consoleCtrl, b))
 	require.NotEqual(t, bindingName(a), bindingName(b))

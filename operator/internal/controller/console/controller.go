@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cockroachdb/errors"
 	"github.com/imdario/mergo"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -572,7 +573,11 @@ func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
 		}
 		scope, err := r.ctl.ScopeOf(gvk)
 		if meta.IsNoMatchError(err) {
-			// The syncer skips kinds the cluster doesn't serve.
+			// The syncer skips kinds the cluster doesn't serve, which would
+			// leave the pipeline API waiting for its certificate.
+			if _, ok := obj.(*certmanagerv1.Certificate); ok {
+				return nil, errors.Wrap(err, "spec.pipelines.tls requires cert-manager: install it, set spec.pipelines.tls.secretName, or set spec.pipelines.tls.enabled: false")
+			}
 			continue
 		} else if err != nil {
 			return nil, err

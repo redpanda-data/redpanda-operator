@@ -317,3 +317,13 @@ pipelines:
     tag: ""
     pullPolicy: IfNotPresent
   resources: {}
+  tls:
+    # -- Serves the pipeline API over TLS. Requires a Console that supports `cloud.redpandaConnect.tls`.
+    enabled: true
+    # -- Secret with `tls.crt`, `tls.key`, and the `ca.crt` that Console trusts, valid for `<fullname>-pipeline-api.<namespace>.svc`. If unset, the chart issues one with cert-manager from a self-signed CA.
+    secretName: ""
+  # -- Accepts calls without Console's ServiceAccount token, for Consoles that predate `cloud.redpandaConnect.tokenFile`. Then only the NetworkPolicy keeps other Pods from managing pipelines, so it needs a CNI that enforces NetworkPolicies. Requires `tls.enabled: false`, as those Consoles can't use TLS either.
+  allowUnauthenticated: false
+  networkPolicy:
+    # -- Admits only Console's Pods to the pipeline API.
+    enabled: true

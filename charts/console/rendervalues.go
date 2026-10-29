@@ -75,6 +75,20 @@ type PipelinesConfig struct {
 	UserRef    string                      `json:"userRef"`
 	Image      PipelineAPIImage            `json:"image"`
 	Resources  corev1.ResourceRequirements `json:"resources"`
+	TLS        PipelineAPITLS              `json:"tls"`
+	// AllowUnauthenticated serves Consoles that predate
+	// cloud.redpandaConnect.tokenFile, guarded only by NetworkPolicy.
+	AllowUnauthenticated bool                           `json:"allowUnauthenticated"`
+	NetworkPolicy        PipelineAPINetworkPolicyConfig `json:"networkPolicy"`
+}
+
+type PipelineAPITLS struct {
+	Enabled    bool   `json:"enabled"`
+	SecretName string `json:"secretName"`
+}
+
+type PipelineAPINetworkPolicyConfig struct {
+	Enabled bool `json:"enabled"`
 }
 
 type PipelineAPIImage struct {

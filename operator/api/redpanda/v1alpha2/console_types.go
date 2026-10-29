@@ -63,7 +63,7 @@ func (c *ConsoleList) GetItems() []*Console {
 // The operator renders these fields with the same logic as the Redpanda Console Helm chart, so fields left unset take the chart's default values.
 // Writing Console resources is a privileged operation: they set the Console image, containers, volumes, and ServiceAccount,
 // and with `pipelines.enabled` they make the operator create a ClusterRoleBinding to `system:auth-delegator`.
-// +kubebuilder:validation:XValidation:message="pipelines.enabled requires a dedicated ServiceAccount for Console: the pipeline API accepts tokens of Console's ServiceAccount, and the namespace's default ServiceAccount is shared with every Pod that doesn't name one. Unset serviceAccount.name",rule="!has(self.pipelines) || !has(self.pipelines.enabled) || !self.pipelines.enabled || !has(self.serviceAccount) || !has(self.serviceAccount.name) || self.serviceAccount.name != 'default'"
+// +kubebuilder:validation:XValidation:message="pipelines.enabled requires a dedicated ServiceAccount for Console: the pipeline API accepts tokens of Console's ServiceAccount, and the namespace's default ServiceAccount is shared with every Pod that doesn't name one. Unset serviceAccount.name",rule="!has(self.pipelines) || !has(self.pipelines.enabled) || !self.pipelines.enabled || (has(self.pipelines.allowUnauthenticated) && self.pipelines.allowUnauthenticated) || !has(self.serviceAccount) || !has(self.serviceAccount.name) || self.serviceAccount.name != 'default'"
 type ConsoleSpec struct {
 	ConsoleValues `json:",inline"`
 	// Specifies the Redpanda cluster that Console connects to.
@@ -225,6 +225,7 @@ type ConsoleValues struct {
 
 // PipelinesConfig configures Console to manage Redpanda Connect pipelines.
 // +kubebuilder:validation:XValidation:message="clusterRef requires userRef: set userRef to a User with ACLs scoped to Console's pipelines",rule="!has(self.enabled) || !self.enabled || !has(self.clusterRef) || has(self.userRef)"
+// +kubebuilder:validation:XValidation:message="allowUnauthenticated is for Consoles that can't send a token, which can't use TLS either: set tls.enabled to false with it",rule="!has(self.allowUnauthenticated) || !self.allowUnauthenticated || (has(self.tls) && has(self.tls.enabled) && !self.tls.enabled)"
 type PipelinesConfig struct {
 	// Specifies whether Console manages pipelines.
 	// The operator must run with the Helm value `connectController.enabled: true`, which runs the Pipelines and grants the operator the permissions the pipeline API needs.
@@ -245,6 +246,32 @@ type PipelinesConfig struct {
 	UserRef *string `json:"userRef,omitempty"`
 	// Sets the pipeline API container's resource requests and limits.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Configures TLS between Console and the pipeline API.
+	TLS *PipelineAPITLS `json:"tls,omitempty"`
+	// Specifies whether the pipeline API accepts calls without Console's ServiceAccount token, for Console versions that predate `cloud.redpandaConnect.tokenFile`.
+	// Then only the NetworkPolicy keeps other Pods in the cluster from managing pipelines, so the cluster's CNI must enforce NetworkPolicies.
+	// Requires `tls.enabled: false`, because those Console versions can't use TLS either.
+	// Defaults to `false`.
+	AllowUnauthenticated *bool `json:"allowUnauthenticated,omitempty"`
+	// Configures the NetworkPolicy that admits only Console's Pods to the pipeline API.
+	NetworkPolicy *PipelineAPINetworkPolicyConfig `json:"networkPolicy,omitempty"`
+}
+
+// PipelineAPITLS configures TLS between Console and the pipeline API.
+type PipelineAPITLS struct {
+	// Specifies whether the pipeline API serves TLS. Requires a Console version that supports `cloud.redpandaConnect.tls`.
+	// Defaults to `true`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies a Secret with `tls.crt`, `tls.key`, and the `ca.crt` that Console trusts, valid for `<console>-pipeline-api.<namespace>.svc`.
+	// If unset, the operator issues one with cert-manager from a self-signed CA, which requires cert-manager.
+	SecretName *string `json:"secretName,omitempty"`
+}
+
+// PipelineAPINetworkPolicyConfig configures the pipeline API's NetworkPolicy.
+type PipelineAPINetworkPolicyConfig struct {
+	// Specifies whether the operator creates a NetworkPolicy that admits only Console's Pods to the pipeline API.
+	// Defaults to `true`.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // AutoScaling configures a HorizontalPodAutoscaler for the Console Deployment.

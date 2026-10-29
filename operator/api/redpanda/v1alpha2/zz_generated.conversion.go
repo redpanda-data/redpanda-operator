@@ -254,6 +254,12 @@ func init() {
 				consolePartialPipelinesConfig.UserRef = &xstring2
 			}
 			consolePartialPipelinesConfig.Resources = pV1ResourceRequirementsToPV1ResourceRequirements((*source).Resources)
+			consolePartialPipelinesConfig.TLS = pV1alpha2PipelineAPITLSToPConsolePartialPipelineAPITLS((*source).TLS)
+			if (*source).AllowUnauthenticated != nil {
+				xbool2 := *(*source).AllowUnauthenticated
+				consolePartialPipelinesConfig.AllowUnauthenticated = &xbool2
+			}
+			consolePartialPipelinesConfig.NetworkPolicy = pV1alpha2PipelineAPINetworkPolicyConfigToPConsolePartialPipelineAPINetworkPolicyConfig((*source).NetworkPolicy)
 			pConsolePartialPipelinesConfig = &consolePartialPipelinesConfig
 		}
 		return pConsolePartialPipelinesConfig
@@ -1366,6 +1372,34 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 		pConsolePartialOIDCLoginSecrets = &consolePartialOIDCLoginSecrets
 	}
 	return pConsolePartialOIDCLoginSecrets
+}
+func pV1alpha2PipelineAPINetworkPolicyConfigToPConsolePartialPipelineAPINetworkPolicyConfig(source *PipelineAPINetworkPolicyConfig) *v3.PartialPipelineAPINetworkPolicyConfig {
+	var pConsolePartialPipelineAPINetworkPolicyConfig *v3.PartialPipelineAPINetworkPolicyConfig
+	if source != nil {
+		var consolePartialPipelineAPINetworkPolicyConfig v3.PartialPipelineAPINetworkPolicyConfig
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			consolePartialPipelineAPINetworkPolicyConfig.Enabled = &xbool
+		}
+		pConsolePartialPipelineAPINetworkPolicyConfig = &consolePartialPipelineAPINetworkPolicyConfig
+	}
+	return pConsolePartialPipelineAPINetworkPolicyConfig
+}
+func pV1alpha2PipelineAPITLSToPConsolePartialPipelineAPITLS(source *PipelineAPITLS) *v3.PartialPipelineAPITLS {
+	var pConsolePartialPipelineAPITLS *v3.PartialPipelineAPITLS
+	if source != nil {
+		var consolePartialPipelineAPITLS v3.PartialPipelineAPITLS
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			consolePartialPipelineAPITLS.Enabled = &xbool
+		}
+		if (*source).SecretName != nil {
+			xstring := *(*source).SecretName
+			consolePartialPipelineAPITLS.SecretName = &xstring
+		}
+		pConsolePartialPipelineAPITLS = &consolePartialPipelineAPITLS
+	}
+	return pConsolePartialPipelineAPITLS
 }
 func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(source *RedpandaAdminAPISecrets) *v3.PartialRedpandaAdminAPISecrets {
 	var pConsolePartialRedpandaAdminAPISecrets *v3.PartialRedpandaAdminAPISecrets

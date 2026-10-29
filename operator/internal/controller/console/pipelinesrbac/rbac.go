@@ -13,6 +13,8 @@
 package pipelinesrbac
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cert-manager.io,resources=issuers;certificates,verbs=get;list;watch;create;update;patch;delete
 // RBAC escalation checks require holding every permission the pipeline API's
 // Role grants. Binding system:auth-delegator needs the TokenReview and
 // SubjectAccessReview creates that the leader-election bundle already grants.

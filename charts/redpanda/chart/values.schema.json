@@ -373,9 +373,33 @@
       },
       "type": "object"
     },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelineAPINetworkPolicyConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelineAPITLS": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "secretName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelinesConfig": {
       "additionalProperties": false,
       "properties": {
+        "allowUnauthenticated": {
+          "type": "boolean"
+        },
         "clusterRef": {
           "type": "string"
         },
@@ -385,8 +409,14 @@
         "image": {
           "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelineAPIImage"
         },
+        "networkPolicy": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelineAPINetworkPolicyConfig"
+        },
         "resources": {
           "$ref": "#/$defs/k8s.io.api.core.v1.ResourceRequirements"
+        },
+        "tls": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelineAPITLS"
         },
         "userRef": {
           "type": "string"

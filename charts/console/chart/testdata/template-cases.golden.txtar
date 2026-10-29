@@ -23039,7 +23039,440 @@ spec:
       - name: secrets
         secret:
           secretName: console
--- testdata/pipelines.yaml.golden --
+-- testdata/pipelines-tls-secret.yaml.golden --
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-sa
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+stringData:
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
+  kafka-sasl-aws-msk-iam-secret-key: ""
+  kafka-sasl-password: ""
+  kafka-tls-ca: ""
+  kafka-tls-cert: ""
+  kafka-tls-key: ""
+  license: ""
+  redpanda-admin-api-password: ""
+  redpanda-admin-api-tls-ca: ""
+  redpanda-admin-api-tls-cert: ""
+  redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
+type: Opaque
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    # from .Values.config
+    cloud:
+      redpandaConnect:
+        address: console-pipeline-api.test-namespace.svc:8080
+        enabled: true
+        tls:
+          caFilepath: /etc/console/pipeline-api-ca/ca.crt
+          enabled: true
+        tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-8193b897-pipeline-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+rules:
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: console-pipeline-api
+subjects:
+- kind: ServiceAccount
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console
+  type: ClusterIP
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  ports:
+  - name: grpc
+    port: 8080
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: pipeline-api
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-pipeline-api
+  type: ClusterIP
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: 06f2bdc36c40593d7d1232cf549f130057e9cda80ffe2e19e52d3d7c515bbc6b
+      labels:
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console
+    spec:
+      affinity: {}
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --config.filepath=/etc/console/configs/config.yaml
+        command: null
+        env:
+        - name: AUTHENTICATION_JWTSIGNINGKEY
+          valueFrom:
+            secretKeyRef:
+              key: authentication-jwt-signingkey
+              name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.9.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.9.0
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
+        envFrom: []
+        image: docker.redpanda.com/redpandadata/console:v3.9.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: console
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/console/configs
+          name: configs
+          readOnly: true
+        - mountPath: /etc/console/secrets
+          name: secrets
+          readOnly: true
+        - mountPath: /var/run/secrets/redpanda.com/pipeline-api
+          name: pipeline-api-token
+          readOnly: true
+        - mountPath: /etc/console/pipeline-api-ca
+          name: pipeline-api-ca
+          readOnly: true
+      imagePullSecrets: []
+      initContainers: null
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 99
+        fsGroupChangePolicy: Always
+        runAsUser: 99
+      serviceAccountName: console-sa
+      tolerations: []
+      topologySpreadConstraints: []
+      volumes:
+      - configMap:
+          name: console
+        name: configs
+      - name: secrets
+        secret:
+          secretName: console
+      - name: pipeline-api-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              audience: redpanda-pipeline-api
+              expirationSeconds: 3600
+              path: token
+      - name: pipeline-api-ca
+        secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: my-pipeline-api-tls
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: pipeline-api
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console-pipeline-api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: pipeline-api
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console-pipeline-api
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - pipeline-api
+        - --namespace=test-namespace
+        - --listen-address=:8080
+        - --allowed-caller=system:serviceaccount:test-namespace:console-sa
+        - --tls-cert-file=/etc/pipeline-api/tls/tls.crt
+        - --tls-key-file=/etc/pipeline-api/tls/tls.key
+        command:
+        - /redpanda-operator
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.3.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: grpc
+            scheme: HTTPS
+        name: pipeline-api
+        ports:
+        - containerPort: 8080
+          name: grpc
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: grpc
+            scheme: HTTPS
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/pipeline-api/tls
+          name: tls
+          readOnly: true
+      imagePullSecrets: []
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: console-pipeline-api
+      volumes:
+      - name: tls
+        secret:
+          items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          secretName: my-pipeline-api-tls
+-- testdata/pipelines-unauthenticated.yaml.golden --
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: console
+          app.kubernetes.io/name: console
+    ports:
+    - port: grpc
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: pipeline-api
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console-pipeline-api
+  policyTypes:
+  - Ingress
 ---
 # Source: console/templates/entry-point.yaml
 apiVersion: v1
@@ -23111,8 +23544,6 @@ data:
       redpandaConnect:
         address: console-pipeline-api.test-namespace.svc:8080
         enabled: true
-        impersonateUser: false
-        tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
 kind: ConfigMap
 metadata:
   labels:
@@ -23122,26 +23553,6 @@ metadata:
     app.kubernetes.io/version: v3.9.0
     helm.sh/chart: console-3.9.0
   name: console
-  namespace: test-namespace
----
-# Source: console/templates/entry-point.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/instance: console
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.9.0
-    helm.sh/chart: console-3.9.0
-  name: console-8193b897-pipeline-api
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-- kind: ServiceAccount
-  name: console-pipeline-api
   namespace: test-namespace
 ---
 # Source: console/templates/entry-point.yaml
@@ -23261,7 +23672,411 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: bc0fb756c53b2190faa1b6c07d82e78564d305d85f4a29123e2d79f08bc2ed87
+        checksum/config: 37e7c1be7118721fc6ce9920816d43d4a2f953bb570bdda8ff478cf2a38005e4
+      labels:
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console
+    spec:
+      affinity: {}
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --config.filepath=/etc/console/configs/config.yaml
+        command: null
+        env:
+        - name: AUTHENTICATION_JWTSIGNINGKEY
+          valueFrom:
+            secretKeyRef:
+              key: authentication-jwt-signingkey
+              name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.9.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.9.0
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
+        envFrom: []
+        image: docker.redpanda.com/redpandadata/console:v3.9.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: console
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/console/configs
+          name: configs
+          readOnly: true
+        - mountPath: /etc/console/secrets
+          name: secrets
+          readOnly: true
+      imagePullSecrets: []
+      initContainers: null
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 99
+        fsGroupChangePolicy: Always
+        runAsUser: 99
+      serviceAccountName: console
+      tolerations: []
+      topologySpreadConstraints: []
+      volumes:
+      - configMap:
+          name: console
+        name: configs
+      - name: secrets
+        secret:
+          secretName: console
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: pipeline-api
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console-pipeline-api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: pipeline-api
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console-pipeline-api
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - pipeline-api
+        - --namespace=test-namespace
+        - --listen-address=:8080
+        - --allow-unauthenticated
+        - --cluster-ref=redpanda
+        - --user-ref=console-pipelines
+        command:
+        - /redpanda-operator
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.3.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: grpc
+            scheme: HTTP
+        name: pipeline-api
+        ports:
+        - containerPort: 8080
+          name: grpc
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: grpc
+            scheme: HTTP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts: null
+      imagePullSecrets: []
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: console-pipeline-api
+      volumes: null
+-- testdata/pipelines.yaml.golden --
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: console
+          app.kubernetes.io/name: console
+    ports:
+    - port: grpc
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: pipeline-api
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console-pipeline-api
+  policyTypes:
+  - Ingress
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+stringData:
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
+  kafka-sasl-aws-msk-iam-secret-key: ""
+  kafka-sasl-password: ""
+  kafka-tls-ca: ""
+  kafka-tls-cert: ""
+  kafka-tls-key: ""
+  license: ""
+  redpanda-admin-api-password: ""
+  redpanda-admin-api-tls-ca: ""
+  redpanda-admin-api-tls-cert: ""
+  redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
+type: Opaque
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    # from .Values.config
+    cloud:
+      redpandaConnect:
+        address: console-pipeline-api.test-namespace.svc:8080
+        enabled: true
+        impersonateUser: false
+        tls:
+          caFilepath: /etc/console/pipeline-api-ca/ca.crt
+          enabled: true
+        tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-8193b897-pipeline-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+rules:
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: console-pipeline-api
+subjects:
+- kind: ServiceAccount
+  name: console-pipeline-api
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console
+  type: ClusterIP
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  ports:
+  - name: grpc
+    port: 8080
+    protocol: TCP
+    targetPort: grpc
+  selector:
+    app.kubernetes.io/component: pipeline-api
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-pipeline-api
+  type: ClusterIP
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: 3e2303f8aeed79ef1a298e39dfaee0f50d132a9a1a2f79207f3143ff149bed74
       labels:
         app.kubernetes.io/instance: console
         app.kubernetes.io/name: console
@@ -23325,6 +24140,9 @@ spec:
         - mountPath: /var/run/secrets/redpanda.com/pipeline-api
           name: pipeline-api-token
           readOnly: true
+        - mountPath: /etc/console/pipeline-api-ca
+          name: pipeline-api-ca
+          readOnly: true
       imagePullSecrets: []
       initContainers: null
       nodeSelector: {}
@@ -23350,6 +24168,12 @@ spec:
               audience: redpanda-pipeline-api
               expirationSeconds: 3600
               path: token
+      - name: pipeline-api-ca
+        secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: console-pipeline-api-tls
 ---
 # Source: console/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -23385,6 +24209,8 @@ spec:
         - --namespace=test-namespace
         - --listen-address=:8080
         - --allowed-caller=system:serviceaccount:test-namespace:console
+        - --tls-cert-file=/etc/pipeline-api/tls/tls.crt
+        - --tls-key-file=/etc/pipeline-api/tls/tls.key
         - --cluster-ref=redpanda
         - --user-ref=console-pipelines
         command:
@@ -23395,6 +24221,7 @@ spec:
           httpGet:
             path: /healthz
             port: grpc
+            scheme: HTTPS
         name: pipeline-api
         ports:
         - containerPort: 8080
@@ -23404,6 +24231,7 @@ spec:
           httpGet:
             path: /healthz
             port: grpc
+            scheme: HTTPS
         resources:
           requests:
             cpu: 50m
@@ -23414,12 +24242,111 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/pipeline-api/tls
+          name: tls
+          readOnly: true
       imagePullSecrets: []
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: console-pipeline-api
+      volumes:
+      - name: tls
+        secret:
+          items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          secretName: console-pipeline-api-tls
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api-ca
+  namespace: test-namespace
+spec:
+  commonName: console-pipeline-api-ca
+  duration: 43800h0m0s
+  isCA: true
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: console-pipeline-api-selfsigned
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: console-pipeline-api-ca
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api
+  namespace: test-namespace
+spec:
+  commonName: console-pipeline-api
+  dnsNames:
+  - console-pipeline-api
+  - console-pipeline-api.test-namespace
+  - console-pipeline-api.test-namespace.svc
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: console-pipeline-api-ca
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: console-pipeline-api-tls
+  usages:
+  - server auth
+  - digital signature
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api-selfsigned
+  namespace: test-namespace
+spec:
+  selfSigned: {}
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console-pipeline-api-ca
+  namespace: test-namespace
+spec:
+  ca:
+    secretName: console-pipeline-api-ca
 -- testdata/service-account-automount-token-in-deployment-resource.yaml.golden --
 ---
 # Source: console/templates/entry-point.yaml

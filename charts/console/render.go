@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strings"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cockroachdb/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
@@ -49,6 +50,7 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
 	must(gatewayv1.Install(Scheme))
+	must(certmanagerv1.AddToScheme(Scheme))
 }
 
 // +gotohelm:ignore=true
@@ -193,6 +195,11 @@ func Render(state *RenderState) []kube.Object {
 		PipelineAPIRole(state),
 		PipelineAPIRoleBinding(state),
 		PipelineAPIClusterRoleBinding(state),
+		PipelineAPISelfSignedIssuer(state),
+		PipelineAPICACertificate(state),
+		PipelineAPICAIssuer(state),
+		PipelineAPICertificate(state),
+		PipelineAPINetworkPolicy(state),
 		PipelineAPIDeployment(state),
 		PipelineAPIService(state),
 	}

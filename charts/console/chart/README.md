@@ -248,8 +248,14 @@ Runs the Redpanda Operator's pipeline API, which serves Console's Redpanda Conne
 **Default:**
 
 ```
-{"clusterRef":"","enabled":false,"image":{"pullPolicy":"IfNotPresent","repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":""},"resources":{},"userRef":""}
+{"allowUnauthenticated":false,"clusterRef":"","enabled":false,"image":{"pullPolicy":"IfNotPresent","repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":""},"networkPolicy":{"enabled":true},"resources":{},"tls":{"enabled":true,"secretName":""},"userRef":""}
 ```
+
+### [pipelines.allowUnauthenticated](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.allowUnauthenticated)
+
+Accepts calls without Console's ServiceAccount token, for Consoles that predate `cloud.redpandaConnect.tokenFile`. Then only the NetworkPolicy keeps other Pods from managing pipelines, so it needs a CNI that enforces NetworkPolicies. Requires `tls.enabled: false`, as those Consoles can't use TLS either.
+
+**Default:** `false`
 
 ### [pipelines.clusterRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.clusterRef)
 
@@ -260,6 +266,24 @@ Name of the Redpanda resource that pipelines created in Console connect to. Requ
 ### [pipelines.image.tag](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.image.tag)
 
 Redpanda Operator version that serves the pipeline API. Required.
+
+**Default:** `""`
+
+### [pipelines.networkPolicy.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.networkPolicy.enabled)
+
+Admits only Console's Pods to the pipeline API.
+
+**Default:** `true`
+
+### [pipelines.tls.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.tls.enabled)
+
+Serves the pipeline API over TLS. Requires a Console that supports `cloud.redpandaConnect.tls`.
+
+**Default:** `true`
+
+### [pipelines.tls.secretName](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.tls.secretName)
+
+Secret with `tls.crt`, `tls.key`, and the `ca.crt` that Console trusts, valid for `<fullname>-pipeline-api.<namespace>.svc`. If unset, the chart issues one with cert-manager from a self-signed CA.
 
 **Default:** `""`
 

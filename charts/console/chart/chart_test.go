@@ -314,6 +314,25 @@ func TestPipelinesValidation(t *testing.T) {
 			},
 			err: "pipelines.enabled requires a dedicated ServiceAccount for Console",
 		},
+		"allowUnauthenticated with TLS": {
+			values: console.PartialRenderValues{Pipelines: func() *console.PartialPipelinesConfig {
+				p := valid()
+				p.AllowUnauthenticated = ptr.To(true)
+				return p
+			}()},
+			err: "pipelines.allowUnauthenticated is for Consoles that can't send a token",
+		},
+		"allowUnauthenticated with the default ServiceAccount": {
+			values: console.PartialRenderValues{
+				ServiceAccount: &console.PartialServiceAccountConfig{Name: ptr.To("default")},
+				Pipelines: func() *console.PartialPipelinesConfig {
+					p := valid()
+					p.AllowUnauthenticated = ptr.To(true)
+					p.TLS = &console.PartialPipelineAPITLS{Enabled: ptr.To(false)}
+					return p
+				}(),
+			},
+		},
 		"default ServiceAccount": {
 			values: console.PartialRenderValues{
 				ServiceAccount: &console.PartialServiceAccountConfig{Name: ptr.To("default")},

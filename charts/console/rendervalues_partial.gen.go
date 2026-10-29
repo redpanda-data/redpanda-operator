@@ -144,11 +144,14 @@ type PartialMonitoringConfig struct {
 }
 
 type PartialPipelinesConfig struct {
-	Enabled    *bool                        "json:\"enabled,omitempty\""
-	ClusterRef *string                      "json:\"clusterRef,omitempty\""
-	UserRef    *string                      "json:\"userRef,omitempty\""
-	Image      *PartialPipelineAPIImage     "json:\"image,omitempty\""
-	Resources  *corev1.ResourceRequirements "json:\"resources,omitempty\""
+	Enabled              *bool                                  "json:\"enabled,omitempty\""
+	ClusterRef           *string                                "json:\"clusterRef,omitempty\""
+	UserRef              *string                                "json:\"userRef,omitempty\""
+	Image                *PartialPipelineAPIImage               "json:\"image,omitempty\""
+	Resources            *corev1.ResourceRequirements           "json:\"resources,omitempty\""
+	TLS                  *PartialPipelineAPITLS                 "json:\"tls,omitempty\""
+	AllowUnauthenticated *bool                                  "json:\"allowUnauthenticated,omitempty\""
+	NetworkPolicy        *PartialPipelineAPINetworkPolicyConfig "json:\"networkPolicy,omitempty\""
 }
 
 type PartialSecretMount struct {
@@ -193,6 +196,15 @@ type PartialPipelineAPIImage struct {
 	Repository *string            "json:\"repository,omitempty\""
 	Tag        *string            "json:\"tag,omitempty\""
 	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\""
+}
+
+type PartialPipelineAPITLS struct {
+	Enabled    *bool   "json:\"enabled,omitempty\""
+	SecretName *string "json:\"secretName,omitempty\""
+}
+
+type PartialPipelineAPINetworkPolicyConfig struct {
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialIngressHost struct {

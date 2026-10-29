@@ -11,8 +11,11 @@ package pipelineapi
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 
 	"buf.build/gen/go/redpandadata/dataplane/connectrpc/go/redpanda/api/dataplane/v1/dataplanev1connect"
@@ -32,9 +35,9 @@ func Handler(svc *Service, interceptors ...connect.Interceptor) http.Handler {
 // ServeOptions configures Serve.
 type ServeOptions struct {
 	Address string
-	// CertFile and KeyFile enable TLS. Without them the server speaks
-	// HTTP/1.1 and unencrypted HTTP/2, which is what Console's default
-	// pipeline proxy client uses.
+	// CertFile and KeyFile enable TLS, re-read when they change so that
+	// cert-manager renewals apply without a restart. Without them the server
+	// speaks HTTP/1.1 and unencrypted HTTP/2.
 	CertFile, KeyFile string
 }
 
@@ -53,10 +56,22 @@ func Serve(ctx context.Context, h http.Handler, opts ServeOptions) error {
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 
+	if opts.CertFile != "" {
+		certs := &certReloader{certFile: opts.CertFile, keyFile: opts.KeyFile}
+		// Fail at startup, not on the first handshake.
+		if _, err := certs.getCertificate(nil); err != nil {
+			return err
+		}
+		srv.TLSConfig = &tls.Config{
+			MinVersion:     tls.VersionTLS12,
+			GetCertificate: certs.getCertificate,
+		}
+	}
+
 	errCh := make(chan error, 1)
 	go func() {
-		if opts.CertFile != "" {
-			errCh <- srv.ListenAndServeTLS(opts.CertFile, opts.KeyFile)
+		if srv.TLSConfig != nil {
+			errCh <- srv.ListenAndServeTLS("", "")
 			return
 		}
 		errCh <- srv.ListenAndServe()
@@ -76,4 +91,51 @@ func Serve(ctx context.Context, h http.Handler, opts ServeOptions) error {
 		return err
 	}
 	return nil
+}
+
+// certReloaderInterval bounds how often certReloader checks the files.
+const certReloaderInterval = 10 * time.Second
+
+// certReloader serves a key pair from files, reloading it when the
+// certificate file's modification time changes. A failed reload keeps the
+// previous key pair.
+type certReloader struct {
+	certFile, keyFile string
+
+	mu      sync.Mutex
+	cert    *tls.Certificate
+	modTime time.Time
+	checked time.Time
+}
+
+func (r *certReloader) getCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	now := time.Now()
+	if r.cert != nil && now.Sub(r.checked) < certReloaderInterval {
+		return r.cert, nil
+	}
+	r.checked = now
+
+	info, err := os.Stat(r.certFile)
+	if err != nil {
+		return r.cachedOr(errors.Wrap(err, "reading TLS certificate"))
+	}
+	if r.cert != nil && info.ModTime().Equal(r.modTime) {
+		return r.cert, nil
+	}
+	cert, err := tls.LoadX509KeyPair(r.certFile, r.keyFile)
+	if err != nil {
+		return r.cachedOr(errors.Wrap(err, "loading TLS key pair"))
+	}
+	r.cert, r.modTime = &cert, info.ModTime()
+	return r.cert, nil
+}
+
+func (r *certReloader) cachedOr(err error) (*tls.Certificate, error) {
+	if r.cert != nil {
+		return r.cert, nil
+	}
+	return nil, err
 }

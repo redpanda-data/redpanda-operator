@@ -1345,6 +1345,9 @@
         redpandaConnect:
           address: console-pipelines-console-pipeline-api.test-ns.svc:8080
           enabled: true
+          tls:
+            caFilepath: /etc/console/pipeline-api-ca/ca.crt
+            enabled: true
           tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
   kind: ConfigMap
   metadata:
@@ -1381,7 +1384,7 @@
     template:
       metadata:
         annotations:
-          checksum/config: 8c459cb465601691a1bb1e85ae4fc815046be5b3eddf88c69b57db1fc5f6a8e4
+          checksum/config: ffab165aab1bda592ac497ee11b17934f23f3558b7f13b363e63bf65459f850f
         labels:
           app.kubernetes.io/instance: console-pipelines
           app.kubernetes.io/name: console
@@ -1445,6 +1448,9 @@
           - mountPath: /var/run/secrets/redpanda.com/pipeline-api
             name: pipeline-api-token
             readOnly: true
+          - mountPath: /etc/console/pipeline-api-ca
+            name: pipeline-api-ca
+            readOnly: true
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -1472,6 +1478,13 @@
                 audience: redpanda-pipeline-api
                 expirationSeconds: 3600
                 path: token
+        - name: pipeline-api-ca
+          secret:
+            defaultMode: 420
+            items:
+            - key: ca.crt
+              path: ca.crt
+            secretName: console-pipelines-tls
   status: {}
 - apiVersion: apps/v1
   kind: Deployment
@@ -1511,6 +1524,8 @@
           - --namespace=test-ns
           - --listen-address=:8080
           - --allowed-caller=system:serviceaccount:test-ns:console-pipelines-console
+          - --tls-cert-file=/etc/pipeline-api/tls/tls.crt
+          - --tls-key-file=/etc/pipeline-api/tls/tls.key
           - --cluster-ref=test-redpanda
           - --user-ref=console-pipelines
           command:
@@ -1522,7 +1537,7 @@
             httpGet:
               path: /healthz
               port: grpc
-              scheme: HTTP
+              scheme: HTTPS
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
@@ -1536,7 +1551,7 @@
             httpGet:
               path: /healthz
               port: grpc
-              scheme: HTTP
+              scheme: HTTPS
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
@@ -1549,6 +1564,10 @@
             readOnlyRootFilesystem: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/pipeline-api/tls
+            name: tls
+            readOnly: true
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -1559,7 +1578,44 @@
         serviceAccount: console-pipelines-console-pipeline-api
         serviceAccountName: console-pipelines-console-pipeline-api
         terminationGracePeriodSeconds: 30
+        volumes:
+        - name: tls
+          secret:
+            defaultMode: 420
+            items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+            secretName: console-pipelines-tls
   status: {}
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/instance: console-pipelines
+            app.kubernetes.io/name: console
+      ports:
+      - port: grpc
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/component: pipeline-api
+        app.kubernetes.io/instance: console-pipelines
+        app.kubernetes.io/name: console-pipeline-api
+    policyTypes:
+    - Ingress
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
@@ -1702,8 +1758,7 @@
     - IPv4
     ipFamilyPolicy: SingleStack
     ports:
-    - appProtocol: kubernetes.io/h2c
-      name: grpc
+    - name: grpc
       port: 8080
       protocol: TCP
       targetPort: grpc
