@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/migration"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/multicluster"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/pipelineapi"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
@@ -51,6 +52,7 @@ func init() {
 		configurator.WatchRPKProfileCommand(),
 		crd.Command(),
 		multicluster.Command(),
+		pipelineapi.Command(),
 		ready.Command(),
 		run.Command(),
 		sidecar.Command(),
