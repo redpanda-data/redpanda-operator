@@ -213,9 +213,19 @@ rules:
   - schemas
   - shadowlinks
   - stretchclusters
-  - topics
   - users
   verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
   - get
   - list
   - patch

@@ -89,6 +89,10 @@ const saslSecretSuffix = "-sasl"
 // saslSecretKey is the key inside the per-Pipeline SASL Secret.
 const saslSecretKey = "password"
 
+// connectLogsTopic is the topic that Redpanda Console's pipeline Logs tab
+// reads, keyed by pipeline ID.
+const connectLogsTopic = "__redpanda.connect.logs"
+
 // Types returns the set of Kubernetes resource types managed by the Pipeline
 // controller.
 func Types() []kube.Object {
@@ -315,11 +319,37 @@ func (r *render) renderConnectYAML() (string, error) {
 	// keys win.
 	mergeTopLevelRedpanda(userConfig, overlay)
 
+	// Send logs to the topic Console's Logs tab reads. Only for clusterRef
+	// pipelines, whose cluster the operator creates that topic on. Console
+	// attributes records by pipeline_id, so the operator's value wins.
+	if cs := r.pipeline.Spec.ClusterSource; cs != nil && cs.ClusterRef != nil {
+		mergeTopLevelRedpanda(userConfig, map[string]any{"logs_topic": connectLogsTopic})
+		userConfig["redpanda"].(map[string]any)["pipeline_id"] = r.pipeline.Name
+	}
+
 	out, err := yaml.Marshal(userConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling rendered connect.yaml")
 	}
 	return string(out), nil
+}
+
+// sendsConnectLogs reports whether the connect.yaml in the rendered objects
+// sends logs to [connectLogsTopic].
+func sendsConnectLogs(objs []kube.Object) (bool, error) {
+	for _, obj := range objs {
+		cm, ok := obj.(*corev1.ConfigMap)
+		if !ok {
+			continue
+		}
+		var config map[string]any
+		if err := yaml.Unmarshal([]byte(cm.Data["connect.yaml"]), &config); err != nil {
+			return false, errors.WithStack(err)
+		}
+		redpanda, _ := config["redpanda"].(map[string]any)
+		return redpanda["logs_topic"] == connectLogsTopic, nil
+	}
+	return false, nil
 }
 
 // redpandaPluginOverlay returns the connection fields the operator will
@@ -579,6 +609,13 @@ func (r *render) deployment() *appsv1.Deployment {
 		VolumeMounts:             volumeMounts,
 	})
 
+	// Connect doesn't call the Kubernetes API, and the namespace's default
+	// ServiceAccount may hold RBAC that pipeline authors shouldn't get.
+	var automountToken *bool
+	if r.pipeline.Spec.ServiceAccountName == "" {
+		automountToken = ptr.To(false)
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -602,8 +639,9 @@ func (r *render) deployment() *appsv1.Deployment {
 					Annotations: r.podAnnotations(),
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: r.pipeline.Spec.ServiceAccountName,
-					InitContainers:     initContainers,
+					ServiceAccountName:           r.pipeline.Spec.ServiceAccountName,
+					AutomountServiceAccountToken: automountToken,
+					InitContainers:               initContainers,
 					Containers: []corev1.Container{
 						{
 							Name:    "connect",

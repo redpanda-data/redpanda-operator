@@ -47,6 +47,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -139,6 +140,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -180,6 +182,143 @@
         volumes:
         - configMap:
             name: annotated-pipeline
+          name: config
+  status: {}
+-- pipeline-with-cluster-ref --
+- apiVersion: v1
+  data:
+    connect.yaml: |
+      input:
+        redpanda:
+          consumer_group: orders
+          sasl:
+          - mechanism: SCRAM-SHA-512
+            password: ${REDPANDA_SASL_PASSWORD}
+            username: ${REDPANDA_SASL_USERNAME}
+          seed_brokers:
+          - redpanda-0.redpanda.default.svc.cluster.local.:9093
+          topics:
+          - orders
+      output:
+        stdout: {}
+      redpanda:
+        logs_topic: __redpanda.connect.logs
+        pipeline_id: orders-pipeline
+        sasl:
+        - mechanism: SCRAM-SHA-512
+          password: ${REDPANDA_SASL_PASSWORD}
+          username: ${REDPANDA_SASL_USERNAME}
+        seed_brokers:
+        - redpanda-0.redpanda.default.svc.cluster.local.:9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: orders-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: orders-pipeline
+    namespace: default
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: orders-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: orders-pipeline
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: connect-pipeline
+        app.kubernetes.io/instance: orders-pipeline
+        app.kubernetes.io/managed-by: redpanda-operator
+        app.kubernetes.io/name: redpanda-connect
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          cluster.redpanda.com/config-checksum: b41b70933a276568234cb9db20e0d6e9bf40787b5541aa4575a5d5d2de942541
+        labels:
+          app.kubernetes.io/component: connect-pipeline
+          app.kubernetes.io/instance: orders-pipeline
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda-connect
+      spec:
+        automountServiceAccountToken: false
+        containers:
+        - command:
+          - /redpanda-connect
+          - run
+          - /config/connect.yaml
+          env:
+          - name: REDPANDA_SASL_USERNAME
+            value: orders
+          - name: REDPANDA_SASL_MECHANISM
+            value: SCRAM-SHA-512
+          - name: REDPANDA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: orders-password
+          - name: RPK_BROKERS
+            value: redpanda-0.redpanda.default.svc.cluster.local.:9093
+          - name: RPK_TLS_ENABLED
+            value: "false"
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: connect
+          ports:
+          - containerPort: 4195
+            name: http
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4195
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        initContainers:
+        - command:
+          - /redpanda-connect
+          - lint
+          - /config/connect.yaml
+          env:
+          - name: REDPANDA_SASL_USERNAME
+            value: orders
+          - name: REDPANDA_SASL_MECHANISM
+            value: SCRAM-SHA-512
+          - name: REDPANDA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: orders-password
+          - name: RPK_BROKERS
+            value: redpanda-0.redpanda.default.svc.cluster.local.:9093
+          - name: RPK_TLS_ENABLED
+            value: "false"
+          image: docker.redpanda.com/redpandadata/connect:4.115.1
+          name: lint
+          resources: {}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        volumes:
+        - configMap:
+            name: orders-pipeline
           name: config
   status: {}
 -- rolling-update-strategy --
@@ -233,6 +372,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect
@@ -331,6 +471,7 @@
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda-connect
       spec:
+        automountServiceAccountToken: false
         containers:
         - command:
           - /redpanda-connect

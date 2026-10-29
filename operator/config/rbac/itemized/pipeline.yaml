@@ -72,6 +72,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - topics
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - podmonitors

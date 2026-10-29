@@ -222,6 +222,83 @@ func TestRender_ClusterRefSASLFallback(t *testing.T) {
 	assert.Equal(t, "rp-superuser", env["REDPANDA_SASL_PASSWORD"].ValueFrom.SecretKeyRef.Name)
 }
 
+// TestRender_ConnectLogs asserts that only clusterRef pipelines send logs to
+// the topic Console reads, through the top-level redpanda block, that a
+// user-set logs_topic wins, and that the operator's pipeline_id does.
+func TestRender_ConnectLogs(t *testing.T) {
+	clusterRef := &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"}}
+	static := &redpandav1alpha2.ClusterSource{StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{}}
+
+	cases := []struct {
+		name     string
+		cluster  *redpandav1alpha2.ClusterSource
+		config   string
+		expected map[string]any
+	}{
+		{
+			name:     "cluster-ref",
+			cluster:  clusterRef,
+			config:   "input:\n  redpanda:\n    topics: [orders]\noutput:\n  stdout: {}\n",
+			expected: map[string]any{"pipeline_id": "orders", "logs_topic": connectLogsTopic},
+		},
+		{
+			name:     "static-configuration",
+			cluster:  static,
+			config:   "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			expected: map[string]any{},
+		},
+		{
+			// Console attributes log records by pipeline_id, so a pipeline
+			// can't claim another's.
+			name:     "pipeline-id-wins",
+			cluster:  clusterRef,
+			config:   "redpanda:\n  pipeline_id: victim\n  logs_topic: my-logs\ninput:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			expected: map[string]any{"pipeline_id": "orders", "logs_topic": "my-logs"},
+		},
+		{
+			name:     "opt-out",
+			cluster:  clusterRef,
+			config:   "redpanda:\n  logs_topic: \"\"\ninput:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			expected: map[string]any{"pipeline_id": "orders", "logs_topic": ""},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "orders", Namespace: "default"},
+				Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: tc.config, ClusterSource: tc.cluster},
+			}
+			r := &render{pipeline: p, labels: Labels(p), clusterConn: &clusterConnection{Brokers: []string{"rp-0:9093"}}}
+
+			yamlStr, err := r.renderConnectYAML()
+			require.NoError(t, err)
+			var cfg map[string]any
+			require.NoError(t, yaml.Unmarshal([]byte(yamlStr), &cfg))
+
+			top := cfg["redpanda"].(map[string]any)
+			actual := map[string]any{}
+			for _, key := range []string{"pipeline_id", "logs_topic"} {
+				if v, ok := top[key]; ok {
+					actual[key] = v
+				}
+			}
+			assert.Equal(t, tc.expected, actual)
+
+			// Plugin blocks only get connection fields.
+			if in, ok := cfg["input"].(map[string]any)["redpanda"].(map[string]any); ok {
+				assert.NotContains(t, in, "logs_topic")
+				assert.NotContains(t, in, "pipeline_id")
+			}
+
+			rendered, err := r.Render(t.Context())
+			require.NoError(t, err)
+			sends, err := sendsConnectLogs(rendered)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected["logs_topic"] == connectLogsTopic, sends)
+		})
+	}
+}
+
 // TestRender_ConfigChecksumAnnotation covers fix #2: the Deployment pod template
 // carries a config checksum that changes with the rendered config, so a
 // configYaml change rolls the Deployment.

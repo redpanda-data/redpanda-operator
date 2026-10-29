@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -657,6 +658,90 @@ func (s *ControllerSuite) TestResolveClusterSource_RejectsCrossNamespaceAndForei
 // TestResolveUserRef_Validation covers userRef resolution incl. the password
 // Secret: previously a missing Secret still marked UserRef=True and the pod
 // later wedged in CreateContainerConfigError.
+// TestUserRefRequiresSASL checks that a userRef pipeline on an mtls_identity
+// cluster is scaled to zero and reports why, instead of running as the
+// mounted client certificate's principal.
+func (s *ControllerSuite) TestUserRefRequiresSASL() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	rp := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls", Namespace: ns.Name},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Listeners: &redpandav1alpha2.Listeners{
+					Kafka: &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{AuthenticationMethod: ptr.To("mtls_identity")}},
+				},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), rp))
+
+	mechanism := redpandav1alpha2.SASLMechanism("scram-sha-512")
+	require.NoError(t, ctl.Apply(t.Context(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-user-password", Namespace: ns.Name},
+		Data:       map[string][]byte{"password": []byte("hunter2")},
+	}))
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-user", Namespace: ns.Name},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "mtls"}},
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Type: &mechanism,
+				Password: redpandav1alpha2.Password{ValueFrom: &redpandav1alpha2.PasswordSource{SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "mtls-user-password"},
+					Key:                  "password",
+				}}},
+			},
+		},
+	}))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "mtls-pipeline", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML:    "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "mtls"}},
+			UserRef:       &redpandav1alpha2.PipelineUserRef{Name: "mtls-user"},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	c := &Controller{Ctl: ctl}
+	conn, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.True(t, conn.MTLSIdentity)
+
+	// A running Deployment, as left by an earlier operator version.
+	dp := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: pipeline.Name, Namespace: ns.Name},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To[int32](1),
+			Selector: &metav1.LabelSelector{MatchLabels: Labels(pipeline)},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: Labels(pipeline)},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "connect", Image: "connect"}}},
+			},
+		},
+	}
+	require.NoError(t, ctl.Create(t.Context(), dp))
+
+	for range 2 { // idempotent
+		_, err = c.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(pipeline)})
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	cond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionUserRef)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonUserRefRequiresSASL, cond.Reason)
+	assert.Contains(t, cond.Message, "mtls_identity")
+
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), dp))
+	assert.Equal(t, int32(0), ptr.Deref(dp.Spec.Replicas, -1), "the pipeline must not run as the certificate's principal")
+}
+
 func (s *ControllerSuite) TestResolveUserRef_Validation() {
 	t := s.T()
 
@@ -743,9 +828,10 @@ func (s *ControllerSuite) TestFindOwnershipConflict() {
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
 
 	c := &Controller{Ctl: ctl}
-	renderer := c.rendererFor(pipeline, nil, nil, nil, "")
+	rendered, err := c.rendererFor(pipeline, nil, nil, nil, "").Render(t.Context())
+	require.NoError(t, err)
 
-	conflict, err := c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	conflict, err := c.findOwnershipConflict(t.Context(), pipeline, rendered)
 	require.NoError(t, err)
 	require.NotEmpty(t, conflict, "a foreign same-named ConfigMap must be reported as a conflict")
 	assert.Contains(t, conflict, "ConfigMap")
@@ -757,9 +843,130 @@ func (s *ControllerSuite) TestFindOwnershipConflict() {
 		*metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
 	}
 	require.NoError(t, ctl.Apply(t.Context(), foreign))
-	conflict, err = c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	conflict, err = c.findOwnershipConflict(t.Context(), pipeline, rendered)
 	require.NoError(t, err)
 	assert.Empty(t, conflict)
+}
+
+// TestEnsureConnectLogsTopic covers the Topic behind Console's pipeline logs:
+// created once per cluster without an owner reference, left alone once it
+// exists, reported Ready only when it is, and not deleted with the pipeline.
+func (s *ControllerSuite) TestEnsureConnectLogsTopic() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "logs", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	c := &Controller{Ctl: ctl}
+	conn := &clusterConnection{Brokers: []string{"redpanda-0:9093"}}
+	renderer := c.rendererFor(pipeline, conn, nil, nil, "")
+	ensure := func(c *Controller, p *redpandav1alpha2.Pipeline) (*metav1.Condition, error) {
+		rendered, err := c.rendererFor(p, conn, nil, nil, "").Render(t.Context())
+		require.NoError(t, err)
+		return c.ensureConnectLogsTopic(t.Context(), p, rendered)
+	}
+	key := kube.ObjectKey{Namespace: ns.Name, Name: "redpanda-connect-logs"}
+
+	// A new Topic isn't Ready until the Topic controller reconciles it.
+	cond, err := ensure(c, pipeline)
+	require.NoError(t, err)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicNotReady, cond.Reason)
+
+	var topic redpandav1alpha2.Topic
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
+	assert.Empty(t, topic.OwnerReferences)
+	assert.Equal(t, ptr.To(connectLogsTopic), topic.Spec.OverwriteTopicName)
+	assert.Equal(t, ptr.To(1), topic.Spec.Partitions)
+	assert.Equal(t, "redpanda", topic.Spec.ClusterSource.ClusterRef.Name)
+	assert.Equal(t, map[string]*string{"retention.ms": ptr.To("86400000"), "retention.bytes": ptr.To("1073741824")}, topic.Spec.AdditionalConfig)
+
+	// The condition follows the Topic's Ready condition.
+	apimeta.SetStatusCondition(&topic.Status.Conditions, metav1.Condition{Type: redpandav1alpha2.ReadyCondition, Status: metav1.ConditionFalse, Reason: "Failed", Message: "broker unavailable"})
+	require.NoError(t, ctl.UpdateStatus(t.Context(), &topic))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicNotReady, cond.Reason)
+	assert.Equal(t, `Topic "redpanda-connect-logs" is not Ready: broker unavailable`, cond.Message)
+
+	apimeta.SetStatusCondition(&topic.Status.Conditions, metav1.Condition{Type: redpandav1alpha2.ReadyCondition, Status: metav1.ConditionTrue, Reason: "Succeeded"})
+	require.NoError(t, ctl.UpdateStatus(t.Context(), &topic))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicReady, cond.Reason)
+
+	// Admins may tune the Topic, and later passes don't write to it.
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
+	topic.Spec.AdditionalConfig["retention.ms"] = ptr.To("3600000")
+	require.NoError(t, ctl.Update(t.Context(), &topic))
+	cond, err = ensure(c, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	var tuned redpandav1alpha2.Topic
+	require.NoError(t, ctl.Get(t.Context(), key, &tuned))
+	assert.Equal(t, topic.ResourceVersion, tuned.ResourceVersion)
+
+	// A Topic of that name for another topic is reported, not used.
+	taken := pipeline.DeepCopy()
+	taken.Spec.ClusterSource.ClusterRef.Name = "taken"
+	require.NoError(t, ctl.Create(t.Context(), &redpandav1alpha2.Topic{
+		ObjectMeta: metav1.ObjectMeta{Name: "taken-connect-logs", Namespace: ns.Name},
+		Spec: redpandav1alpha2.TopicSpec{
+			OverwriteTopicName: ptr.To("orders"),
+			Partitions:         ptr.To(1),
+			ClusterSource:      &redpandav1alpha2.ClusterSource{ClusterRef: &redpandav1alpha2.ClusterRef{Name: "taken"}},
+		},
+	}))
+	cond, err = ensure(c, taken)
+	require.NoError(t, err)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLogsTopicConflict, cond.Reason)
+	assert.Contains(t, cond.Message, `Topic "taken-connect-logs"`)
+
+	// RBAC failures are fatal rather than a False condition.
+	cfg := rest.CopyConfig(ctl.RestConfig())
+	cfg.Impersonate = rest.ImpersonationConfig{UserName: "no-rbac"}
+	noRBAC, err := kube.FromRESTConfig(cfg, kube.Options{Options: client.Options{Scheme: controller.UnifiedScheme}})
+	require.NoError(t, err)
+	_, err = ensure(&Controller{Ctl: noRBAC}, pipeline)
+	assert.True(t, apierrors.IsForbidden(err), "expected Forbidden, got %v", err)
+
+	// The Topic outlives the pipeline's resources.
+	syncer, err := c.syncerFor(pipeline, renderer)
+	require.NoError(t, err)
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+	_, err = syncer.DeleteAll(t.Context())
+	require.NoError(t, err)
+	require.NoError(t, ctl.Get(t.Context(), key, &topic))
+
+	// Opting out creates nothing.
+	optOut := pipeline.DeepCopy()
+	optOut.Spec.ConfigYAML = "redpanda:\n  logs_topic: \"\"\n" + optOut.Spec.ConfigYAML
+	optOut.Spec.ClusterSource.ClusterRef.Name = "opted-out"
+	cond, err = ensure(c, optOut)
+	require.NoError(t, err)
+	assert.Nil(t, cond)
+	err = ctl.Get(t.Context(), kube.ObjectKey{Namespace: ns.Name, Name: "opted-out-connect-logs"}, &topic)
+	assert.True(t, apierrors.IsNotFound(err), "expected no Topic, got %v", err)
+
+	// Long cluster names are hashed into the 63-character budget.
+	long := strings.Repeat("a", 60)
+	assert.Len(t, connectLogsTopicName(long), 63)
+	assert.True(t, strings.HasSuffix(connectLogsTopicName(long), "-connect-logs"))
+	assert.NotEqual(t, connectLogsTopicName(long), connectLogsTopicName(long+"a"))
 }
 
 // TestValidateValueSources covers reconcile-time resolution of valueSources
@@ -928,8 +1135,10 @@ func TestRender_GoldenFiles(t *testing.T) {
 	golden := testutil.NewTxTar(t, "testdata/controller-tests.golden.txtar")
 
 	testCases := []struct {
-		name     string
-		pipeline *redpandav1alpha2.Pipeline
+		name            string
+		pipeline        *redpandav1alpha2.Pipeline
+		clusterConn     *clusterConnection
+		userCredentials *userCredentials
 	}{
 		{
 			name: "basic-pipeline",
@@ -987,14 +1196,43 @@ func TestRender_GoldenFiles(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pipeline-with-cluster-ref",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "orders-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML: "input:\n  redpanda:\n    topics: [orders]\n    consumer_group: orders\noutput:\n  stdout: {}\n",
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+					},
+					UserRef: &redpandav1alpha2.PipelineUserRef{Name: "orders"},
+				},
+			},
+			clusterConn: &clusterConnection{
+				Brokers: []string{"redpanda-0.redpanda.default.svc.cluster.local.:9093"},
+			},
+			userCredentials: &userCredentials{
+				Mechanism: "SCRAM-SHA-512",
+				Username:  "orders",
+				PasswordRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "orders-password"},
+					Key:                  "password",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			labels := Labels(tc.pipeline)
 			r := &render{
-				pipeline: tc.pipeline,
-				labels:   labels,
+				pipeline:        tc.pipeline,
+				labels:          labels,
+				clusterConn:     tc.clusterConn,
+				userCredentials: tc.userCredentials,
 			}
 
 			objs, err := r.Render(t.Context())
@@ -1891,6 +2129,7 @@ func TestRender_Deployment_ServiceAccountName(t *testing.T) {
 		require.NoError(t, err)
 		dp := objs[1].(*appsv1.Deployment)
 		assert.Equal(t, "mysql-cdc-pipeline-sa", dp.Spec.Template.Spec.ServiceAccountName)
+		assert.Nil(t, dp.Spec.Template.Spec.AutomountServiceAccountToken, "a named SA decides whether its token is mounted")
 	})
 
 	t.Run("empty_when_unset", func(t *testing.T) {
@@ -1904,6 +2143,8 @@ func TestRender_Deployment_ServiceAccountName(t *testing.T) {
 		dp := objs[1].(*appsv1.Deployment)
 		assert.Empty(t, dp.Spec.Template.Spec.ServiceAccountName,
 			"unset means the namespace's default SA is used at admission time")
+		assert.Equal(t, ptr.To(false), dp.Spec.Template.Spec.AutomountServiceAccountToken,
+			"the default SA's token, and any RBAC it holds, stays out of the pod")
 	})
 }
 

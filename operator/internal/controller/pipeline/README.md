@@ -188,6 +188,16 @@ Relevant conditions on `.status` reflect resolution: `ClusterRef`, `UserRef`
 > `clusterRef`). Prefer a dedicated `User` + `userRef` in production so each
 > pipeline authenticates with ACL-scoped credentials.
 
+With `clusterRef`, the operator also sets `pipeline_id` (always the
+Pipeline's name) and `logs_topic: __redpanda.connect.logs` in the top-level
+`redpanda:` block, so Redpanda Console can show the pipeline's logs, and
+creates the shared Topic `<cluster>-connect-logs` (24h and 1 GiB retention) if
+it doesn't exist. The `userRef` User needs Write and Describe on
+`__redpanda.connect.logs`; without them the pipeline runs but its logs don't
+reach Console. Log records aren't authenticated: anyone with Write on the
+topic can write under any pipeline's ID. Opt out with
+`redpanda.logs_topic: ""` in `configYaml`.
+
 ### Connecting with `staticConfiguration`
 
 Instead of `clusterRef`, hard-code the connection with
@@ -525,6 +535,7 @@ kubectl get pipeline <name> -o yaml | yq '.status'
 | `ClusterRef` | the cluster source (`clusterRef` / `staticConfiguration`) was resolved |
 | `UserRef` | the referenced `User`'s credentials (incl. its password Secret) were resolved |
 | `ValueSourcesResolved` | every `valueSources` entry resolved to an existing backing object + key |
+| `LogsTopic` | the Topic for `__redpanda.connect.logs` is Ready (`clusterRef` only; False doesn't stop the pipeline) |
 | `License` | the operator-level enterprise license is valid and includes Connect |
 
 ---

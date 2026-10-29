@@ -106,12 +106,30 @@ const (
 	// PipelineReasonUserInvalid means the userRef could not be found or its
 	// password Secret was missing.
 	PipelineReasonUserInvalid = "UserInvalid"
+	// PipelineReasonUserRefRequiresSASL means the referenced cluster's Kafka
+	// listener authenticates by client certificate (`mtls_identity`), so the
+	// userRef's SASL credentials would be ignored. The pipeline is scaled to
+	// zero until the listener uses `sasl` or userRef is removed.
+	PipelineReasonUserRefRequiresSASL = "UserRefRequiresSASL"
 	// PipelineReasonValueSourcesResolved means every entry in spec.valueSources
 	// was bound successfully.
 	PipelineReasonValueSourcesResolved = "ValueSourcesResolved"
 	// PipelineReasonValueSourceInvalid means at least one entry in
 	// spec.valueSources could not be resolved.
 	PipelineReasonValueSourceInvalid = "ValueSourceInvalid"
+	// PipelineReasonLogsTopicReady means the Topic for the pipeline's logs
+	// is Ready.
+	PipelineReasonLogsTopicReady = "LogsTopicReady"
+	// PipelineReasonLogsTopicNotReady means the Topic for the pipeline's logs
+	// exists but isn't Ready.
+	PipelineReasonLogsTopicNotReady = "LogsTopicNotReady"
+	// PipelineReasonLogsTopicConflict means a Topic with the name the
+	// operator uses for the pipeline's logs exists for another topic or
+	// cluster.
+	PipelineReasonLogsTopicConflict = "LogsTopicConflict"
+	// PipelineReasonLogsTopicFailed means the operator couldn't read or
+	// create the Topic for the pipeline's logs.
+	PipelineReasonLogsTopicFailed = "LogsTopicFailed"
 )
 
 // Pipeline status condition types added with the v2 spec.
@@ -122,6 +140,10 @@ const (
 	// PipelineConditionValueSourcesResolved indicates whether every
 	// spec.valueSources entry resolved to a backing value.
 	PipelineConditionValueSourcesResolved = "ValueSourcesResolved"
+	// PipelineConditionLogsTopic indicates whether the Topic that a
+	// clusterRef pipeline sends its logs to is Ready. A False status doesn't
+	// stop the pipeline, only its logs in Redpanda Console.
+	PipelineConditionLogsTopic = "LogsTopic"
 )
 
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.
@@ -138,25 +160,38 @@ const (
 // +kubebuilder:validation:XValidation:message="cluster.clusterRef.group must be cluster.redpanda.com (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.group) || self.cluster.clusterRef.group == 'cluster.redpanda.com'"
 // +kubebuilder:validation:XValidation:message="cluster.clusterRef.kind must be Redpanda (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.kind) || self.cluster.clusterRef.kind == 'Redpanda'"
 type PipelineSpec struct {
-	// ConfigYAML is the user-supplied Redpanda Connect pipeline YAML.
-	// Reference cluster-bound or sensitive values from .valueSources via
-	// ${NAME} interpolation; the operator resolves them at render time.
+	// Specifies the Redpanda Connect pipeline configuration, as YAML.
+	// Reference cluster-bound or sensitive values from `valueSources` with
+	// `${NAME}` interpolation; the operator resolves them when it renders
+	// the pipeline.
 	//
-	// When .cluster is set, the operator inline-merges connection fields
-	// (seed_brokers, tls, sasl) into any `input.redpanda` and
-	// `output.redpanda` blocks in this YAML, derived from the resolved
-	// cluster connection and .userRef. Users only need to write the
-	// per-plugin fields (topic, key, consumer_group, etc.); brokers, TLS,
-	// and SASL are filled in by the operator.
+	// When `cluster` is set, the operator merges the connection fields
+	// `seed_brokers`, `tls`, and `sasl`, derived from the resolved cluster
+	// connection and `userRef`, into any `input.redpanda` and
+	// `output.redpanda` blocks in this YAML and into the top-level
+	// `redpanda` block, which it adds if this YAML has none. Write only
+	// the per-plugin fields, such as `topic`, `key`, and `consumer_group`;
+	// the operator fills in the brokers, TLS, and SASL.
 	//
-	// User-side keys win on conflict — set a key explicitly (for example,
-	// seed_brokers pointing at a different cluster) and the operator's
-	// generated value is skipped for that key.
+	// Keys set here win on conflict. For example, a `seed_brokers` that
+	// points at a different cluster skips the operator's generated value
+	// for that key.
 	//
-	// The merge targets the `redpanda` input/output plugins specifically.
-	// Any `redpanda_common` blocks the user authors are passed through
-	// unchanged — the operator does not inject connection fields into
-	// them.
+	// The operator adds nothing inside a `redpanda_common` block, which
+	// needs no connection fields of its own: `redpanda_common` and the
+	// other shared-client plugins read the top-level `redpanda` block.
+	//
+	// With `cluster.clusterRef`, the operator also sets `pipeline_id`, to
+	// the Pipeline's name and overriding any value set here, and
+	// `logs_topic: __redpanda.connect.logs` in the top-level `redpanda`
+	// block, so that Redpanda Console can show the pipeline's logs. It
+	// creates the Topic resource `<cluster>-connect-logs` for that topic
+	// if it doesn't exist, shortening and hashing long cluster names to
+	// fit 63 characters. The cluster's pipelines share the Topic, and
+	// deleting them doesn't delete it. To opt out, set
+	// `redpanda.logs_topic: ""`. Log records aren't authenticated: any
+	// principal with Write on the topic can write records under any
+	// pipeline's ID.
 	// +kubebuilder:validation:Required
 	ConfigYAML string `json:"configYaml"`
 
@@ -239,17 +274,18 @@ type PipelineSpec struct {
 	// +optional
 	RPCPlugins []string `json:"rpcPlugins,omitempty"`
 
-	// ServiceAccountName is the ServiceAccount to bind to the pipeline pod.
-	// When unset, the namespace's default ServiceAccount is used.
+	// Specifies the ServiceAccount that the pipeline Pod runs as.
+	// When unset, the Pod runs as the namespace's default ServiceAccount,
+	// and the operator keeps that ServiceAccount's token out of the Pod.
 	//
-	// Setting this is the recommended way to scope per-pipeline cloud-IAM
-	// trust (e.g. IRSA on EKS, Workload Identity on GKE, Pod Identity on
-	// AKS). Annotating the namespace's default SA works but grants every
-	// pipeline in the namespace the same role — naming a Pipeline-specific
-	// SA here keeps the trust boundary per-pipeline.
+	// Set this to scope per-pipeline cloud IAM trust, for example IRSA on
+	// EKS, Workload Identity on GKE, or Pod Identity on AKS. Annotating
+	// the namespace's default ServiceAccount also works, but gives every
+	// pipeline in the namespace the same role, whereas a ServiceAccount
+	// named here keeps the trust boundary per pipeline.
 	//
-	// The operator does NOT create the ServiceAccount; provision it
-	// (along with the appropriate cloud-IAM annotations) out-of-band.
+	// The operator does not create the ServiceAccount. Provision it,
+	// along with the cloud IAM annotations it needs, yourself.
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
@@ -431,28 +467,37 @@ type PipelineSpec struct {
 	// +optional
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 
-	// UserRef binds the pipeline to a User CR. When set alongside
-	// .cluster.clusterRef, the operator reads the referenced User's
-	// password Secret + SASL mechanism and uses the User's metadata.name
-	// as the SASL username, emitting REDPANDA_SASL_USERNAME / _PASSWORD /
-	// _MECHANISM env vars in the pipeline pod and a `sasl:` block in the
-	// auto-generated `redpanda` config.
+	// Binds the pipeline to a User resource. When set alongside
+	// `cluster.clusterRef`, the operator reads the referenced User's
+	// password Secret and SASL mechanism, uses the User's `metadata.name`
+	// as the SASL username, sets the `REDPANDA_SASL_USERNAME`,
+	// `REDPANDA_SASL_PASSWORD`, and `REDPANDA_SASL_MECHANISM` environment
+	// variables in the pipeline Pod, and adds a `sasl` block to the
+	// generated `redpanda` configuration.
 	//
 	// Set this when the cluster the pipeline talks to has SASL enabled.
-	// On unauthenticated clusters (and in clusterRef-only modes that
-	// only need broker discovery), leave it empty.
+	// On unauthenticated clusters, and in `clusterRef`-only modes that
+	// only need broker discovery, leave it empty. The referenced
+	// cluster's internal Kafka listener must use `sasl` as its
+	// `listeners.kafka.authenticationMethod`: with `mtls_identity` the
+	// mounted client certificate decides the principal instead, so the
+	// operator scales the pipeline to zero and reports
+	// `UserRefRequiresSASL`.
 	//
-	// CEL restrictions:
-	//   - userRef must NOT be set alongside .cluster.staticConfiguration —
-	//     the static path carries its own inline SASL config.
-	//   - userRef must NOT be set without .cluster.clusterRef — there's no
-	//     cluster context to authenticate against otherwise.
+	// Validation rejects:
+	//   - `userRef` alongside `cluster.staticConfiguration`, because the
+	//     static path carries its own inline SASL configuration.
+	//   - `userRef` without `cluster.clusterRef`, because there is then
+	//     no cluster context to authenticate against.
 	//
-	// The referenced User CR is expected to live in the same namespace as
-	// the Pipeline and to declare ACLs scoped to the topics, schema
-	// subjects, and consumer groups this pipeline reads/writes. The
-	// operator does NOT auto-create or modify the User CR — ACL scoping
-	// stays an explicit, auditable user-controlled action.
+	// The referenced User resource lives in the same namespace as the
+	// Pipeline and needs ACLs scoped to the topics, schema subjects, and
+	// consumer groups this pipeline reads and writes. For Redpanda
+	// Console to show the pipeline's logs, the User also needs Write and
+	// Describe on the topic `__redpanda.connect.logs`; without them the
+	// pipeline still runs, but its logs don't reach Console. The operator
+	// never creates or modifies the User resource, so ACL scoping stays
+	// an explicit, auditable action.
 	// +optional
 	UserRef *PipelineUserRef `json:"userRef,omitempty"`
 }
