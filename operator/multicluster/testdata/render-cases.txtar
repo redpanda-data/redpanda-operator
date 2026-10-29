@@ -315,6 +315,76 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+-- external-loadbalancer-addresses --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec: {}
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  external:
+    enabled: true
+    type: LoadBalancer
+    domain: "{{ .Release.Namespace }}.example.com"
+    addresses:
+    - broker-a
+    - broker-b
+    externalDns:
+      enabled: true
+  listeners:
+    kafka:
+      external:
+        default:
+          enabled: true
+          advertisedPorts: [30092]
+    http:
+      external:
+        default:
+          enabled: true
+          advertisedPorts: [30082]
+-- external-disabled-domain --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec: {}
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 2
+  external:
+    enabled: false
+    domain: example.com
+    addresses:
+    - broker-a
+    - broker-b
+  listeners:
+    kafka:
+      external:
+        default:
+          enabled: true
+          advertisedPorts: [30092]
 -- external-nodeport --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
