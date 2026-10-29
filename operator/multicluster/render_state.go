@@ -333,23 +333,6 @@ func (r *RenderState) schemaRegistryBrokerList() []string {
 	return brokers
 }
 
-// --- ---
-
-// podOrdinalOffset returns the flattened index of the first pod of pool
-// within the local-pool pod list. Lets per-pool helpers index into
-// per-broker config (e.g. External.Addresses) using the same offset they
-// would have under the pre-split single-loop emission order.
-func (r *RenderState) podOrdinalOffset(pool *redpandav1alpha2.RedpandaBrokerPool) int {
-	offset := 0
-	for _, p := range r.inClusterPools {
-		if p.Name == pool.Name {
-			return offset
-		}
-		offset += int(p.GetReplicas())
-	}
-	return offset
-}
-
 // fetchBootstrapUser looks up an existing bootstrap user secret so that we
 // re-emit it with the same password rather than generating a new random one
 // on every reconciliation. If the secret doesn't exist yet, secretBootstrapUser()
