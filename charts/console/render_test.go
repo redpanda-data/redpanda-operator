@@ -17,10 +17,7 @@ import (
 
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -49,10 +46,6 @@ func TestTypes(t *testing.T) {
 	allowableTypes := map[reflect.Type]struct{}{}
 	for _, typ := range Types() {
 		allowableTypes[reflect.TypeOf(typ)] = struct{}{}
-	}
-	pipelinesTypes := map[reflect.Type]struct{}{}
-	for _, typ := range PipelinesTypes() {
-		pipelinesTypes[reflect.TypeOf(typ)] = struct{}{}
 	}
 
 	testCases := []struct {
@@ -139,18 +132,6 @@ func TestTypes(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "pipelines service account",
-			values: PartialRenderValues{
-				Pipelines: &PartialPipelinesConfig{Enabled: ptr.To(true)},
-			},
-		},
-		{
-			name: "pipelines impersonate user",
-			values: PartialRenderValues{
-				Pipelines: &PartialPipelinesConfig{Enabled: ptr.To(true), ImpersonateUser: ptr.To(true)},
-			},
-		},
 	}
 
 	for _, tc := range testCases {
@@ -159,45 +140,11 @@ func TestTypes(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, obj := range Render(state) {
-				if reflect.ValueOf(obj).IsNil() {
-					continue
-				}
 				objType := reflect.TypeOf(obj)
 				_, ok := allowableTypes[objType]
 				require.True(t, ok, "%T is not an allowable type. Did you forget to update `console.Types`?", obj)
-
-				// The operator only lists PipelinesTypes for Consoles that
-				// enable pipelines.
-				if _, ok := pipelinesTypes[objType]; ok {
-					require.True(t, state.Values.Pipelines.Enabled, "%T is rendered without pipelines.enabled. Did you forget to update `console.PipelinesTypes`?", obj)
-				}
 			}
 		})
-	}
-}
-
-// TestPipelinesAdmissionPolicyOrder asserts that the policy restricting
-// Console's ServiceAccount is applied before anything that grants it access to
-// Pipelines, so a failure to apply the policy leaves no access behind.
-func TestPipelinesAdmissionPolicyOrder(t *testing.T) {
-	state, err := NewRenderState("test-namespace", "test-release", nil, PartialRenderValues{
-		Pipelines: &PartialPipelinesConfig{Enabled: ptr.To(true)},
-	})
-	require.NoError(t, err)
-
-	index := map[reflect.Type]int{}
-	for i, obj := range Render(state) {
-		if !reflect.ValueOf(obj).IsNil() {
-			index[reflect.TypeOf(obj)] = i
-		}
-	}
-
-	for _, policy := range []kube.Object{&admissionregistrationv1.ValidatingAdmissionPolicy{}, &admissionregistrationv1.ValidatingAdmissionPolicyBinding{}} {
-		require.Contains(t, index, reflect.TypeOf(policy))
-		for _, grant := range []kube.Object{&rbacv1.Role{}, &rbacv1.RoleBinding{}, &appsv1.Deployment{}} {
-			require.Contains(t, index, reflect.TypeOf(grant))
-			require.Less(t, index[reflect.TypeOf(policy)], index[reflect.TypeOf(grant)], "%T must render before %T", policy, grant)
-		}
 	}
 }
 

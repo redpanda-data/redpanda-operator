@@ -358,51 +358,6 @@
       },
       "type": "object"
     },
-    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelinesAdmissionPolicyConfig": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      },
-      "type": "object"
-    },
-    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelinesConfig": {
-      "additionalProperties": false,
-      "properties": {
-        "admissionPolicy": {
-          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelinesAdmissionPolicyConfig"
-        },
-        "allowBootstrapUser": {
-          "type": "boolean"
-        },
-        "allowUnauthenticated": {
-          "type": "boolean"
-        },
-        "clusterRef": {
-          "maxLength": 253,
-          "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$",
-          "type": "string"
-        },
-        "enabled": {
-          "type": "boolean"
-        },
-        "impersonateUser": {
-          "type": "boolean"
-        },
-        "namespace": {
-          "maxLength": 63,
-          "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$",
-          "type": "string"
-        },
-        "userRef": {
-          "maxLength": 253,
-          "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$",
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
     "github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialRedpandaAdminAPISecrets": {
       "additionalProperties": false,
       "properties": {
@@ -724,9 +679,6 @@
             "type": "string"
           },
           "type": "object"
-        },
-        "pipelines": {
-          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PartialPipelinesConfig"
         },
         "podAnnotations": {
           "additionalProperties": {

@@ -180,11 +180,6 @@ func (s *RenderState) Labels(labels map[string]string) map[string]string {
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func Render(state *RenderState) []kube.Object {
 	manifests := []kube.Object{
-		// The operator applies in order and stops at the first error, so the
-		// policy comes before anything that grants Console access to
-		// Pipelines. Helm installs these kinds last regardless.
-		PipelinesAdmissionPolicy(state),
-		PipelinesAdmissionPolicyBinding(state),
 		ServiceAccount(state),
 		Secret(state),
 		ConfigMap(state),
@@ -194,10 +189,6 @@ func Render(state *RenderState) []kube.Object {
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
 		ServiceMonitor(state),
-		PipelinesRole(state),
-		PipelinesRoleBinding(state),
-		PipelineEditorClusterRole(state),
-		PipelineViewerClusterRole(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -206,9 +197,8 @@ func Render(state *RenderState) []kube.Object {
 	return manifests
 }
 
-// Types returns every kind that [Render] may return.
 func Types() []kube.Object {
-	types := []kube.Object{
+	return []kube.Object{
 		&corev1.ServiceAccount{},
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
@@ -219,7 +209,6 @@ func Types() []kube.Object {
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},
 	}
-	return append(types, PipelinesTypes()...)
 }
 
 func cleanForK8s(s string) string {

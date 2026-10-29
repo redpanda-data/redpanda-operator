@@ -46,7 +46,6 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 				"files/rbac/v1-manager.Role.yaml":                  values.VectorizedControllers.Enabled,
 				"files/rbac/v2-manager.ClusterRole.yaml":           true,
 				"files/rbac/pipeline.ClusterRole.yaml":             values.ConnectController.Enabled,
-				"files/rbac/console-pipelines.ClusterRole.yaml":    values.ConnectController.Enabled, // Console's pipelines run on the Connect controller.
 				"files/rbac/multicluster-manager.ClusterRole.yaml": values.Multicluster.Enabled,
 				// Steering is opted into per cluster, so a regular
 				// operator always needs these rules. The StretchCluster

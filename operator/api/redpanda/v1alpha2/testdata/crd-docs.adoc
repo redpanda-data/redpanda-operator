@@ -1168,8 +1168,6 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 
 ConsoleSpec defines the desired state of a Redpanda Console deployment.
 The operator renders these fields with the same logic as the Redpanda Console Helm chart, so fields left unset take the chart's default values.
-Writing Console resources is a privileged operation: they set the Console image, containers, volumes, and ServiceAccount,
-and with `pipelines.enabled` they make the operator create cluster-scoped ClusterRoles and ValidatingAdmissionPolicies.
 
 
 
@@ -1188,7 +1186,7 @@ Defaults to `1`. + |  |
 | *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies Secrets that hold credentials for pulling the Console image from a private registry. +
 For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
 | *`automountServiceAccountToken`* __boolean__ | Specifies whether Kubernetes mounts a ServiceAccount token into the Console Pods. +
-Console calls the Kubernetes API only with `pipelines.enabled`, which mounts the token regardless, so leave this `false` unless a sidecar in `extraContainers` needs the token. +
+Console does not call the Kubernetes API, so leave this `false` unless a sidecar in `extraContainers` needs the token. +
 Defaults to `false`. + |  | 
 | *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccountconfig[$$ServiceAccountConfig$$]__ | Configures the ServiceAccount that the operator creates for the Console Pods. + |  | 
 | *`commonLabels`* __object (keys:string, values:string)__ | Adds labels to every resource that the operator creates for this Console, except the Pods. +
@@ -1250,11 +1248,6 @@ For details, see https://kubernetes.io/docs/concepts/workloads/controllers/deplo
 Each warning describes a field from the original configuration that was dropped, and why. +
 Setting this field has no effect. + |  | 
 | *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig[$$MonitoringConfig$$]__ | Configures a Prometheus ServiceMonitor that scrapes Console's metrics. + |  | 
-| *`pipelines`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig[$$PipelinesConfig$$]__ | Configures Console to manage Redpanda Connect pipelines that run as Pipeline resources in the Console resource's namespace. +
-When enabled, the operator sets `config.pipelines.kubernetes` from these fields, overriding the same keys in `config`, and mounts the ServiceAccount token and cluster CA into the Console Pods so Console can call the Kubernetes API. +
-Anyone who can create pipelines in Console can run arbitrary code in the namespace, because Connect configs can run commands and read files in the pipeline Pods. +
-Enforce the Pod Security Admission `restricted` level on the namespace, and set a ResourceQuota and LimitRange there, because Console may set any `replicas` and any cpu and memory quantity. +
-Run one Console per namespace: every Console labels its Pipelines `console.redpanda.com/managed-by: console`, so Consoles that share a namespace can edit and delete each other's pipelines. + |  | 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | Specifies the Redpanda cluster that Console connects to. +
 The operator generates the Kafka API, Admin API, and Schema Registry connection settings from this cluster and merges them into `config`. +
 If unset, you must configure the connection in `config` yourself. + |  | 
@@ -3243,82 +3236,6 @@ mechanism the pipeline will use to authenticate to Redpanda.
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesadmissionpolicyconfig"]
-==== PipelinesAdmissionPolicyConfig
-
-
-
-PipelinesAdmissionPolicyConfig configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig[$$PipelinesConfig$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`enabled`* __boolean__ | Specifies whether the operator creates a ValidatingAdmissionPolicy that limits what Console's ServiceAccount can write, so a compromised Console can't run arbitrary Pods. +
-The policy rejects writes that add or change Pipeline fields other than `configYaml`, `displayName`, `description`, `tags`, `paused`, `replicas`, `updateStrategy`, cpu and memory in `resources.requests` and `resources.limits`, `cluster.clusterRef.name`, which must equal `clusterRef`, and `userRef.name`, which must equal `userRef`. +
-Unless `allowBootstrapUser` is `true`, it also requires `userRef` on Pipelines that set `cluster`. +
-It also rejects writes to Pipelines without the label `console.redpanda.com/managed-by: console`, and writes that set `metadata.ownerReferences` or add or remove `metadata.finalizers`. +
-Requires Kubernetes 1.30 or later. +
-Has no effect when `impersonateUser` is `true`. +
-Console refuses to start through its ServiceAccount if the policy is missing, unless this is `false`. +
-Defaults to `true`. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesconfig"]
-==== PipelinesConfig
-
-
-
-PipelinesConfig configures Console to manage Redpanda Connect pipelines.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`enabled`* __boolean__ | Specifies whether Console manages pipelines. +
-The operator must run with the Helm value `connectController.enabled: true`, which runs the Pipelines and grants the operator the permissions it needs to create the objects below. +
-Unless `impersonateUser` is `true`, the operator also grants Console's ServiceAccount access to Pipelines with a Role and RoleBinding whose names end in `-pipelines`, so Console can't use the namespace's `default` ServiceAccount. +
-Defaults to `false`. + |  | 
-| *`clusterRef`* __string__ | Specifies the name of the Redpanda resource that pipelines created in Console connect to, set as their `spec.cluster.clusterRef.name`. +
-The Redpanda resource must be in the Console resource's namespace, even if `cluster.clusterRef` points to another namespace. +
-If unset, Console creates pipelines without a cluster reference. +
-Requires `userRef`, unless `allowBootstrapUser` is `true`. + |  | MaxLength: 253 +
-Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
-
-| *`userRef`* __string__ | Specifies the name of the User resource that pipelines created in Console authenticate as, set as their `spec.userRef.name`. +
-The User must be in the Console resource's namespace and have ACLs for the topics, consumer groups, and schema subjects that the pipelines use, plus Write and Describe on the topic `__redpanda.connect.logs` for Console to show pipeline logs. +
-Every pipeline created in Console runs as this User, so its ACLs bound what anyone who can create pipelines in Console can read and write, regardless of their own Console permissions. Keep them narrow. +
-If the cluster's internal Kafka listener uses `authenticationMethod: mtls_identity`, a pipeline can instead authenticate with the client certificate that the operator and Console also use, which this User's ACLs don't bound. Use SASL on that listener. + |  | MaxLength: 253 +
-Pattern: `^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$` +
-
-| *`allowBootstrapUser`* __boolean__ | Specifies whether pipelines created in Console may run without `userRef`, in which case they authenticate as the cluster's bootstrap superuser if the cluster has SASL enabled. +
-Set it only for clusters without SASL. +
-Defaults to `false`. + |  | 
-| *`impersonateUser`* __boolean__ | Specifies whether Console forwards the logged-in user's OIDC ID token to the Kubernetes API instead of using its ServiceAccount, so Kubernetes RBAC and audit logs apply to each user. +
-Requires the API server to trust Console's identity provider. +
-Console's ServiceAccount then gets no access to Pipelines. Instead, the operator creates two ClusterRoles, whose names end in `-pipeline-editor` and `-pipeline-viewer`, for you to bind to your identity provider's groups. +
-No admission policy applies in this mode, so `-pipeline-editor` lets its members set any Pipeline field, such as `image`, `serviceAccountName`, `valueSources`, and `extraVolumes`, and omit `userRef`. That amounts to creating Pods and reading Secrets in the namespace, and to authenticating as the cluster's bootstrap superuser. +
-Defaults to `false`. + |  | 
-| *`allowUnauthenticated`* __boolean__ | Specifies whether Console may manage pipelines without authenticating its users, which Console otherwise refuses. +
-Set it only for Consoles with authentication handled in front of them: anyone who can reach Console can otherwise run workloads in the cluster. +
-Defaults to `false`. + |  | 
-| *`admissionPolicy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesadmissionpolicyconfig[$$PipelinesAdmissionPolicyConfig$$]__ | Configures the ValidatingAdmissionPolicy that restricts the Pipelines Console's ServiceAccount can write. + |  | 
-|===
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podantiaffinity"]
 ==== PodAntiAffinity
 
@@ -4801,7 +4718,7 @@ ServiceAccountConfig configures the ServiceAccount that the operator creates for
 |===
 | Field | Description | Default | Validation
 | *`automountServiceAccountToken`* __boolean__ | Specifies whether the ServiceAccount allows its API token to be mounted into Pods automatically. +
-Console calls the Kubernetes API only with `pipelines.enabled`, which mounts the token regardless. +
+Console does not call the Kubernetes API. +
 Defaults to `false`. + |  | 
 | *`annotations`* __object (keys:string, values:string)__ | Adds annotations to the ServiceAccount, such as those that bind it to a cloud identity for workload identity. + |  | 
 | *`name`* __string__ | Specifies the name of the ServiceAccount. +

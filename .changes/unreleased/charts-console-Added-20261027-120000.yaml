@@ -1,7 +1,0 @@
-project: charts/console
-kind: Added
-body: |-
-    Added `pipelines` to let Console manage Redpanda Connect pipelines as Pipeline resources. Requires a Console release with Kubernetes pipeline support and a Redpanda Operator with `connectController.enabled: true`. With `pipelines.clusterRef`, set `pipelines.userRef`: every pipeline created in Console runs as that User, so its ACLs bound what any pipeline author can reach. Console refuses to manage pipelines without authenticating its users unless `pipelines.allowUnauthenticated: true`, which is only for Consoles with authentication handled in front of them.
-
-    By default Console's ServiceAccount, which can't be `default`, gets a Role on Pipelines, restricted by a ValidatingAdmissionPolicy (Kubernetes 1.30+). Console refuses to start without the policy unless `pipelines.admissionPolicy.enabled: false`. Helm installs the policy last, so install with `--atomic`. With `pipelines.impersonateUser: true` no policy applies, and the `-pipeline-editor` ClusterRole amounts to creating Pods, reading Secrets, and the bootstrap superuser in the namespace. Pipeline authors can run arbitrary code there: enforce Pod Security Admission `restricted` and a ResourceQuota, and run one Console per pipelines namespace.
-time: 2026-10-27T12:00:00.000000-07:00

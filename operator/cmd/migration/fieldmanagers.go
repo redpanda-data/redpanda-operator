@@ -159,9 +159,7 @@ func typeName(scheme *runtime.Scheme, obj client.Object) string {
 	return fmt.Sprintf("%T", obj)
 }
 
-// copied from operator/internal/controller/console/controller.go, minus the
-// namespace label so that it also matches objects applied before that label
-// was added.
+// copied from operator/internal/controller/console/controller.go
 func consoleOwnershipLabels(c *redpandav1alpha2.Console) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       console.ChartName,

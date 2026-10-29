@@ -1,7 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    Added `spec.pipelines` to the Console resource, matching the Console Helm chart's `pipelines` values, including `allowUnauthenticated`, and their security notes, except that pipelines stay in the Console resource's namespace. Requires a Console release with Kubernetes pipeline support and the operator Helm value `connectController.enabled: true`, which now grants the operator full access to Roles, RoleBindings, ClusterRoles, ValidatingAdmissionPolicies and their bindings, and Pipelines. Add these if you manage the operator's RBAC yourself. Writing Console resources is privileged.
-
-    Objects the operator creates for a Console now carry the label `cluster.redpanda.com/namespace`. An object that a Console stops rendering in the same change as the operator upgrade isn't removed until the Console is deleted.
-time: 2026-10-27T18:00:00.000000-07:00

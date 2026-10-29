@@ -26,10 +26,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
@@ -113,16 +111,7 @@ func TestTemplate(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, obj := range objs {
-				namespace := "test-namespace"
-				switch obj.(type) {
-				case *rbacv1.ClusterRole, *admissionregistrationv1.ValidatingAdmissionPolicy, *admissionregistrationv1.ValidatingAdmissionPolicyBinding:
-					namespace = ""
-				case *rbacv1.Role, *rbacv1.RoleBinding:
-					if values.Pipelines != nil && ptr.Deref(values.Pipelines.Namespace, "") != "" {
-						namespace = *values.Pipelines.Namespace
-					}
-				}
-				assert.Equalf(t, namespace, obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
+				assert.Equalf(t, "test-namespace", obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
 			}
 
 			goldens.AssertGolden(t, testutil.YAML, fmt.Sprintf("testdata/%s.yaml.golden", tc.Name), out)
@@ -231,16 +220,6 @@ func TestGoHelmEquivalence(t *testing.T) {
 			Ingress: &console.PartialIngressConfig{
 				Enabled: ptr.To(true),
 			},
-			Pipelines: &console.PartialPipelinesConfig{
-				Enabled:    ptr.To(true),
-				ClusterRef: ptr.To("redpanda"),
-				UserRef:    ptr.To("console-pipelines"),
-			},
-			Config: map[string]any{
-				"pipelines": map[string]any{
-					"kubernetes": map[string]any{"impersonateUser": true},
-				},
-			},
 		},
 	}
 
@@ -282,67 +261,6 @@ func TestGoHelmEquivalence(t *testing.T) {
 	// report which element(s) aren't equal.
 	for i := range helmObjs {
 		assert.Equal(t, helmObjs[i], goObjs[i])
-	}
-}
-
-// TestPipelinesRequireUserRef asserts that both renderers refuse to let
-// Console create cluster-bound pipelines that would run as the bootstrap
-// superuser.
-func TestPipelinesRequireUserRef(t *testing.T) {
-	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
-	require.NoError(t, err)
-
-	values := PartialValues{
-		PartialRenderValues: console.PartialRenderValues{
-			Pipelines: &console.PartialPipelinesConfig{
-				Enabled:    ptr.To(true),
-				ClusterRef: ptr.To("redpanda"),
-			},
-		},
-	}
-	const msg = "pipelines.clusterRef requires pipelines.userRef"
-
-	_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
-	require.ErrorContains(t, err, msg)
-
-	_, err = client.Template(t.Context(), ".", helm.TemplateOptions{Name: "console", Namespace: "console", Values: values})
-	require.ErrorContains(t, err, msg)
-
-	values.Pipelines.AllowBootstrapUser = ptr.To(true)
-	_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
-	require.NoError(t, err)
-}
-
-// TestPipelinesRequireDedicatedServiceAccount asserts that both renderers
-// refuse to grant Pipeline access to the namespace's default ServiceAccount,
-// which pipeline Pods without a serviceAccountName run as.
-func TestPipelinesRequireDedicatedServiceAccount(t *testing.T) {
-	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
-	require.NoError(t, err)
-
-	const msg = "pipelines.enabled requires a dedicated ServiceAccount for Console"
-
-	for _, sa := range []*console.PartialServiceAccountConfig{
-		{Create: ptr.To(false)},
-		{Name: ptr.To("default")},
-	} {
-		values := PartialValues{
-			PartialRenderValues: console.PartialRenderValues{
-				ServiceAccount: sa,
-				Pipelines:      &console.PartialPipelinesConfig{Enabled: ptr.To(true)},
-			},
-		}
-
-		_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
-		require.ErrorContains(t, err, msg)
-
-		_, err = client.Template(t.Context(), ".", helm.TemplateOptions{Name: "console", Namespace: "console", Values: values})
-		require.ErrorContains(t, err, msg)
-
-		// Console's ServiceAccount gets no access when impersonating.
-		values.Pipelines.ImpersonateUser = ptr.To(true)
-		_, err = Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
-		require.NoError(t, err)
 	}
 }
 

@@ -169,7 +169,6 @@ func init() {
 			consolePartialRenderValues.Deployment = autoconv_DeploymentConfig_console_PartialDeploymentConfig((*source).Deployment)
 			consolePartialRenderValues.Strategy = pV1DeploymentStrategyToPV1DeploymentStrategy((*source).Strategy)
 			consolePartialRenderValues.Monitoring = pV1alpha2MonitoringConfigToPConsolePartialMonitoringConfig((*source).Monitoring)
-			consolePartialRenderValues.Pipelines = autoconv_PipelinesConfig_To_console_PartialPipelinesConfig((*source).Pipelines)
 			pConsolePartialRenderValues = &consolePartialRenderValues
 		}
 		return pConsolePartialRenderValues, nil
@@ -236,39 +235,6 @@ func init() {
 			pConsolePartialDeploymentConfig = &consolePartialDeploymentConfig
 		}
 		return pConsolePartialDeploymentConfig
-	}
-	autoconv_PipelinesConfig_To_console_PartialPipelinesConfig = func(source *PipelinesConfig) *v3.PartialPipelinesConfig {
-		var pConsolePartialPipelinesConfig *v3.PartialPipelinesConfig
-		if source != nil {
-			var consolePartialPipelinesConfig v3.PartialPipelinesConfig
-			if (*source).Enabled != nil {
-				xbool := *(*source).Enabled
-				consolePartialPipelinesConfig.Enabled = &xbool
-			}
-			if (*source).ClusterRef != nil {
-				xstring := *(*source).ClusterRef
-				consolePartialPipelinesConfig.ClusterRef = &xstring
-			}
-			if (*source).UserRef != nil {
-				xstring2 := *(*source).UserRef
-				consolePartialPipelinesConfig.UserRef = &xstring2
-			}
-			if (*source).AllowBootstrapUser != nil {
-				xbool2 := *(*source).AllowBootstrapUser
-				consolePartialPipelinesConfig.AllowBootstrapUser = &xbool2
-			}
-			if (*source).ImpersonateUser != nil {
-				xbool3 := *(*source).ImpersonateUser
-				consolePartialPipelinesConfig.ImpersonateUser = &xbool3
-			}
-			if (*source).AllowUnauthenticated != nil {
-				xbool4 := *(*source).AllowUnauthenticated
-				consolePartialPipelinesConfig.AllowUnauthenticated = &xbool4
-			}
-			consolePartialPipelinesConfig.AdmissionPolicy = pV1alpha2PipelinesAdmissionPolicyConfigToPConsolePartialPipelinesAdmissionPolicyConfig((*source).AdmissionPolicy)
-			pConsolePartialPipelinesConfig = &consolePartialPipelinesConfig
-		}
-		return pConsolePartialPipelinesConfig
 	}
 	autoconv_RedpandaConsole_To_ConsoleValues = func(source *RedpandaConsole) (*ConsoleValues, error) {
 		var pV1alpha2ConsoleValues *ConsoleValues
@@ -1378,18 +1344,6 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 		pConsolePartialOIDCLoginSecrets = &consolePartialOIDCLoginSecrets
 	}
 	return pConsolePartialOIDCLoginSecrets
-}
-func pV1alpha2PipelinesAdmissionPolicyConfigToPConsolePartialPipelinesAdmissionPolicyConfig(source *PipelinesAdmissionPolicyConfig) *v3.PartialPipelinesAdmissionPolicyConfig {
-	var pConsolePartialPipelinesAdmissionPolicyConfig *v3.PartialPipelinesAdmissionPolicyConfig
-	if source != nil {
-		var consolePartialPipelinesAdmissionPolicyConfig v3.PartialPipelinesAdmissionPolicyConfig
-		if (*source).Enabled != nil {
-			xbool := *(*source).Enabled
-			consolePartialPipelinesAdmissionPolicyConfig.Enabled = &xbool
-		}
-		pConsolePartialPipelinesAdmissionPolicyConfig = &consolePartialPipelinesAdmissionPolicyConfig
-	}
-	return pConsolePartialPipelinesAdmissionPolicyConfig
 }
 func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(source *RedpandaAdminAPISecrets) *v3.PartialRedpandaAdminAPISecrets {
 	var pConsolePartialRedpandaAdminAPISecrets *v3.PartialRedpandaAdminAPISecrets

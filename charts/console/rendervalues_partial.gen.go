@@ -63,7 +63,6 @@ type PartialRenderValues struct {
 	Deployment                   *PartialDeploymentConfig                          "json:\"deployment,omitempty\""
 	Strategy                     *appsv1.DeploymentStrategy                        "json:\"strategy,omitempty\""
 	Monitoring                   *PartialMonitoringConfig                          "json:\"monitoring,omitempty\""
-	Pipelines                    *PartialPipelinesConfig                           "json:\"pipelines,omitempty\""
 }
 
 type PartialImage struct {
@@ -143,17 +142,6 @@ type PartialMonitoringConfig struct {
 	Labels         map[string]string      "json:\"labels,omitempty\""
 }
 
-type PartialPipelinesConfig struct {
-	Enabled              *bool                                  "json:\"enabled,omitempty\""
-	Namespace            *string                                "json:\"namespace,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$,maxLength=63\""
-	ClusterRef           *string                                "json:\"clusterRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
-	UserRef              *string                                "json:\"userRef,omitempty\" jsonschema:\"pattern=^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$,maxLength=253\""
-	AllowBootstrapUser   *bool                                  "json:\"allowBootstrapUser,omitempty\""
-	ImpersonateUser      *bool                                  "json:\"impersonateUser,omitempty\""
-	AllowUnauthenticated *bool                                  "json:\"allowUnauthenticated,omitempty\""
-	AdmissionPolicy      *PartialPipelinesAdmissionPolicyConfig "json:\"admissionPolicy,omitempty\""
-}
-
 type PartialSecretMount struct {
 	Name        *string "json:\"name,omitempty\""
 	SecretName  *string "json:\"secretName,omitempty\""
@@ -190,10 +178,6 @@ type PartialSchemaRegistrySecrets struct {
 	TLSCA       *string "json:\"tlsCa,omitempty\""
 	TLSCert     *string "json:\"tlsCert,omitempty\""
 	TLSKey      *string "json:\"tlsKey,omitempty\""
-}
-
-type PartialPipelinesAdmissionPolicyConfig struct {
-	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialIngressHost struct {
