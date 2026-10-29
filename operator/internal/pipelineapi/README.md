@@ -67,6 +67,8 @@ spec:
       containers:
       - name: pipeline-api
         image: docker.redpanda.com/redpandadata/redpanda-operator:<operator version>
+        # The image's default entrypoint runs the controller manager.
+        command: [/redpanda-operator]
         args:
         - pipeline-api
         - --namespace=redpanda
