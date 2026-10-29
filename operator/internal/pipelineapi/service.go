@@ -20,10 +20,10 @@ import (
 	"slices"
 	"strings"
 
+	"buf.build/gen/go/redpandadata/dataplane/connectrpc/go/redpanda/api/dataplane/v1/dataplanev1connect"
+	dataplanev1 "buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go/redpanda/api/dataplane/v1"
 	"connectrpc.com/connect"
 	"github.com/cockroachdb/errors"
-	dataplanev1 "github.com/redpanda-data/console/backend/pkg/protogen/redpanda/api/dataplane/v1"
-	"github.com/redpanda-data/console/backend/pkg/protogen/redpanda/api/dataplane/v1/dataplanev1connect"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,10 +88,6 @@ func NewService(cfg Config, c client.Client, logger *slog.Logger) (*Service, err
 // kubectl or GitOps, which are read-only through this API.
 func (s *Service) ListPipelines(ctx context.Context, req *connect.Request[dataplanev1.ListPipelinesRequest]) (*connect.Response[dataplanev1.ListPipelinesResponse], error) {
 	f := req.Msg.GetFilter()
-	if f.GetSecretId() != "" {
-		// Secrets are out of scope, so no pipeline references one.
-		return connect.NewResponse(&dataplanev1.ListPipelinesResponse{}), nil
-	}
 
 	var pageSize int64
 	switch size := req.Msg.GetPageSize(); {

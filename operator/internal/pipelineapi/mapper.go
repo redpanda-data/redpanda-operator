@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	dataplanev1 "github.com/redpanda-data/console/backend/pkg/protogen/redpanda/api/dataplane/v1"
+	dataplanev1 "buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go/redpanda/api/dataplane/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +63,7 @@ func pipelineToProto(p *redpandav1alpha2.Pipeline) *dataplanev1.Pipeline {
 		out.Status = &dataplanev1.Pipeline_Status{Error: errMsg}
 	}
 	// TODO: set created_by from createdByAnnotation, and create_time and
-	// update_time from metadata, once the console/backend pin has them.
+	// update_time from metadata, once the dataplane proto pin has them.
 	return out
 }
 
