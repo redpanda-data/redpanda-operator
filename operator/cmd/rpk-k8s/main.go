@@ -57,12 +57,16 @@ func main() {
 	}
 }
 
+// pluginHelp is one entry of the --help-autocomplete output rpk reads.
+// Use is the command's cobra Use line, positional arguments included, so
+// rpk can print them in the command's usage. Older rpk ignores it.
 type pluginHelp struct {
 	Path    string       `json:"path"`
 	Short   string       `json:"short"`
 	Long    string       `json:"long"`
 	Example string       `json:"example"`
 	Args    []string     `json:"args"`
+	Use     string       `json:"use"`
 	Flags   []pluginFlag `json:"flags"`
 }
 
@@ -87,6 +91,7 @@ func collectHelps(prefix string, cmd *cobra.Command) []pluginHelp {
 		Long:    cmd.Long,
 		Example: cmd.Example,
 		Args:    pluginHelpArgs(cmd),
+		Use:     cmd.Use,
 		Flags:   pluginHelpFlags(cmd),
 	})
 

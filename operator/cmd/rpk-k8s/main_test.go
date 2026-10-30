@@ -23,7 +23,7 @@ func TestCollectHelpsFlags(t *testing.T) {
 	root.PersistentFlags().String("kubeconfig", "", "path to kubeconfig")
 
 	sub := &cobra.Command{
-		Use:       "status",
+		Use:       "status <cluster>",
 		Short:     "status short",
 		ValidArgs: []string{"positional"},
 		Run:       func(*cobra.Command, []string) {},
@@ -67,6 +67,9 @@ func TestCollectHelpsFlags(t *testing.T) {
 		paths = append(paths, h["path"])
 	}
 	require.Equal(t, []any{"k8s", "k8s_bare", "k8s_status"}, paths, "help, completion and hidden commands must be skipped")
+	require.Equal(t, "k8s", got[0]["use"])
+	require.Equal(t, "bare", got[1]["use"])
+	require.Equal(t, "status <cluster>", got[2]["use"], "use keeps the positional arguments; path uses the name")
 	require.Equal(t, []any{}, got[1]["flags"], "flags must be [] rather than null")
 	require.Equal(t, []any{"--kubeconfig"}, got[1]["args"])
 

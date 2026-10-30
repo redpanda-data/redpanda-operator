@@ -1,7 +1,7 @@
 project: operator
 kind: Added
 body: |-
-    `rpk k8s` reports each command's flags to rpk, so shell completion for `rpk k8s` commands lists their flags and `rpk --print-tree` includes them
+    `rpk k8s` reports each command's flags and usage line to rpk, so shell completion for `rpk k8s` commands lists their flags and `rpk --print-tree` includes them, along with any positional arguments in the usage line
 
-      Previously the plugin reported no flags for its commands.
+      Previously the plugin reported no flags or usage lines for its commands.
 time: 2026-10-27T10:00:00.000000+00:00
