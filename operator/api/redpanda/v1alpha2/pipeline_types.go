@@ -19,7 +19,7 @@ import (
 
 const (
 	// PipelineDefaultImage is the default Redpanda Connect container image.
-	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.115.1"
+	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.116.1"
 )
 
 // PipelinePhase describes the lifecycle phase of a Pipeline.
