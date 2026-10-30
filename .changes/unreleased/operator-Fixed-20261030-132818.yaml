@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'In Broker CR mode (`operator.redpanda.com/use-broker-cr`), a V1 Cluster node pool scaled to `replicas: 0` but still listed in `spec.nodePools` left `OperatorQuiescent` False with reason `NodePoolNotSynced` and `status.observedGeneration` one behind `metadata.generation` for good: once the last Broker CR of the pool was removed, the status carried the last non-zero `status.nodePools` entry of that pool forward, which also inflated `status.readyReplicas` by the drained count. A drained pool kept in spec at zero replicas is now reported with a zeroed `status.nodePools` entry, so the cluster quiesces and `observedGeneration` advances as soon as the last broker is decommissioned.'
+time: 2026-10-30T13:28:18.316542376+01:00

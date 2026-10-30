@@ -83,6 +83,26 @@ func v1ClusterShouldHaveCondition(ctx context.Context, t framework.TestingT, clu
 	}))
 }
 
+// v1ClusterObservedGenerationShouldMatch is the check the cloud node-pool
+// migration waits on: the V1 cluster controller bumps observedGeneration only
+// at the end of a pass that found nothing left to do.
+func v1ClusterObservedGenerationShouldMatch(ctx context.Context, t framework.TestingT, clusterName string) {
+	var cluster vectorizedv1alpha1.Cluster
+
+	key := t.ResourceKey(clusterName)
+
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
+		t.Logf("Cluster %q generation=%d observedGeneration=%d", key.String(), cluster.Generation, cluster.Status.ObservedGeneration)
+		return cluster.Status.ObservedGeneration == cluster.Generation
+	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf("Cluster %q observedGeneration (%d) never caught up to generation (%d), final Conditions: %+v", key.String(), cluster.Status.ObservedGeneration, cluster.Generation, cluster.Status.Conditions)
+	}))
+}
+
 func hasV1Condition(expected vectorizedv1alpha1.ClusterCondition, conditions []vectorizedv1alpha1.ClusterCondition) bool {
 	for _, condition := range conditions {
 		if expected.Type == condition.Type && expected.Status == condition.Status {

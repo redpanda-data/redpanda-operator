@@ -242,3 +242,110 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
     Then at most one Broker of cluster "rp-scaledown" should be decommissioning at any time until it has 3 Broker CRs
     And all Broker CRs for cluster "rp-scaledown" should be Running
     And cluster "rp-scaledown" admin API should show 3 brokers
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Scaling a nodePool to zero while keeping it in spec leaves the cluster quiescent
+    Given I apply Kubernetes manifest:
+      """
+      apiVersion: redpanda.vectorized.io/v1alpha1
+      kind: Cluster
+      metadata:
+        name: rp-zero-pool
+        annotations:
+          operator.redpanda.com/use-broker-cr: "true"
+      spec:
+        image: ${DEFAULT_REDPANDA_REPO}
+        version: ${DEFAULT_REDPANDA_TAG}
+        additionalConfiguration: {}
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
+        configuration:
+          developerMode: true
+          additionalCommandlineArguments:
+            abort-on-seastar-bad-alloc: ""
+            dump-memory-diagnostics-on-alloc-failure-kind: "all"
+          rpcServer:
+            port: 33145
+          kafkaApi:
+            - port: 9092
+              tls:
+                enabled: true
+          adminApi:
+            - port: 9644
+        nodePools:
+          - name: blue
+            replicas: 3
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
+            storage:
+              capacity: 2Gi
+            cloudCacheStorage:
+              capacity: 1Gi
+            resources:
+              requests:
+                cpu: "100m"
+                memory: 512Mi
+              limits:
+                cpu: "100m"
+                memory: 512Mi
+            additionalCommandlineArguments:
+              abort-on-seastar-bad-alloc: ""
+              dump-memory-diagnostics-on-alloc-failure-kind: "all"
+            hostIndexOffset: 100
+          - name: green
+            replicas: 1
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
+            storage:
+              capacity: 2Gi
+            cloudCacheStorage:
+              capacity: 1Gi
+            resources:
+              requests:
+                cpu: "100m"
+                memory: 512Mi
+              limits:
+                cpu: "100m"
+                memory: 512Mi
+            additionalCommandlineArguments:
+              abort-on-seastar-bad-alloc: ""
+              dump-memory-diagnostics-on-alloc-failure-kind: "all"
+            hostIndexOffset: 200
+      """
+    Then cluster "rp-zero-pool" should eventually have 4 Broker CRs
+    And all Broker CRs for cluster "rp-zero-pool" should be Running
+    And all Broker CRs for cluster "rp-zero-pool" should be Stable
+    And cluster "rp-zero-pool" admin API should show 4 brokers
+    And vectorized cluster "rp-zero-pool" should have condition "OperatorQuiescent" as "True"
+    And vectorized cluster "rp-zero-pool" should have observedGeneration equal to its generation
+    # The cloud node-pool migration drains the source pool to zero and waits
+    # for the Cluster to reconcile that generation BEFORE removing the pool
+    # from spec. With no Broker CRs left, the pool's status entry must not
+    # carry its last non-zero bookkeeping forward, or OperatorQuiescent never
+    # returns to True and observedGeneration stalls one behind.
+    When I set nodePool "green" replicas to 0 on V1 cluster "rp-zero-pool"
+    Then cluster "rp-zero-pool" should eventually have 3 Broker CRs
+    And all Broker CRs for cluster "rp-zero-pool" should be Running
+    And cluster "rp-zero-pool" admin API should show 3 brokers
+    And vectorized cluster "rp-zero-pool" should have condition "OperatorQuiescent" as "True"
+    And vectorized cluster "rp-zero-pool" should have observedGeneration equal to its generation
+    # Second half of the migration: the drained pool leaves the spec.
+    When I remove nodePool "green" from V1 cluster "rp-zero-pool"
+    Then cluster "rp-zero-pool" should have 3 Broker CRs
+    And vectorized cluster "rp-zero-pool" should have condition "OperatorQuiescent" as "True"
+    And vectorized cluster "rp-zero-pool" should have observedGeneration equal to its generation

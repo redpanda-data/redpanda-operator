@@ -664,8 +664,19 @@ func (r *ClusterReconciler) reportStatus(
 		// for it, and wiping the entry zeroes CalculateCurrentReplicas just
 		// the same. Pools absent from the spec with no Broker CRs left are
 		// genuinely gone (drained) and stay dropped.
+		//
+		// A spec pool at zero replicas with no Broker CRs is drained, not
+		// mid-migration: a StatefulSet still owning pods for it implies a
+		// decommission in flight, which blocks the migration before
+		// reportStatus runs. Its old entry would pin status.replicas above
+		// spec.replicas and hold OperatorQuiescent False for good; the
+		// StatefulSet path writes the same zeroed entry.
 		for _, np := range redpandaCluster.GetNodePoolsFromSpec() {
 			if _, ok := nodePoolStatus[np.Name]; ok {
+				continue
+			}
+			if ptr.Deref(np.Replicas, 0) == 0 {
+				nodePoolStatus[np.Name] = vectorizedv1alpha1.NodePoolStatus{}
 				continue
 			}
 			if old, ok := redpandaCluster.Status.NodePools[np.Name]; ok {
