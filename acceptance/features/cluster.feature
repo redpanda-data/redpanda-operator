@@ -18,11 +18,28 @@ Feature: Basic cluster tests
           tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
+        # The chart pins static nodePorts and this feature needs the external
+        # Service, so it claims ports no other feature uses, inside the static
+        # band (30000-30085), which auto-allocation only uses once the rest of
+        # the range is exhausted.
         listeners:
           admin:
             external:
               default:
                 port: 9645
+                advertisedPorts: [30010]
+          kafka:
+            external:
+              default:
+                advertisedPorts: [30011]
+          http:
+            external:
+              default:
+                advertisedPorts: [30012]
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts: [30013]
     """
     And cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" has named port "admin-default" with value 9645
@@ -41,11 +58,28 @@ Feature: Basic cluster tests
           tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
+        # The chart pins static nodePorts and this feature needs the external
+        # Service, so it claims ports no other feature uses, inside the static
+        # band (30000-30085), which auto-allocation only uses once the rest of
+        # the range is exhausted.
         listeners:
           admin:
             external:
               default:
                 port: 9640
+                advertisedPorts: [30010]
+          kafka:
+            external:
+              default:
+                advertisedPorts: [30011]
+          http:
+            external:
+              default:
+                advertisedPorts: [30012]
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts: [30013]
     """
     Then cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" should have named port "admin-default" with value 9640

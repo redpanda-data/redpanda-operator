@@ -23,6 +23,10 @@ Feature: Operator upgrade regressions
       name: operator-upgrade
     spec:
       clusterSpec:
+        # The chart pins static nodePorts (e.g. 31644); a second cluster with
+        # external enabled on the shared k3d cluster fails to create its Service.
+        external:
+          enabled: false
         image:
           repository: redpandadata/redpanda
           tag: v25.2.11
@@ -66,6 +70,10 @@ Feature: Operator upgrade regressions
       name: operator-upgrade
     spec:
       clusterSpec:
+        # The chart pins static nodePorts (e.g. 31644); a second cluster with
+        # external enabled on the shared k3d cluster fails to create its Service.
+        external:
+          enabled: false
         image:
           repository: redpandadata/redpanda
           tag: v25.2.11

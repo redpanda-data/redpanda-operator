@@ -11,6 +11,10 @@ Feature: Broker CRD with V2 Redpanda
           operator.redpanda.com/use-broker-cr: "true"
       spec:
         clusterSpec:
+          # The chart pins static nodePorts (e.g. 31644); a second cluster with
+          # external enabled on the shared k3d cluster fails to create its Service.
+          external:
+            enabled: false
           statefulset:
             replicas: 3
           # The harpoon k3d cluster defaults not-ready/unreachable tolerations
@@ -46,6 +50,10 @@ Feature: Broker CRD with V2 Redpanda
           operator.redpanda.com/use-broker-cr: "true"
       spec:
         clusterSpec:
+          # The chart pins static nodePorts (e.g. 31644); a second cluster with
+          # external enabled on the shared k3d cluster fails to create its Service.
+          external:
+            enabled: false
           statefulset:
             replicas: 3
           tolerations:
@@ -87,6 +95,10 @@ Feature: Broker CRD with V2 Redpanda
         name: broker-v2
       spec:
         clusterSpec:
+          # The chart pins static nodePorts (e.g. 31644); a second cluster with
+          # external enabled on the shared k3d cluster fails to create its Service.
+          external:
+            enabled: false
           statefulset:
             replicas: 3
           tolerations:

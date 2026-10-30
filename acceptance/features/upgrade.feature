@@ -10,6 +10,10 @@ Feature: Upgrading redpanda
       name: cluster-upgrade
     spec:
       clusterSpec:
+        # The chart pins static nodePorts (e.g. 31644); a second cluster with
+        # external enabled on the shared k3d cluster fails to create its Service.
+        external:
+          enabled: false
         image:
           repository: redpandadata/redpanda
           tag: v25.2.11
@@ -32,6 +36,10 @@ Feature: Upgrading redpanda
       name: cluster-upgrade
     spec:
       clusterSpec:
+        # The chart pins static nodePorts (e.g. 31644); a second cluster with
+        # external enabled on the shared k3d cluster fails to create its Service.
+        external:
+          enabled: false
         image:
           repository: redpandadata/redpanda-unstable
           tag: v25.3.1-rc4

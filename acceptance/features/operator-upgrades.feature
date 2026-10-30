@@ -18,6 +18,10 @@ Feature: Upgrading the operator
       name: operator-upgrade
     spec:
       clusterSpec:
+        # The chart pins static nodePorts (e.g. 31644); a second cluster with
+        # external enabled on the shared k3d cluster fails to create its Service.
+        external:
+          enabled: false
         console:
           enabled: false
         statefulset:
