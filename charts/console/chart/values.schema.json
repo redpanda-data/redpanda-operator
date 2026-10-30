@@ -295,6 +295,72 @@
       },
       "type": "object"
     },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPIImage": {
+      "additionalProperties": false,
+      "properties": {
+        "pullPolicy": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPINetworkPolicyConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPITLS": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "secretName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelinesConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "allowUnauthenticated": {
+          "type": "boolean"
+        },
+        "clusterRef": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "image": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPIImage"
+        },
+        "networkPolicy": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPINetworkPolicyConfig"
+        },
+        "resources": {
+          "$ref": "#/$defs/k8s.io.api.core.v1.ResourceRequirements"
+        },
+        "tls": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelineAPITLS"
+        },
+        "userRef": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "github.com.redpanda-data.redpanda-operator.charts.console.v3.RedpandaAdminAPISecrets": {
       "additionalProperties": false,
       "properties": {
@@ -3125,6 +3191,9 @@
         "type": "string"
       },
       "type": "object"
+    },
+    "pipelines": {
+      "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.console.v3.PipelinesConfig"
     },
     "podAnnotations": {
       "additionalProperties": {

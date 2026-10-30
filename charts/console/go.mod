@@ -3,6 +3,7 @@ module github.com/redpanda-data/redpanda-operator/charts/console/v3
 go 1.26.10
 
 require (
+	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cloudhut/common v0.11.0
 	github.com/cockroachdb/errors v1.12.0
 	github.com/google/gofuzz v1.2.0

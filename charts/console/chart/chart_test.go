@@ -28,6 +28,7 @@ import (
 	"golang.org/x/tools/txtar"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
@@ -111,7 +112,11 @@ func TestTemplate(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, obj := range objs {
-				assert.Equalf(t, "test-namespace", obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
+				namespace := "test-namespace"
+				if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+					namespace = ""
+				}
+				assert.Equalf(t, namespace, obj.GetNamespace(), "%T %q did not have namespace correctly set", obj, obj.GetName())
 			}
 
 			goldens.AssertGolden(t, testutil.YAML, fmt.Sprintf("testdata/%s.yaml.golden", tc.Name), out)
@@ -261,6 +266,96 @@ func TestGoHelmEquivalence(t *testing.T) {
 	// report which element(s) aren't equal.
 	for i := range helmObjs {
 		assert.Equal(t, helmObjs[i], goObjs[i])
+	}
+}
+
+// TestPipelinesValidation asserts that both renderers refuse pipelines values
+// that would leave the pipeline API unusable or open to other Pods.
+func TestPipelinesValidation(t *testing.T) {
+	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
+	require.NoError(t, err)
+
+	valid := func() *console.PartialPipelinesConfig {
+		return &console.PartialPipelinesConfig{
+			Enabled:    ptr.To(true),
+			ClusterRef: ptr.To("redpanda"),
+			UserRef:    ptr.To("console-pipelines"),
+			Image:      &console.PartialPipelineAPIImage{Tag: ptr.To("v26.3.1")},
+		}
+	}
+
+	cases := map[string]struct {
+		values console.PartialRenderValues
+		err    string
+	}{
+		"valid": {
+			values: console.PartialRenderValues{Pipelines: valid()},
+		},
+		"no image tag": {
+			values: console.PartialRenderValues{Pipelines: func() *console.PartialPipelinesConfig {
+				p := valid()
+				p.Image = nil
+				return p
+			}()},
+			err: "pipelines.image.tag is required",
+		},
+		"clusterRef without userRef": {
+			values: console.PartialRenderValues{Pipelines: func() *console.PartialPipelinesConfig {
+				p := valid()
+				p.UserRef = nil
+				return p
+			}()},
+			err: "pipelines.clusterRef requires pipelines.userRef",
+		},
+		"no ServiceAccount": {
+			values: console.PartialRenderValues{
+				ServiceAccount: &console.PartialServiceAccountConfig{Create: ptr.To(false)},
+				Pipelines:      valid(),
+			},
+			err: "pipelines.enabled requires a dedicated ServiceAccount for Console",
+		},
+		"allowUnauthenticated with TLS": {
+			values: console.PartialRenderValues{Pipelines: func() *console.PartialPipelinesConfig {
+				p := valid()
+				p.AllowUnauthenticated = ptr.To(true)
+				return p
+			}()},
+			err: "pipelines.allowUnauthenticated is for Consoles that can't send a token",
+		},
+		"allowUnauthenticated with the default ServiceAccount": {
+			values: console.PartialRenderValues{
+				ServiceAccount: &console.PartialServiceAccountConfig{Name: ptr.To("default")},
+				Pipelines: func() *console.PartialPipelinesConfig {
+					p := valid()
+					p.AllowUnauthenticated = ptr.To(true)
+					p.TLS = &console.PartialPipelineAPITLS{Enabled: ptr.To(false)}
+					return p
+				}(),
+			},
+		},
+		"default ServiceAccount": {
+			values: console.PartialRenderValues{
+				ServiceAccount: &console.PartialServiceAccountConfig{Name: ptr.To("default")},
+				Pipelines:      valid(),
+			},
+			err: "pipelines.enabled requires a dedicated ServiceAccount for Console",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			values := PartialValues{PartialRenderValues: tc.values}
+
+			_, goErr := Chart.Render(nil, helmette.Release{Name: "console", Namespace: "console"}, values)
+			_, helmErr := client.Template(t.Context(), ".", helm.TemplateOptions{Name: "console", Namespace: "console", Values: values})
+			if tc.err == "" {
+				require.NoError(t, goErr)
+				require.NoError(t, helmErr)
+				return
+			}
+			require.ErrorContains(t, goErr, tc.err)
+			require.ErrorContains(t, helmErr, tc.err)
+		})
 	}
 }
 

@@ -24,7 +24,7 @@ func ConfigMap(state *RenderState) *corev1.ConfigMap {
 	}
 
 	data := map[string]string{
-		"config.yaml": fmt.Sprintf("# from .Values.config\n%s\n", state.Template(helmette.ToYaml(state.Values.Config))),
+		"config.yaml": fmt.Sprintf("# from .Values.config\n%s\n", state.Template(helmette.ToYaml(consoleConfig(state)))),
 	}
 
 	return &corev1.ConfigMap{

@@ -77,6 +77,8 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 		})
 	}
 
+	volumeMounts = append(volumeMounts, consolePipelinesVolumeMounts(state)...)
+
 	volumeMounts = append(volumeMounts, state.Values.ExtraVolumeMounts...)
 
 	return &appsv1.Deployment{
@@ -437,6 +439,8 @@ func consolePodVolumes(state *RenderState) []corev1.Volume {
 			},
 		})
 	}
+
+	volumes = append(volumes, consolePipelinesVolumes(state)...)
 
 	return append(volumes, state.Values.ExtraVolumes...)
 }

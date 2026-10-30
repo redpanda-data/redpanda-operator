@@ -241,6 +241,58 @@ Override `console.name` template.
 
 **Default:** `{}`
 
+### [pipelines](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines)
+
+Runs the Redpanda Operator's pipeline API, which serves Console's Redpanda Connect pipelines from the Pipeline resources in the release namespace. Console (enterprise) proxies its pipeline calls to it with a token of its own ServiceAccount, so Console itself gets no access to the Kubernetes API. Requires the Redpanda Operator with `connectController.enabled: true` to run the Pipelines, and a dedicated ServiceAccount for Console.
+
+**Default:**
+
+```
+{"allowUnauthenticated":false,"clusterRef":"","enabled":false,"image":{"pullPolicy":"IfNotPresent","repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":""},"networkPolicy":{"enabled":true},"resources":{},"tls":{"enabled":true,"secretName":""},"userRef":""}
+```
+
+### [pipelines.allowUnauthenticated](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.allowUnauthenticated)
+
+Accepts calls without Console's ServiceAccount token, for Consoles that predate `cloud.redpandaConnect.tokenFile`. Then only the NetworkPolicy keeps other Pods from managing pipelines, so it needs a CNI that enforces NetworkPolicies. Requires `tls.enabled: false`, as those Consoles can't use TLS either.
+
+**Default:** `false`
+
+### [pipelines.clusterRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.clusterRef)
+
+Name of the Redpanda resource that pipelines created in Console connect to. Requires `userRef`.
+
+**Default:** `""`
+
+### [pipelines.image.tag](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.image.tag)
+
+Redpanda Operator version that serves the pipeline API. Required.
+
+**Default:** `""`
+
+### [pipelines.networkPolicy.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.networkPolicy.enabled)
+
+Admits only Console's Pods to the pipeline API.
+
+**Default:** `true`
+
+### [pipelines.tls.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.tls.enabled)
+
+Serves the pipeline API over TLS. Requires a Console that supports `cloud.redpandaConnect.tls`.
+
+**Default:** `true`
+
+### [pipelines.tls.secretName](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.tls.secretName)
+
+Secret with `tls.crt`, `tls.key`, and the `ca.crt` that Console trusts, valid for `<fullname>-pipeline-api.<namespace>.svc`. If unset, the chart issues one with cert-manager from a self-signed CA.
+
+**Default:** `""`
+
+### [pipelines.userRef](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=pipelines.userRef)
+
+Name of the User resource that every pipeline created in Console authenticates as. Keep its ACLs narrow.
+
+**Default:** `""`
+
 ### [podAnnotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=podAnnotations)
 
 **Default:** `{}`

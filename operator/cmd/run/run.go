@@ -36,6 +36,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -561,24 +562,24 @@ func Run(
 
 		// Console Reconciler.
 		if opts.enableConsoleController {
-			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
-					// need to set the cache as well.
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			ctl, err := consolecontroller.NewCtl(mgr.GetConfig(), mgr.GetScheme(), mgr.GetCache())
 			if err != nil {
 				return err
 			}
 
 			setupLog.Info("starting Console controller")
 
-			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig(), UseNodePools: opts.enableV2NodepoolController}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+			if err := (&consolecontroller.Controller{
+				Ctl:             ctl,
+				Config:          mgr.GetConfig(),
+				UseNodePools:    opts.enableV2NodepoolController,
+				EnablePipelines: opts.enableConnectController,
+				PipelineAPIImage: console.PipelineAPIImage{
+					Repository: opts.configuratorBaseImage,
+					Tag:        opts.configuratorTag,
+					PullPolicy: corev1.PullPolicy(opts.configuratorImagePullPolicy),
+				},
+			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}

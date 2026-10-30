@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -340,6 +342,50 @@ func TestRBACBindings(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestRBACIsSuperSetOfConsolePipelineAPI asserts that, with the Connect
+// controller, the operator holds every permission that the pipeline API's Role
+// and its system:auth-delegator binding grant, as RBAC escalation checks
+// require. Without it, the operator gets none of the Pipeline permissions.
+func TestRBACIsSuperSetOfConsolePipelineAPI(t *testing.T) {
+	consoleObjs, err := consolechart.Chart.Render(nil, helmette.Release{}, consolechart.PartialValues{
+		PartialRenderValues: console.PartialRenderValues{
+			Pipelines: &console.PartialPipelinesConfig{
+				Enabled: ptr.To(true),
+				Image:   &console.PartialPipelineAPIImage{Tag: ptr.To("v0.0.0-test")},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	operatorObjs, err := Chart.Render(nil, helmette.Release{}, PartialValues{
+		ConnectController: &PartialConnectController{Enabled: ptr.To(true)},
+	})
+	require.NoError(t, err)
+
+	_, consoleRoleRules := ExtractRules(consoleObjs)
+	operatorClusterRoleRules, _ := ExtractRules(operatorObjs)
+
+	// Guard against a vacuous pass.
+	require.Contains(t, consoleRoleRules, "cluster.redpanda.com#pipelines")
+	assertRulesSuperSet(t, operatorClusterRoleRules, consoleRoleRules)
+	// system:auth-delegator's rules.
+	assertRulesSuperSet(t, operatorClusterRoleRules, CalculateRoleRules([]rbacv1.PolicyRule{
+		{APIGroups: []string{"authentication.k8s.io"}, Resources: []string{"tokenreviews"}, Verbs: []string{"create"}},
+		{APIGroups: []string{"authorization.k8s.io"}, Resources: []string{"subjectaccessreviews"}, Verbs: []string{"create"}},
+	}))
+
+	t.Run("connectController disabled", func(t *testing.T) {
+		operatorObjs, err := Chart.Render(nil, helmette.Release{}, PartialValues{
+			ConnectController: &PartialConnectController{Enabled: ptr.To(false)},
+		})
+		require.NoError(t, err)
+
+		operatorClusterRoleRules, operatorRoleRules := ExtractRules(operatorObjs)
+		assert.NotContains(t, operatorClusterRoleRules, "cluster.redpanda.com#pipelines")
+		assert.NotContains(t, operatorRoleRules, "cluster.redpanda.com#pipelines")
+	})
 }
 
 func TestRBACIsSuperSetOfRedpanda(t *testing.T) {

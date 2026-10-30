@@ -1,0 +1,4 @@
+project: charts/console
+kind: Added
+body: Added `pipelines`, which deploys the Redpanda Operator's pipeline API in the release namespace and points Console's `cloud.redpandaConnect` at it with a projected ServiceAccount token, so that Console (enterprise) can manage Pipeline resources without Kubernetes API access of its own. The pipeline API serves TLS from a cert-manager-issued certificate by default (`pipelines.tls`) behind a NetworkPolicy that admits only Console. For Console versions without `cloud.redpandaConnect.tokenFile`, set `pipelines.allowUnauthenticated: true` and `pipelines.tls.enabled: false`. Requires `pipelines.image.tag`.
+time: 2026-10-29T14:00:00.000000000-07:00

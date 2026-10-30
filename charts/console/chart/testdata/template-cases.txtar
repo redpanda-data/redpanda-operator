@@ -204,3 +204,56 @@ extraVolumes:
             apiVersion: v1
             fieldPath: metadata.namespace
           path: namespace
+
+-- pipelines-disabled --
+# pipelines settings have no effect while pipelines.enabled is false.
+pipelines:
+  enabled: false
+  clusterRef: redpanda
+  image:
+    tag: v26.3.1
+
+-- pipelines --
+# The pipeline API for a cluster-bound Console. pipelines wins over the same
+# keys in config.cloud.redpandaConnect and keeps the others.
+pipelines:
+  enabled: true
+  clusterRef: redpanda
+  userRef: console-pipelines
+  image:
+    tag: v26.3.1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+config:
+  cloud:
+    redpandaConnect:
+      address: ignored:9090
+      impersonateUser: false
+
+-- pipelines-tls-secret --
+# The pipeline API with a TLS Secret supplied by the user and no NetworkPolicy.
+serviceAccount:
+  name: console-sa
+pipelines:
+  enabled: true
+  image:
+    tag: v26.3.1
+  tls:
+    secretName: my-pipeline-api-tls
+  networkPolicy:
+    enabled: false
+
+-- pipelines-unauthenticated --
+# For Consoles without cloud.redpandaConnect.tokenFile: no token, no TLS, and
+# only the NetworkPolicy in front of the pipeline API.
+pipelines:
+  enabled: true
+  clusterRef: redpanda
+  userRef: console-pipelines
+  allowUnauthenticated: true
+  image:
+    tag: v26.3.1
+  tls:
+    enabled: false

@@ -14,10 +14,12 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cockroachdb/errors"
 	"github.com/imdario/mergo"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -25,9 +27,12 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,6 +70,8 @@ const (
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+//
+// The RBAC for console.PipelinesTypes lives in ./pipelinesrbac.
 
 type Controller struct {
 	// Ctl is the kube.Ctl bound to the controller's local cluster. It is
@@ -86,6 +93,16 @@ type Controller struct {
 	// whose brokers exist are exactly the ones it deploys, and the NodePool
 	// CRD may not be installed otherwise.
 	UseNodePools bool
+
+	// EnablePipelines lets Consoles set spec.pipelines.enabled. The operator
+	// chart grants the RBAC for console.PipelinesTypes only with
+	// connectController.enabled, which also runs the Pipelines, so Consoles
+	// don't watch or list those kinds without it.
+	EnablePipelines bool
+
+	// PipelineAPIImage is the operator's own image, which runs the pipeline
+	// API for Consoles with spec.pipelines.enabled.
+	PipelineAPIImage console.PipelineAPIImage
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
@@ -112,22 +129,11 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
-	// NB: As of writing, all console types are namespace scoped.
-	for _, t := range console.Types() {
-		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
-		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
-		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
-		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
-			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
-				continue
-			}
-		}
-		// Skip HTTPRoute watch if Gateway API CRDs are not installed.
-		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
-			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
-				continue
-			}
-		}
+	ownedTypes, err := c.ownedTypes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, t := range ownedTypes {
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -180,17 +186,11 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 		}).
 		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
-	for _, t := range console.Types() {
-		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
-			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
-				continue
-			}
-		}
-		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
-			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
-				continue
-			}
-		}
+	ownedTypes, err := c.ownedTypes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, t := range ownedTypes {
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -205,6 +205,60 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 	}
 
 	return builder.Complete(c)
+}
+
+// ownedTypes returns the Console types that can be watched through their
+// owner references.
+func (c *Controller) ownedTypes(ctx context.Context) ([]kube.Object, error) {
+	var types []kube.Object
+	for _, t := range c.types() {
+		gvk, err := kube.GVKFor(c.Ctl.Scheme(), t)
+		if err != nil {
+			return nil, err
+		}
+		scope, err := c.Ctl.ScopeOf(gvk)
+		if meta.IsNoMatchError(err) {
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		// Cluster scoped types carry no owner reference to map back to a Console.
+		if scope != meta.RESTScopeNameNamespace {
+			continue
+		}
+		// ScopeOf already skips kinds the cluster doesn't serve. These checks
+		// also skip a served kind the operator can't list, whose informer
+		// would otherwise never sync.
+		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
+		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
+		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
+		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
+			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
+				continue
+			}
+		}
+		// Skip HTTPRoute watch if Gateway API CRDs are not installed.
+		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
+			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
+				continue
+			}
+		}
+		types = append(types, t)
+	}
+	return types, nil
+}
+
+// types returns the kinds that the Console controller manages.
+func (c *Controller) types() []kube.Object {
+	if c.EnablePipelines {
+		return console.Types()
+	}
+	pipelinesTypes := console.PipelinesTypes()
+	return functional.Filter(console.Types(), func(t kube.Object) bool {
+		return !slices.ContainsFunc(pipelinesTypes, func(p kube.Object) bool {
+			return reflect.TypeOf(p) == reflect.TypeOf(t)
+		})
+	})
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
@@ -227,9 +281,8 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 	}
 
 	// If we're being deleted, clean up any left over objects and remove the
-	// finalizer. As of writing, there are no Cluster scope resources deployed
-	// so we don't NEED to use a finalizer. It's here to prevent accidents if
-	// we need cluster scoped resources one day.
+	// finalizer. Cluster scoped resources, such as the pipeline API's
+	// ClusterRoleBinding, have no owner references and rely on this cleanup.
 	if !cr.DeletionTimestamp.IsZero() {
 		log.Info(ctx, "GC'ing Console", "key", kube.AsKey(cr))
 
@@ -314,17 +367,28 @@ func (c *Controller) ctlFor(ctx context.Context, clusterName string) (*kube.Ctl,
 		return nil, fmt.Errorf("looking up cluster %q: %w", clusterName, err)
 	}
 
-	ctl, err := kube.FromRESTConfig(cluster.GetConfig(), kube.Options{
-		Options: client.Options{
-			Scheme: cluster.GetScheme(),
-			Cache:  &client.CacheOptions{Reader: cluster.GetCache()},
-		},
-		FieldManager: string(lifecycle.DefaultFieldOwner),
-	})
+	ctl, err := NewCtl(cluster.GetConfig(), cluster.GetScheme(), cluster.GetCache())
 	if err != nil {
 		return nil, fmt.Errorf("building kube.Ctl for cluster %q: %w", clusterName, err)
 	}
 	return ctl, nil
+}
+
+// NewCtl returns the kube.Ctl the Console controller works with, which reads
+// from reader, a manager's cache, except for cluster-scoped kinds. The cache
+// filters a List by the Console's namespace even for those, so the syncer
+// would never find them to garbage collect.
+func NewCtl(cfg *rest.Config, scheme *runtime.Scheme, reader client.Reader) (*kube.Ctl, error) {
+	return kube.FromRESTConfig(cfg, kube.Options{
+		Options: client.Options{
+			Scheme: scheme,
+			Cache: &client.CacheOptions{
+				Reader:     reader,
+				DisableFor: []client.Object{&rbacv1.ClusterRoleBinding{}},
+			},
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
 }
 
 func (c *Controller) syncerFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) (*kube.Syncer, error) {
@@ -349,6 +413,9 @@ func (c *Controller) ownershipLabelsFor(cr *redpandav1alpha2.Console) map[string
 		"app.kubernetes.io/name":       console.ChartName,
 		"app.kubernetes.io/managed-by": managedByService,
 		"app.kubernetes.io/instance":   cr.Name,
+		// Cluster scoped resources are owned by labels alone, so the labels
+		// must tell apart same-named Consoles in different namespaces.
+		lifecycle.DefaultNamespaceLabel: cr.Namespace,
 	}
 }
 
@@ -369,11 +436,14 @@ func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *r
 	}
 
 	return &render{
-		ctl:          ctl,
-		console:      cr,
-		labels:       c.ownershipLabelsFor(cr),
-		metrics:      metrics,
-		useNodePools: c.UseNodePools,
+		ctl:              ctl,
+		console:          cr,
+		labels:           c.ownershipLabelsFor(cr),
+		metrics:          metrics,
+		useNodePools:     c.UseNodePools,
+		enablePipelines:  c.EnablePipelines,
+		pipelineAPIImage: c.PipelineAPIImage,
+		types:            c.types(),
 	}
 }
 
@@ -477,15 +547,18 @@ func (c *Controller) skipWatchIfNotInstalled(ctx context.Context, list client.Ob
 
 // render implements [kube.Renderer].
 type render struct {
-	ctl          *kube.Ctl
-	labels       map[string]string
-	console      *redpandav1alpha2.Console
-	metrics      console.MetricsState
-	useNodePools bool
+	ctl              *kube.Ctl
+	labels           map[string]string
+	console          *redpandav1alpha2.Console
+	metrics          console.MetricsState
+	useNodePools     bool
+	enablePipelines  bool
+	pipelineAPIImage console.PipelineAPIImage
+	types            []kube.Object
 }
 
 func (r *render) Types() []kube.Object {
-	return console.Types()
+	return r.types
 }
 
 func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
@@ -494,11 +567,66 @@ func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
 		return nil, err
 	}
 
-	objs := console.Render(state)
+	if state.Values.Pipelines.Enabled && !r.enablePipelines {
+		return nil, errors.New("spec.pipelines.enabled requires the operator to run with connectController.enabled, which runs the Pipelines and grants the operator the permissions the pipeline API needs")
+	}
 
-	return functional.Filter(objs, func(obj kube.Object) bool {
+	rendered, err := renderConsole(state)
+	if err != nil {
+		return nil, err
+	}
+
+	objs := functional.Filter(rendered, func(obj kube.Object) bool {
 		return !reflect.ValueOf(obj).IsNil()
-	}), nil
+	})
+
+	for _, obj := range objs {
+		gvk, err := kube.GVKFor(r.ctl.Scheme(), obj)
+		if err != nil {
+			return nil, err
+		}
+		scope, err := r.ctl.ScopeOf(gvk)
+		if meta.IsNoMatchError(err) {
+			// The syncer skips kinds the cluster doesn't serve, which would
+			// leave the pipeline API waiting for its certificate.
+			if _, ok := obj.(*certmanagerv1.Certificate); ok {
+				return nil, errors.Wrap(err, "spec.pipelines.tls requires cert-manager: install it, set spec.pipelines.tls.secretName, or set spec.pipelines.tls.enabled: false")
+			}
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+
+		// Cluster scoped objects are owned by labels alone and the syncer
+		// force-applies, so refuse to take over one this Console didn't
+		// create, e.g. another Console's.
+		if scope == meta.RESTScopeNameRoot {
+			existing := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(kube.Object)
+			if err := r.ctl.Get(ctx, kube.AsKey(obj), existing); apierrors.IsNotFound(err) {
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			for key, value := range r.labels {
+				if existing.GetLabels()[key] != value {
+					return nil, errors.Newf("%s %q already exists and isn't owned by this Console; refusing to adopt it", gvk.Kind, obj.GetName())
+				}
+			}
+		}
+	}
+
+	return objs, nil
+}
+
+// renderConsole calls console.Render, which panics on invalid values as the
+// chart's templates fail.
+func renderConsole(state *console.RenderState) (objs []kube.Object, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Newf("%v", r)
+		}
+	}()
+	return console.Render(state), nil
 }
 
 func (r *render) state(ctx context.Context) (*console.RenderState, error) {
@@ -522,6 +650,7 @@ func (r *render) state(ctx context.Context) (*console.RenderState, error) {
 	if err != nil {
 		return nil, err
 	}
+	state.Values.Pipelines.Image = r.pipelineAPIImage
 
 	// Populate metrics telemetry state. Cluster ID is resolved per-reconcile
 	// as the controller may not have access at startup.

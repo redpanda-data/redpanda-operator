@@ -34,6 +34,7 @@
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -43,6 +44,7 @@
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-console
     namespace: test-ns
   spec:
@@ -179,6 +181,7 @@
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-console
     namespace: test-ns
   type: Opaque
@@ -199,6 +202,7 @@
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-console
     namespace: test-ns
 - apiVersion: v1
@@ -208,6 +212,7 @@
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-console
     namespace: test-ns
   spec:
@@ -261,6 +266,7 @@
       app.kubernetes.io/instance: console-cluster-ref-node-pools
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-node-pools-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -270,6 +276,7 @@
       app.kubernetes.io/instance: console-cluster-ref-node-pools
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-node-pools-console
     namespace: test-ns
   spec:
@@ -406,6 +413,7 @@
       app.kubernetes.io/instance: console-cluster-ref-node-pools
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-node-pools-console
     namespace: test-ns
   type: Opaque
@@ -426,6 +434,7 @@
       app.kubernetes.io/instance: console-cluster-ref-node-pools
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-node-pools-console
     namespace: test-ns
 - apiVersion: v1
@@ -435,6 +444,7 @@
       app.kubernetes.io/instance: console-cluster-ref-node-pools
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-cluster-ref-node-pools-console
     namespace: test-ns
   spec:
@@ -466,6 +476,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -475,6 +486,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
   spec:
@@ -581,6 +593,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
   spec:
@@ -634,6 +647,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
   type: Opaque
@@ -654,6 +668,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
 - apiVersion: v1
@@ -663,6 +678,7 @@
       app.kubernetes.io/instance: console-gw-path
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gw-path-console
     namespace: test-ns
   spec:
@@ -694,6 +710,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -703,6 +720,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
   spec:
@@ -811,6 +829,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
   spec:
@@ -860,6 +879,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
   type: Opaque
@@ -880,6 +900,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
 - apiVersion: v1
@@ -889,6 +910,7 @@
       app.kubernetes.io/instance: console-gateway
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-gateway-console
     namespace: test-ns
   spec:
@@ -920,6 +942,7 @@
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-jwt-set-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -929,6 +952,7 @@
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-jwt-set-console
     namespace: test-ns
   spec:
@@ -1054,6 +1078,7 @@
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-jwt-set-console
     namespace: test-ns
   type: Opaque
@@ -1065,6 +1090,7 @@
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-jwt-set-console
     namespace: test-ns
 - apiVersion: v1
@@ -1074,6 +1100,7 @@
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-jwt-set-console
     namespace: test-ns
   spec:
@@ -1105,6 +1132,7 @@
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-no-cluster-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -1114,6 +1142,7 @@
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-no-cluster-console
     namespace: test-ns
   spec:
@@ -1239,6 +1268,7 @@
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-no-cluster-console
     namespace: test-ns
   type: Opaque
@@ -1259,6 +1289,7 @@
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-no-cluster-console
     namespace: test-ns
 - apiVersion: v1
@@ -1268,6 +1299,7 @@
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-no-cluster-console
     namespace: test-ns
   spec:
@@ -1283,6 +1315,457 @@
     selector:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/name: console
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+-- pipelines --
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-d1a9f7d5-pipeline-api
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:auth-delegator
+  subjects:
+  - kind: ServiceAccount
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+- apiVersion: v1
+  data:
+    config.yaml: |
+      # from .Values.config
+      cloud:
+        redpandaConnect:
+          address: console-pipelines-console-pipeline-api.test-ns.svc:8080
+          enabled: true
+          tls:
+            caFilepath: /etc/console/pipeline-api-ca/ca.crt
+            enabled: true
+          tokenFile: /var/run/secrets/redpanda.com/pipeline-api/token
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console
+    namespace: test-ns
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console
+    namespace: test-ns
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: console-pipelines
+        app.kubernetes.io/name: console
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          checksum/config: ffab165aab1bda592ac497ee11b17934f23f3558b7f13b363e63bf65459f850f
+        labels:
+          app.kubernetes.io/instance: console-pipelines
+          app.kubernetes.io/name: console
+      spec:
+        affinity: {}
+        automountServiceAccountToken: false
+        containers:
+        - args:
+          - --config.filepath=/etc/console/configs/config.yaml
+          env:
+          - name: AUTHENTICATION_JWTSIGNINGKEY
+            valueFrom:
+              secretKeyRef:
+                key: authentication-jwt-signingkey
+                name: console-pipelines-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.9.0
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: docker.redpanda.com/redpandadata/console:v3.9.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: console
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            runAsNonRoot: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/console/configs
+            name: configs
+            readOnly: true
+          - mountPath: /etc/console/secrets
+            name: secrets
+            readOnly: true
+          - mountPath: /var/run/secrets/redpanda.com/pipeline-api
+            name: pipeline-api-token
+            readOnly: true
+          - mountPath: /etc/console/pipeline-api-ca
+            name: pipeline-api-ca
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 99
+          fsGroupChangePolicy: Always
+          runAsUser: 99
+        serviceAccount: console-pipelines-console
+        serviceAccountName: console-pipelines-console
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: console-pipelines-console
+          name: configs
+        - name: secrets
+          secret:
+            defaultMode: 420
+            secretName: console-pipelines-console
+        - name: pipeline-api-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                audience: redpanda-pipeline-api
+                expirationSeconds: 3600
+                path: token
+        - name: pipeline-api-ca
+          secret:
+            defaultMode: 420
+            items:
+            - key: ca.crt
+              path: ca.crt
+            secretName: console-pipelines-tls
+  status: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: pipeline-api
+        app.kubernetes.io/instance: console-pipelines
+        app.kubernetes.io/name: console-pipeline-api
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/component: pipeline-api
+          app.kubernetes.io/instance: console-pipelines
+          app.kubernetes.io/name: console-pipeline-api
+      spec:
+        automountServiceAccountToken: true
+        containers:
+        - args:
+          - pipeline-api
+          - --namespace=test-ns
+          - --listen-address=:8080
+          - --allowed-caller=system:serviceaccount:test-ns:console-pipelines-console
+          - --tls-cert-file=/etc/pipeline-api/tls/tls.crt
+          - --tls-key-file=/etc/pipeline-api/tls/tls.key
+          - --cluster-ref=test-redpanda
+          - --user-ref=console-pipelines
+          command:
+          - /redpanda-operator
+          image: redpandadata/redpanda-operator:v0.0.0-test
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: grpc
+              scheme: HTTPS
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: pipeline-api
+          ports:
+          - containerPort: 8080
+            name: grpc
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: grpc
+              scheme: HTTPS
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/pipeline-api/tls
+            name: tls
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        serviceAccount: console-pipelines-console-pipeline-api
+        serviceAccountName: console-pipelines-console-pipeline-api
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: tls
+          secret:
+            defaultMode: 420
+            items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+            secretName: console-pipelines-tls
+  status: {}
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  spec:
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/instance: console-pipelines
+            app.kubernetes.io/name: console
+      ports:
+      - port: grpc
+        protocol: TCP
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/component: pipeline-api
+        app.kubernetes.io/instance: console-pipelines
+        app.kubernetes.io/name: console-pipeline-api
+    policyTypes:
+    - Ingress
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: console-pipelines-console-pipeline-api
+  subjects:
+  - kind: ServiceAccount
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  rules:
+  - apiGroups:
+    - cluster.redpanda.com
+    resources:
+    - pipelines
+    verbs:
+    - get
+    - list
+    - create
+    - update
+    - delete
+- apiVersion: v1
+  data:
+    authentication-jwt-signingkey: XGRbfUEsSmRod1dmWjQ4UE1vRCQwZ3hQJ1ZyVzZuQTM=
+    authentication-oidc-client-secret: ""
+    kafka-sasl-aws-msk-iam-secret-key: ""
+    kafka-sasl-password: ""
+    kafka-tls-ca: ""
+    kafka-tls-cert: ""
+    kafka-tls-key: ""
+    license: ""
+    redpanda-admin-api-password: ""
+    redpanda-admin-api-tls-ca: ""
+    redpanda-admin-api-tls-cert: ""
+    redpanda-admin-api-tls-key: ""
+    schema-registry-bearertoken: ""
+    schema-registry-password: ""
+    schemaregistry-tls-ca: ""
+    schemaregistry-tls-cert: ""
+    schemaregistry-tls-key: ""
+    serde-protobuf-git-basicauth-password: ""
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  data:
+    key: XGRbfUEsSmRod1dmWjQ4UE1vRCQwZ3hQJ1ZyVzZuQTM=
+  immutable: true
+  kind: Secret
+  metadata:
+    name: console-pipelines-jwt-secret
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console
+    namespace: test-ns
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console
+    namespace: test-ns
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/name: console
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
+    name: console-pipelines-console-pipeline-api
+    namespace: test-ns
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: grpc
+      port: 8080
+      protocol: TCP
+      targetPort: grpc
+    selector:
+      app.kubernetes.io/component: pipeline-api
+      app.kubernetes.io/instance: console-pipelines
+      app.kubernetes.io/name: console-pipeline-api
     sessionAffinity: None
     type: ClusterIP
   status:
@@ -1310,6 +1793,7 @@
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-static-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -1319,6 +1803,7 @@
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-static-console
     namespace: test-ns
   spec:
@@ -1449,6 +1934,7 @@
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-static-console
     namespace: test-ns
   type: Opaque
@@ -1469,6 +1955,7 @@
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-static-console
     namespace: test-ns
 - apiVersion: v1
@@ -1478,6 +1965,7 @@
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-static-console
     namespace: test-ns
   spec:
@@ -1529,6 +2017,7 @@
       app.kubernetes.io/instance: console-stretch-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-stretch-cluster-ref-console
     namespace: test-ns
 - apiVersion: apps/v1
@@ -1538,6 +2027,7 @@
       app.kubernetes.io/instance: console-stretch-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-stretch-cluster-ref-console
     namespace: test-ns
   spec:
@@ -1674,6 +2164,7 @@
       app.kubernetes.io/instance: console-stretch-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-stretch-cluster-ref-console
     namespace: test-ns
   type: Opaque
@@ -1694,6 +2185,7 @@
       app.kubernetes.io/instance: console-stretch-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-stretch-cluster-ref-console
     namespace: test-ns
 - apiVersion: v1
@@ -1703,6 +2195,7 @@
       app.kubernetes.io/instance: console-stretch-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: console
+      cluster.redpanda.com/namespace: test-ns
     name: console-stretch-cluster-ref-console
     namespace: test-ns
   spec:

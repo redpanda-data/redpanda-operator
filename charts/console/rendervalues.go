@@ -64,6 +64,37 @@ type RenderValues struct {
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
 	Monitoring          MonitoringConfig          `json:"monitoring"`
+	Pipelines           PipelinesConfig           `json:"pipelines"`
+}
+
+// PipelinesConfig runs the operator's pipeline API, which Console proxies its
+// pipeline calls to.
+type PipelinesConfig struct {
+	Enabled    bool                        `json:"enabled"`
+	ClusterRef string                      `json:"clusterRef"`
+	UserRef    string                      `json:"userRef"`
+	Image      PipelineAPIImage            `json:"image"`
+	Resources  corev1.ResourceRequirements `json:"resources"`
+	TLS        PipelineAPITLS              `json:"tls"`
+	// AllowUnauthenticated serves Consoles that predate
+	// cloud.redpandaConnect.tokenFile, guarded only by NetworkPolicy.
+	AllowUnauthenticated bool                           `json:"allowUnauthenticated"`
+	NetworkPolicy        PipelineAPINetworkPolicyConfig `json:"networkPolicy"`
+}
+
+type PipelineAPITLS struct {
+	Enabled    bool   `json:"enabled"`
+	SecretName string `json:"secretName"`
+}
+
+type PipelineAPINetworkPolicyConfig struct {
+	Enabled bool `json:"enabled"`
+}
+
+type PipelineAPIImage struct {
+	Repository string            `json:"repository"`
+	Tag        string            `json:"tag"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 }
 
 type DeploymentConfig struct {

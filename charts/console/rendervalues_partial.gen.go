@@ -63,6 +63,7 @@ type PartialRenderValues struct {
 	Deployment                   *PartialDeploymentConfig                          "json:\"deployment,omitempty\""
 	Strategy                     *appsv1.DeploymentStrategy                        "json:\"strategy,omitempty\""
 	Monitoring                   *PartialMonitoringConfig                          "json:\"monitoring,omitempty\""
+	Pipelines                    *PartialPipelinesConfig                           "json:\"pipelines,omitempty\""
 }
 
 type PartialImage struct {
@@ -142,6 +143,17 @@ type PartialMonitoringConfig struct {
 	Labels         map[string]string      "json:\"labels,omitempty\""
 }
 
+type PartialPipelinesConfig struct {
+	Enabled              *bool                                  "json:\"enabled,omitempty\""
+	ClusterRef           *string                                "json:\"clusterRef,omitempty\""
+	UserRef              *string                                "json:\"userRef,omitempty\""
+	Image                *PartialPipelineAPIImage               "json:\"image,omitempty\""
+	Resources            *corev1.ResourceRequirements           "json:\"resources,omitempty\""
+	TLS                  *PartialPipelineAPITLS                 "json:\"tls,omitempty\""
+	AllowUnauthenticated *bool                                  "json:\"allowUnauthenticated,omitempty\""
+	NetworkPolicy        *PartialPipelineAPINetworkPolicyConfig "json:\"networkPolicy,omitempty\""
+}
+
 type PartialSecretMount struct {
 	Name        *string "json:\"name,omitempty\""
 	SecretName  *string "json:\"secretName,omitempty\""
@@ -178,6 +190,21 @@ type PartialSchemaRegistrySecrets struct {
 	TLSCA       *string "json:\"tlsCa,omitempty\""
 	TLSCert     *string "json:\"tlsCert,omitempty\""
 	TLSKey      *string "json:\"tlsKey,omitempty\""
+}
+
+type PartialPipelineAPIImage struct {
+	Repository *string            "json:\"repository,omitempty\""
+	Tag        *string            "json:\"tag,omitempty\""
+	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\""
+}
+
+type PartialPipelineAPITLS struct {
+	Enabled    *bool   "json:\"enabled,omitempty\""
+	SecretName *string "json:\"secretName,omitempty\""
+}
+
+type PartialPipelineAPINetworkPolicyConfig struct {
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialIngressHost struct {

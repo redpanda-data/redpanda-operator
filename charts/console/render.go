@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strings"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cockroachdb/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
@@ -49,6 +50,7 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
 	must(gatewayv1.Install(Scheme))
+	must(certmanagerv1.AddToScheme(Scheme))
 }
 
 // +gotohelm:ignore=true
@@ -189,6 +191,17 @@ func Render(state *RenderState) []kube.Object {
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
 		ServiceMonitor(state),
+		PipelineAPIServiceAccount(state),
+		PipelineAPIRole(state),
+		PipelineAPIRoleBinding(state),
+		PipelineAPIClusterRoleBinding(state),
+		PipelineAPISelfSignedIssuer(state),
+		PipelineAPICACertificate(state),
+		PipelineAPICAIssuer(state),
+		PipelineAPICertificate(state),
+		PipelineAPINetworkPolicy(state),
+		PipelineAPIDeployment(state),
+		PipelineAPIService(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -197,8 +210,9 @@ func Render(state *RenderState) []kube.Object {
 	return manifests
 }
 
+// Types returns every kind that [Render] may return.
 func Types() []kube.Object {
-	return []kube.Object{
+	types := []kube.Object{
 		&corev1.ServiceAccount{},
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
@@ -209,6 +223,7 @@ func Types() []kube.Object {
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},
 	}
+	return append(types, PipelinesTypes()...)
 }
 
 func cleanForK8s(s string) string {
