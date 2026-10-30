@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD migration from StatefulSet (V2 Redpanda)
   @skip:gke @skip:aks @skip:eks
   Scenario: Migrate V2 Redpanda from StatefulSet to Broker CRs, scale, and roll back

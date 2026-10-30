@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD with V1 Cluster inlined nodePools
   @skip:gke @skip:aks @skip:eks
   Scenario: V1 Cluster with inlined nodePools creates Broker CRs per pool

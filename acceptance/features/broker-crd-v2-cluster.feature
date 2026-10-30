@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD with V2 Redpanda
   @skip:gke @skip:aks @skip:eks
   Scenario: Redpanda with broker-cr annotation creates Broker CRs instead of a StatefulSet

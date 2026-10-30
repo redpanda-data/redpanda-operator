@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD migration from StatefulSet
   @skip:gke @skip:aks @skip:eks
   Scenario: Migrate V1 Cluster from StatefulSet to Broker CRs and roll back
