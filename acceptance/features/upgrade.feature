@@ -10,6 +10,28 @@ Feature: Upgrading redpanda
       name: cluster-upgrade
     spec:
       clusterSpec:
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+        listeners:
+          admin:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
         image:
           repository: redpandadata/redpanda
           tag: v25.2.11
@@ -32,6 +54,28 @@ Feature: Upgrading redpanda
       name: cluster-upgrade
     spec:
       clusterSpec:
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+        listeners:
+          admin:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
         image:
           repository: redpandadata/redpanda-unstable
           tag: v25.3.1-rc4

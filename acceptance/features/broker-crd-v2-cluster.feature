@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD with V2 Redpanda
   @skip:gke @skip:aks @skip:eks
   Scenario: Redpanda with broker-cr annotation creates Broker CRs instead of a StatefulSet
@@ -12,6 +11,28 @@ Feature: Broker CRD with V2 Redpanda
           operator.redpanda.com/use-broker-cr: "true"
       spec:
         clusterSpec:
+          # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+          listeners:
+            admin:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_ADMIN}
+            kafka:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_KAFKA}
+            http:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_HTTP}
+            schemaRegistry:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_SR}
           statefulset:
             replicas: 3
           # The harpoon k3d cluster defaults not-ready/unreachable tolerations
@@ -47,6 +68,28 @@ Feature: Broker CRD with V2 Redpanda
           operator.redpanda.com/use-broker-cr: "true"
       spec:
         clusterSpec:
+          # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+          listeners:
+            admin:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_ADMIN}
+            kafka:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_KAFKA}
+            http:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_HTTP}
+            schemaRegistry:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_SR}
           statefulset:
             replicas: 3
           tolerations:
@@ -88,6 +131,28 @@ Feature: Broker CRD with V2 Redpanda
         name: broker-v2
       spec:
         clusterSpec:
+          # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+          listeners:
+            admin:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_ADMIN}
+            kafka:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_KAFKA}
+            http:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_HTTP}
+            schemaRegistry:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_SR}
           statefulset:
             replicas: 3
           tolerations:
