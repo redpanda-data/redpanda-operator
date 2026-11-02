@@ -206,7 +206,9 @@ func TestReportStatusWithholdsVersionDuringBrokerRoll(t *testing.T) {
 // lifecycle hooks from CalculateCurrentReplicas() — writing zero here made
 // the render scale the live StatefulSet to 0 and strip the hooks, deleting
 // every pod at migration entry (then handleScaling re-inited to 3 and the
-// flap repeated until the brokers registered).
+// flap repeated until the brokers registered). The exception is a spec pool
+// at zero replicas with no Broker CRs: it is drained, and carrying its old
+// entry forward holds OperatorQuiescent False after the drain.
 func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 	const version = "v25.1.1"
 
@@ -220,6 +222,17 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 		// wantCurrent is the expected CurrentReplicas of the "default" pool
 		// entry after the pass; -1 means the entry must be absent.
 		wantCurrent int32
+		// extraSpecPools are appended to Spec.NodePools beside the default
+		// pool.
+		extraSpecPools []vectorizedv1alpha1.NodePoolSpec
+		// wantPools are the exact entries expected for the named pools after
+		// the pass.
+		wantPools map[string]vectorizedv1alpha1.NodePoolStatus
+		// wantReady is the expected cluster-level Status.ReadyReplicas.
+		wantReady int32
+		// wantQuiescent is getQuiescentCondition's verdict on the written
+		// status.
+		wantQuiescent bool
 	}{
 		{
 			name:        "no Broker CRs yet: the pool entry is preserved",
@@ -227,7 +240,9 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
 				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
 			},
-			wantCurrent: 3,
+			wantCurrent:   3,
+			wantReady:     3,
+			wantQuiescent: true,
 		},
 		{
 			name:        "Pending shadow Brokers: CurrentReplicas counts incarnations, not readiness",
@@ -235,7 +250,9 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
 				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
 			},
-			wantCurrent: 3,
+			wantCurrent:   3,
+			wantReady:     0,
+			wantQuiescent: false,
 		},
 		{
 			name:        "readiness dip: CurrentReplicas stays at the incarnation count",
@@ -243,13 +260,17 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
 				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
 			},
-			wantCurrent: 3,
+			wantCurrent:   3,
+			wantReady:     2,
+			wantQuiescent: false,
 		},
 		{
-			name:        "steady state: all Ready",
-			brokerReady: []bool{true, true, true},
-			priorPools:  map[string]vectorizedv1alpha1.NodePoolStatus{},
-			wantCurrent: 3,
+			name:          "steady state: all Ready",
+			brokerReady:   []bool{true, true, true},
+			priorPools:    map[string]vectorizedv1alpha1.NodePoolStatus{},
+			wantCurrent:   3,
+			wantReady:     3,
+			wantQuiescent: true,
 		},
 		{
 			name:        "drained pool not in spec is dropped, not preserved",
@@ -257,7 +278,26 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
 				"vanished": {Replicas: 2, ReadyReplicas: 2, CurrentReplicas: 2},
 			},
+			wantCurrent:   3,
+			wantReady:     3,
+			wantQuiescent: true,
+		},
+		{
+			name:        "drained pool kept in spec at zero replicas is zeroed; cluster quiescent",
+			brokerReady: []bool{true, true, true},
+			extraSpecPools: []vectorizedv1alpha1.NodePoolSpec{
+				{Name: "drained", Replicas: ptr.To(int32(0))},
+			},
+			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
+				"drained": {Replicas: 1, ReadyReplicas: 1, CurrentReplicas: 1},
+			},
 			wantCurrent: 3,
+			wantPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"drained": {},
+			},
+			wantReady:     3,
+			wantQuiescent: true,
 		},
 	}
 
@@ -268,9 +308,10 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 			cluster := &vectorizedv1alpha1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test"},
 				Spec: vectorizedv1alpha1.ClusterSpec{
-					Image:    "vectorized/redpanda",
-					Version:  version,
-					Replicas: ptr.To(int32(3)),
+					Image:     "vectorized/redpanda",
+					Version:   version,
+					Replicas:  ptr.To(int32(3)),
+					NodePools: tc.extraSpecPools,
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 9092}},
 					},
@@ -278,6 +319,12 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 				Status: vectorizedv1alpha1.ClusterStatus{
 					Version:   version,
 					NodePools: tc.priorPools,
+					// Quiescence also requires ClusterConfigured=True; the
+					// pool bookkeeping is the variable under test.
+					Conditions: []vectorizedv1alpha1.ClusterCondition{{
+						Type:   vectorizedv1alpha1.ClusterConfiguredConditionType,
+						Status: corev1.ConditionTrue,
+					}},
 				},
 			}
 
@@ -370,6 +417,18 @@ func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
 
 			_, vanished := got.Status.NodePools["vanished"]
 			require.False(t, vanished, "pools absent from spec with no Broker CRs are dropped")
+
+			for name, want := range tc.wantPools {
+				gotNp, ok := got.Status.NodePools[name]
+				require.True(t, ok, "pool %q entry must exist", name)
+				require.Equal(t, want, gotNp, "pool %q entry", name)
+			}
+			require.Equal(t, tc.wantReady, got.Status.ReadyReplicas,
+				"cluster-level ReadyReplicas must count live Ready Brokers only")
+
+			cond := getQuiescentCondition(&got)
+			require.Equal(t, tc.wantQuiescent, cond.Status == corev1.ConditionTrue,
+				"OperatorQuiescent reason=%s message=%s", cond.Reason, cond.Message)
 		})
 	}
 }
