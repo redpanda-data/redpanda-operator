@@ -35,7 +35,11 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 		out = append(out, saslUsers)
 	}
 	for _, pool := range state.inClusterPools {
-		out = append(out, poolSecrets(state, pool)...)
+		poolOut, err := poolSecrets(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, poolOut...)
 	}
 	if bootstrapUser := secretBootstrapUser(state); bootstrapUser != nil {
 		out = append(out, bootstrapUser)
@@ -65,15 +69,19 @@ func clusterSecrets(state *RenderState) ([]*corev1.Secret, error) {
 // poolSecrets returns the Secrets emitted for a single local BrokerPool
 // (lifecycle scripts, configurator script, optional fs-validator). Caller
 // iterates state.InClusterPools().
-func poolSecrets(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*corev1.Secret {
+func poolSecrets(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Secret, error) {
+	configurator, err := secretConfigurator(state, pool)
+	if err != nil {
+		return nil, err
+	}
 	out := []*corev1.Secret{
 		secretSTSLifecycle(state, pool),
-		secretConfigurator(state, pool),
+		configurator,
 	}
 	if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
 		out = append(out, fsValidator)
 	}
-	return out
+	return out, nil
 }
 
 // secretSTSLifecycle returns the lifecycle scripts Secret for a pool's
@@ -202,8 +210,14 @@ func secretFSValidator(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 }
 
 // secretConfigurator returns the configurator script Secret for a pool.
-func secretConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
+func secretConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (*corev1.Secret, error) {
+	domain, addresses, err := externalAdvertiseInputs(state, pool)
+	if err != nil {
+		return nil, err
+	}
 	p := scriptParamsFromState(state, pool)
+	p.ExternalDomain = domain
+	p.ExternalAddresses = addresses
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -219,5 +233,5 @@ func secretConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 		StringData: map[string]string{
 			"configurator.sh": configuratorSh(p),
 		},
-	}
+	}, nil
 }
