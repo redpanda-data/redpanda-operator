@@ -16,6 +16,7 @@ package multicluster
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -53,6 +54,14 @@ type ScriptParams struct {
 	ExternalKafkaListeners []ExternalAdvertisedListener
 	// ExternalHTTPListeners are the external HTTP/pandaproxy listeners to advertise.
 	ExternalHTTPListeners []ExternalAdvertisedListener
+	// ExternalDomain is the expanded External.Domain appended to every
+	// external advertised address. Empty when external access is disabled or
+	// no domain is set, in which case brokers advertise their pod name.
+	ExternalDomain string
+	// ExternalAddresses are the External.Addresses entries of this pool's
+	// brokers in ordinal order. Ordinals past its length advertise their pod
+	// name.
+	ExternalAddresses []string
 
 	// RedpandaAtLeast22_3 indicates whether the Redpanda image is >= v22.3.0.
 	RedpandaAtLeast22_3 bool
@@ -109,6 +118,7 @@ func scriptParamsFromState(state *RenderState) ScriptParams {
 	return p
 }
 
+<<<<<<< HEAD
 // lifecycleCommonSh returns the contents of common.sh sourced by lifecycle hooks.
 func lifecycleCommonSh(p ScriptParams) string {
 	return strings.Join([]string{
@@ -209,6 +219,29 @@ func lifecyclePreStopSh(p ScriptParams) string {
 	}
 	lines = append(lines, `true`)
 	return strings.Join(lines, "\n")
+=======
+// externalAdvertiseInputs returns the expanded External.Domain and the
+// External.Addresses entry of each of the pool's brokers, in ordinal order.
+// Ordinals past the end of addresses, and every ordinal while external access
+// is disabled, use the pod name. The LoadBalancer ExternalDNS hostname and the
+// configurator's advertised address must both come from here, or clients get
+// redirected to a name no LB answers on.
+func externalAdvertiseInputs(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (domain string, addresses []string, err error) {
+	ext := pool.Spec.External
+	if !ext.IsEnabled() {
+		return "", nil, nil
+	}
+
+	domain, err = tplutil.Tpl(ext.GetDomain(), state.tplData())
+	if err != nil {
+		return "", nil, fmt.Errorf("expanding external domain template: %w", err)
+	}
+
+	if len(ext.Addresses) == 1 {
+		return domain, slices.Repeat(ext.Addresses, int(pool.GetReplicas())), nil
+	}
+	return domain, ext.Addresses, nil
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 }
 
 // configuratorSh returns the configurator.sh init container script. It runs
@@ -255,12 +288,43 @@ func configuratorSh(p ScriptParams) string {
 		`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"`,
 	)
 
+	// External advertised address. User-supplied addresses and domains are
+	// single-quoted so the shell never expands them.
+	if len(p.ExternalKafkaListeners) > 0 || len(p.ExternalHTTPListeners) > 0 {
+		var suffix string
+		if p.ExternalDomain != "" {
+			suffix = "." + p.ExternalDomain
+		}
+		fallback := `"${SERVICE_NAME}"`
+		if suffix != "" {
+			fallback += tplutil.SQuote(suffix)
+		}
+		lines = append(lines, ``, `EXTERNAL_ADDRESS=`+fallback)
+		if len(p.ExternalAddresses) > 0 {
+			lines = append(lines, `case "$POD_ORDINAL" in`)
+			for ord, prefix := range p.ExternalAddresses {
+				lines = append(lines, fmt.Sprintf(`%d) EXTERNAL_ADDRESS=%s ;;`, ord, tplutil.SQuote(prefix+suffix)))
+			}
+			lines = append(lines, `esac`)
+		}
+	}
+
 	// External Kafka advertised listeners
 	for i, ext := range p.ExternalKafkaListeners {
 		lines = append(lines, ``)
 		lines = configuratorExternalAdvertisedAddresses(lines, "ADVERTISED_KAFKA_ADDRESSES", ext)
 		lines = append(lines,
+<<<<<<< HEAD
 			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[%d] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"`, i+1),
+=======
+			``,
+			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+				"address": "${EXTERNAL_ADDRESS}",
+				"name":    ext.Name,
+				"port":    ext.Port,
+			}))),
+			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[%d] "$LISTENER"`, i+1),
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 		)
 	}
 
@@ -280,7 +344,17 @@ func configuratorSh(p ScriptParams) string {
 		lines = append(lines, ``)
 		lines = configuratorExternalAdvertisedAddresses(lines, "ADVERTISED_HTTP_ADDRESSES", ext)
 		lines = append(lines,
+<<<<<<< HEAD
 			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[%d] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"`, i+1),
+=======
+			``,
+			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+				"address": "${EXTERNAL_ADDRESS}",
+				"name":    ext.Name,
+				"port":    ext.Port,
+			}))),
+			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[%d] "$LISTENER"`, i+1),
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 		)
 	}
 

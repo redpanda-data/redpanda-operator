@@ -15,7 +15,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+<<<<<<< HEAD
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
+=======
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 )
 
 // loadBalancerServices returns per-pod LoadBalancer Services for external access.
@@ -37,6 +41,14 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 
 	selector := state.clusterPodLabelsSelector()
 
+<<<<<<< HEAD
+=======
+	domain, addresses, err := externalAdvertiseInputs(state, pool)
+	if err != nil {
+		return nil, err
+	}
+
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 	var services []*corev1.Service
 	podNames := state.allPodNames()
 
@@ -47,6 +59,7 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 		}
 
 		if ext.ExternalDNS != nil && ext.ExternalDNS.IsEnabled() {
+<<<<<<< HEAD
 			// Determine the DNS prefix: per-pod address if available,
 			// single shared address, or fall back to the pod name.
 			prefix := podname
@@ -55,13 +68,16 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 				prefix = ext.Addresses[i]
 			case len(ext.Addresses) == 1:
 				prefix = ext.Addresses[0]
+=======
+			hostname := podname
+			if int(ord) < len(addresses) {
+				hostname = addresses[ord]
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 			}
-
-			expandedDomain, err := tplutil.Tpl(ext.GetDomain(), state.tplData())
-			if err != nil {
-				return nil, fmt.Errorf("expanding external domain template: %w", err)
+			if domain != "" {
+				hostname += "." + domain
 			}
-			annotations["external-dns.alpha.kubernetes.io/hostname"] = fmt.Sprintf("%s.%s", prefix, expandedDomain)
+			annotations["external-dns.alpha.kubernetes.io/hostname"] = hostname
 		}
 
 		podSelector := map[string]string{}

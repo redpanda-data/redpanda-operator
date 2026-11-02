@@ -32,11 +32,20 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 	if saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
+<<<<<<< HEAD
 	for _, pool := range state.pools {
 		secrets = append(secrets, secretConfigurator(state, pool))
 		if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
 			secrets = append(secrets, fsValidator)
 		}
+=======
+	for _, pool := range state.inClusterPools {
+		poolOut, err := poolSecrets(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, poolOut...)
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 	}
 	if bootstrapUser := secretBootstrapUser(state); bootstrapUser != nil {
 		secrets = append(secrets, bootstrapUser)
@@ -44,9 +53,54 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 	return secrets, nil
 }
 
+<<<<<<< HEAD
 // secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet.
 func secretSTSLifecycle(state *RenderState) *corev1.Secret {
 	p := scriptParamsFromState(state)
+=======
+// clusterSecrets returns the Secrets whose name and content are scoped to
+// the StretchCluster as a whole (SASL user list, bootstrap user). Lifecycle
+// scripts have moved to poolSecrets because their content (admin URL, TLS
+// flags) is derived from the pool's spec.
+func clusterSecrets(state *RenderState) ([]*corev1.Secret, error) {
+	var out []*corev1.Secret
+	saslUsers, err := secretSASLUsers(state)
+	if err != nil {
+		return nil, err
+	}
+	if saslUsers != nil {
+		out = append(out, saslUsers)
+	}
+	if bootstrapUser := secretBootstrapUser(state); bootstrapUser != nil {
+		out = append(out, bootstrapUser)
+	}
+	return out, nil
+}
+
+// poolSecrets returns the Secrets emitted for a single local BrokerPool
+// (lifecycle scripts, configurator script, optional fs-validator). Caller
+// iterates state.InClusterPools().
+func poolSecrets(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Secret, error) {
+	configurator, err := secretConfigurator(state, pool)
+	if err != nil {
+		return nil, err
+	}
+	out := []*corev1.Secret{
+		secretSTSLifecycle(state, pool),
+		configurator,
+	}
+	if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
+		out = append(out, fsValidator)
+	}
+	return out, nil
+}
+
+// secretSTSLifecycle returns the lifecycle scripts Secret for a pool's
+// StatefulSet. Named <cluster>-<pool>-sts-lifecycle; content (postStart,
+// preStop scripts) reads admin URL / TLS flags from the pool's spec.
+func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
+	p := scriptParamsForLifecycle(state, pool)
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -177,8 +231,19 @@ func secretFSValidator(state *RenderState, pool *redpandav1alpha2.NodePool) *cor
 }
 
 // secretConfigurator returns the configurator script Secret for a pool.
+<<<<<<< HEAD
 func secretConfigurator(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
 	p := scriptParamsFromState(state)
+=======
+func secretConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (*corev1.Secret, error) {
+	domain, addresses, err := externalAdvertiseInputs(state, pool)
+	if err != nil {
+		return nil, err
+	}
+	p := scriptParamsFromState(state, pool)
+	p.ExternalDomain = domain
+	p.ExternalAddresses = addresses
+>>>>>>> 23667620 (operator: advertise external domain on StretchCluster external listeners (#2034))
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -194,5 +259,5 @@ func secretConfigurator(state *RenderState, pool *redpandav1alpha2.NodePool) *co
 		StringData: map[string]string{
 			"configurator.sh": configuratorSh(p),
 		},
-	}
+	}, nil
 }
