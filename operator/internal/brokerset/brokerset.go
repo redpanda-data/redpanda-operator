@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +43,8 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -171,6 +174,10 @@ type BrokerSet struct {
 	// marker MarkForRestart's next value is compared against. Empty renders
 	// templates without the marker.
 	ClusterConfigVersion string
+	// DetectDiskLostImage is the operator image the detect-disk-lost init
+	// container runs (see DetectDiskLostContainerName). Empty disables the
+	// guard.
+	DetectDiskLostImage string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -556,7 +563,12 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 			}
 		}
 
+		s.addDetectDiskLost(&podSpec)
+
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
+		if podAnnotations == nil {
+			podAnnotations = map[string]string{}
+		}
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
 		if s.ClusterConfigVersion != "" {
 			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
@@ -623,6 +635,105 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 	}
 
 	return brokers, nil
+}
+
+// The detect-disk-lost init container (see BrokerIDAnnotation). Its name and
+// exit code (detectdisklost.ExitCodeEmptyDataDir) are how the Broker controller
+// reads the verdict from pod status.
+const (
+	DetectDiskLostContainerName = "detect-disk-lost"
+
+	// The guard's --broker-id-file default is this mount path plus file.
+	detectDiskLostVolumeName = "broker-id"
+	detectDiskLostMountPath  = "/etc/broker-id"
+	detectDiskLostIDFile     = "broker-id"
+)
+
+// addDetectDiskLost puts the guard first among the init containers, so nothing
+// else (ownership chown, tuning) touches the data directory before the
+// verdict. Skipped when no image is configured or the data directory is not
+// persistent: with persistence disabled the chart renders datadir as an
+// emptyDir, which is blank on every pod start by design.
+func (s *BrokerSet) addDetectDiskLost(spec *corev1.PodSpec) {
+	if s.DetectDiskLostImage == "" {
+		return
+	}
+	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool {
+		return v.Name == redpanda.DatadirVolumeName && (v.PersistentVolumeClaim != nil || v.HostPath != nil)
+	}) {
+		return
+	}
+	// The redpanda container is the authority on how the data volume is
+	// seen: the guard takes its mount (so it judges the directory at the
+	// path Redpanda uses, with any subPath) and its user (so it reads with
+	// the permissions that wrote the files). Without that container there is
+	// nothing to guard.
+	i := slices.IndexFunc(spec.Containers, func(c corev1.Container) bool { return c.Name == redpandachart.RedpandaContainerName })
+	if i < 0 {
+		return
+	}
+	rp := &spec.Containers[i]
+	j := slices.IndexFunc(rp.VolumeMounts, func(m corev1.VolumeMount) bool { return m.Name == redpanda.DatadirVolumeName })
+	if j < 0 {
+		return
+	}
+	dataMount := *rp.VolumeMounts[j].DeepCopy()
+	dataMount.ReadOnly = true
+
+	spec.Volumes = append(spec.Volumes, corev1.Volume{
+		Name: detectDiskLostVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			DownwardAPI: &corev1.DownwardAPIVolumeSource{
+				Items: []corev1.DownwardAPIVolumeFile{{
+					Path: detectDiskLostIDFile,
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: fmt.Sprintf("metadata.annotations['%s']", redpandav1alpha2.BrokerIDAnnotation),
+					},
+				}},
+			},
+		},
+	})
+
+	resources := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+		corev1.ResourceMemory: resource.MustParse("125Mi"),
+	}
+	guard := corev1.Container{
+		Name:            DetectDiskLostContainerName,
+		Image:           s.DetectDiskLostImage,
+		Command:         []string{"/redpanda-operator", "detect-disk-lost"},
+		Args:            []string{"--data-dir", dataMount.MountPath},
+		Resources:       corev1.ResourceRequirements{Limits: resources, Requests: resources},
+		SecurityContext: detectDiskLostSecurityContext(rp.SecurityContext),
+		VolumeMounts: []corev1.VolumeMount{
+			dataMount,
+			{Name: detectDiskLostVolumeName, MountPath: detectDiskLostMountPath, ReadOnly: true},
+		},
+	}
+	spec.InitContainers = append([]corev1.Container{guard}, spec.InitContainers...)
+}
+
+// detectDiskLostSecurityContext hardens the guard and runs it as the user Redpanda
+// runs as. V1 sets the user per container (pod level carries only fsGroup),
+// so without copying it the guard would run as the image's nonroot uid and
+// depend on Redpanda having left its files group-readable — a dependency
+// that, once broken, parks every restarted Broker in Stuck. Fields Redpanda
+// leaves unset are inherited from the pod, exactly as they are for Redpanda.
+func detectDiskLostSecurityContext(redpanda *corev1.SecurityContext) *corev1.SecurityContext {
+	sc := &corev1.SecurityContext{
+		AllowPrivilegeEscalation: ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		RunAsNonRoot:             ptr.To(true),
+	}
+	if redpanda == nil {
+		return sc
+	}
+	sc.RunAsUser = redpanda.RunAsUser
+	sc.RunAsGroup = redpanda.RunAsGroup
+	if redpanda.RunAsNonRoot != nil {
+		sc.RunAsNonRoot = redpanda.RunAsNonRoot
+	}
+	return sc
 }
 
 // normalizePodSpecDefaults aligns the rendered pod spec with the values the

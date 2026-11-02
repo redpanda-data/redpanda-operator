@@ -373,11 +373,13 @@ func TestResolveBroker(t *testing.T) {
 	}
 }
 
-// TestExecuteDecommission pins the liveness guard on the K8S-976 upgrade
-// path: a disk-lost incarnation's node cannot be alive, so an alive
-// membership entry at the pinned node_id proves the id belongs to a live
-// node (the replacement, adopted by a pre-fix operator) and must park in
-// Stuck instead of decommissioning. Dead, liveness-unreported, and
+// TestExecuteDecommission pins the two guards on starting a decommission.
+// Liveness, the K8S-976 upgrade path: a disk-lost incarnation's node cannot
+// be alive, so an alive membership entry at the pinned node_id proves the id
+// belongs to a live node (the replacement, adopted by a pre-fix operator) and
+// must not be decommissioned; the tombstone keeps DiskLost and re-checks at
+// the poll rate. Last member: an ordinary Broker parks in Stuck for a human,
+// a tombstone again keeps DiskLost. Dead, liveness-unreported, and
 // non-DiskLost targets must keep decommissioning.
 func TestExecuteDecommission(t *testing.T) {
 	member := func(id int, alive *bool) rpadmin.Broker {
@@ -386,18 +388,26 @@ func TestExecuteDecommission(t *testing.T) {
 	for _, tc := range []struct {
 		name            string
 		diskLost        bool
+		alone           bool // the target is the only cluster member
 		target          rpadmin.Broker
 		wantPhase       redpandav1alpha2.BrokerPhase
+		wantRequeue     bool
 		wantDecommCalls int
 	}{
-		{"tombstone refuses its alive pinned id", true, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseStuck, 0},
-		{"tombstone decommissions its dead pinned id", true, member(3, ptr.To(false)), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
-		{"tombstone decommissions when liveness is unreported", true, member(3, nil), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
-		{"live broker decommissions while alive", false, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
+		{"tombstone refuses its alive pinned id", true, false, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseDiskLost, true, 0},
+		{"tombstone decommissions its dead pinned id", true, false, member(3, ptr.To(false)), redpandav1alpha2.BrokerPhaseDecommissioning, true, 1},
+		{"tombstone decommissions when liveness is unreported", true, false, member(3, nil), redpandav1alpha2.BrokerPhaseDecommissioning, true, 1},
+		{"live broker decommissions while alive", false, false, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseDecommissioning, true, 1},
+		{"tombstone as the last member keeps DiskLost", true, true, member(3, ptr.To(false)), redpandav1alpha2.BrokerPhaseDiskLost, true, 0},
+		{"ordinary last broker parks in Stuck", false, true, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseStuck, false, 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			members := []rpadmin.Broker{member(1, ptr.To(true)), tc.target}
+			if tc.alone {
+				members = []rpadmin.Broker{tc.target}
+			}
 			var calls adminCalls
-			srv := fakeAdminServer(t, []rpadmin.Broker{member(1, ptr.To(true)), tc.target}, &calls)
+			srv := fakeAdminServer(t, members, &calls)
 			broker := &redpandav1alpha2.Broker{}
 			broker.Status.BrokerID = ptr.To(int32(3))
 			if tc.diskLost {
@@ -408,6 +418,7 @@ func TestExecuteDecommission(t *testing.T) {
 			result, err := r.executeDecommission(t.Context(), "", broker)
 			require.NoError(t, err)
 			require.Equal(t, tc.wantPhase, result.phase)
+			require.Equal(t, tc.wantRequeue, result.requeue)
 			require.Len(t, calls.decommissions, tc.wantDecommCalls)
 		})
 	}
@@ -417,9 +428,9 @@ func TestExecuteDecommission(t *testing.T) {
 // upgrade path end to end: a pre-fix operator persisted the live
 // replacement's node_id into the tombstone's Status.BrokerID, so the
 // deletion path skips resolveBroker and goes straight to the decommission.
-// The liveness guard must refuse it and hold the deletion in Stuck for a
-// human (manual recommission, manual finalizer removal) instead of
-// re-decommissioning the replacement on every pass.
+// The liveness guard must refuse it and hold the deletion, keeping the
+// finalizer and the DiskLost phase and re-checking at the decommission poll
+// rate, instead of re-decommissioning the replacement on every pass.
 func TestReconcileDeleteContaminatedTombstoneHoldsDeletion(t *testing.T) {
 	ctx := context.Background()
 	scheme := deleteTestScheme(t)
@@ -438,13 +449,13 @@ func TestReconcileDeleteContaminatedTombstoneHoldsDeletion(t *testing.T) {
 
 	res, err := r.reconcileDelete(ctx, logr.Discard(), c, "", tombstone, tombstone.PodName())
 	require.NoError(t, err)
-	require.Equal(t, periodicRequeue, res.RequeueAfter, "a held deletion must keep re-checking")
+	require.Equal(t, requeueDecommission, res.RequeueAfter, "a held deletion must keep re-checking")
 
 	require.Empty(t, calls.decommissions, "an alive pinned id must never be decommissioned")
 	var b redpandav1alpha2.Broker
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(tombstone), &b))
-	require.Contains(t, b.Finalizers, brokerFinalizerName, "the deletion must hold for a human")
-	require.Equal(t, redpandav1alpha2.BrokerPhaseStuck, b.Status.Phase)
+	require.Contains(t, b.Finalizers, brokerFinalizerName, "the deletion must hold until the id is dead")
+	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, b.Status.Phase, "a tombstone never turns Stuck")
 }
 
 // adminCalls records the decommission PUTs the fake admin server received.

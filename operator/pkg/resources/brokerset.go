@@ -160,6 +160,7 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		PodSelector:          poolLabels.AsClientSelectorForNodePool(),
 		ConfigChecksumKey:    ConfigMapHashAnnotationKey,
 		ClusterConfigVersion: baselineClusterConfigVersion,
+		DetectDiskLostImage:  r.stsResource.fullConfiguratorImage(),
 		Hooks:                r,
 		Reporter:             r.reporter,
 		Arbitration:          r.arbitration,

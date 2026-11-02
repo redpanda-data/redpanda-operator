@@ -709,6 +709,16 @@ func normalizeImageRef(image string) string {
 	return image
 }
 
+// ExecOnNode runs a command inside a node's container (k3d names the
+// container after the Kubernetes node) and returns its combined output.
+func (c *Cluster) ExecOnNode(node string, cmd ...string) ([]byte, error) {
+	out, err := exec.Command("docker", append([]string{"exec", node}, cmd...)...).CombinedOutput()
+	if err != nil {
+		return out, errors.Wrapf(err, "exec on node %s: %s", node, out)
+	}
+	return out, nil
+}
+
 func (c *Cluster) DeleteNode(name string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

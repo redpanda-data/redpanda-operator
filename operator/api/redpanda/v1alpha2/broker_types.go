@@ -28,11 +28,14 @@ const (
 	BrokerPhaseDecommissioning BrokerPhase = "Decommissioning"
 	BrokerPhaseDecommissioned  BrokerPhase = "Decommissioned"
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
-	// BrokerPhaseDiskLost marks a dead incarnation: the broker's pod was
-	// provably unschedulable because its storage is pinned to a Kubernetes
-	// node that no longer exists. Terminal — the CR lingers only as the
-	// decommission record for its node_id while a replacement Broker CR
-	// takes over the network index. See BrokerStatus.DiskLost.
+	// BrokerPhaseDiskLost marks a dead incarnation: the operator accepted
+	// proof that the broker's data is gone — its storage is pinned to a
+	// Kubernetes node that no longer exists, or the detect-disk-lost init
+	// container refused to boot an empty volume under a recorded node_id.
+	// Terminal — the CR lingers only as the decommission record for its
+	// node_id while a replacement Broker CR takes over the network index,
+	// and its phase only moves on to Decommissioning and Decommissioned.
+	// See BrokerStatus.DiskLost.
 	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
@@ -61,6 +64,19 @@ const BrokerClusterConfigVersionAnnotation = "operator.redpanda.com/cluster-conf
 // keys). Whoever writes the pod template must re-stamp this annotation after
 // any SPEC mutation.
 const BrokerPodTemplateHashAnnotation = "operator.redpanda.com/pod-template-hash"
+
+// BrokerIDAnnotation carries the node_id a Broker's pod belongs to. It is the
+// key the V1 cluster controller has always stamped on StatefulSet pods
+// (labels.PodNodeIDKey, redeclared here like NodePoolLabel to keep the API
+// package free of operator imports); on a Broker-owned pod the Broker
+// controller is its only writer. The controller stamps it once the identity
+// is adopted and keeps it on the live pod in place, never removing or
+// changing it: an identity on record is a reason to stop, not to guess. The
+// pod's detect-disk-lost init container reads it through the downward API
+// and refuses to boot Redpanda on an empty data volume while this is set —
+// the disk was wiped or replaced, and booting would register a NEW node_id
+// in place of the recorded one.
+const BrokerIDAnnotation = "operator.redpanda.com/node-id"
 
 const (
 	// NodePoolLabel carries the name of the node pool a Broker belongs to.
@@ -204,18 +220,35 @@ type ExistingClaim struct {
 
 // BrokerStatus defines the observed state of a single Redpanda broker.
 type BrokerStatus struct {
-	// Phase is the high-level lifecycle state of the broker.
+	// Reports the lifecycle stage of the broker. `Pending`: the Broker does
+	// not own a pod yet, for example while the pod still belongs to the
+	// StatefulSet during a migration. `Provisioning`: the pod exists but is
+	// not ready and the broker has not joined the cluster. `Running`: the
+	// broker has joined the cluster or its pod is ready. `Decommissioning`:
+	// `spec.decommission` is set and the broker's `node_id` is being removed
+	// from the cluster. `Decommissioned`: the `node_id` has left the cluster;
+	// final. `Stuck`: the operator cannot make progress without help, for
+	// example an unschedulable or crash-looping pod, a changed `node_id`, or
+	// a decommission of the last broker in the cluster. `DiskLost`: the
+	// broker's data is gone, see `diskLost`; from here the phase only moves
+	// on to `Decommissioning` and `Decommissioned`, never back to `Running`
+	// or on to `Stuck`. Empty until the first reconciliation.
 	// +optional
 	Phase BrokerPhase `json:"phase,omitempty"`
 	// BrokerID is the Redpanda node_id, discovered via the admin API after
 	// the broker registers with the cluster. Nil until discovered.
 	// +optional
 	BrokerID *int32 `json:"brokerID,omitempty"`
-	// DiskLost, once set, marks this Broker as a dead incarnation: its pod
-	// was provably unschedulable because its storage is pinned to a
-	// Kubernetes node that no longer exists. Terminal and never cleared —
-	// the CR lingers only as the decommission record for its node_id while
-	// a replacement Broker CR takes over the network index.
+	// Records that this broker's data is gone and the Broker is being
+	// replaced. Set when one of two proofs is accepted: the Kubernetes node
+	// that the broker's persistent volume is pinned to no longer exists, or
+	// the pod's `detect-disk-lost` init container refused to start Redpanda
+	// because the data volume is empty while the pod is stamped with this
+	// Broker's `node_id`. Terminal and never cleared: from this point the
+	// operator dismantles the pod and its volumes instead of restarting
+	// them, a replacement Broker takes over the network index, and this
+	// resource remains only as the decommission record for the lost
+	// `node_id`. Unset while the broker's data is intact.
 	// +optional
 	DiskLost *DiskLostStatus `json:"diskLost,omitempty"`
 	// PodName is the name of the pod managed by this Broker CR.
@@ -229,15 +262,21 @@ type BrokerStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// DiskLostStatus records the two durable checkpoints of disk-loss handling.
+// Records the durable checkpoints of disk-loss handling: when the loss was
+// accepted, and when the broker's resources were confirmed gone.
 type DiskLostStatus struct {
-	// At is when the dead-node proof was accepted — the point of no return.
+	// Time at which the operator accepted proof that this broker's data is
+	// gone. From this point the operator dismantles the Broker instead of
+	// restarting it, and the decision is never reversed. Two proofs count:
+	// the Kubernetes node that the broker's persistent volume is pinned to
+	// no longer exists, or the pod's `detect-disk-lost` init container refused to
+	// start Redpanda because the data volume is empty while the pod is
+	// stamped with this Broker's `node_id`.
 	// +optional
 	At metav1.Time `json:"at,omitempty"`
-	// ResourcesReleased is set once the pod and every PVC were confirmed
-	// gone on an uncached read; only from then on does the network index
-	// stop being occupied by this CR and a replacement may be created.
-	// Monotonic: never unset.
+	// Reports that the pod and every persistent volume claim of this broker
+	// were confirmed gone. Only from then on is the network index free for a
+	// replacement Broker to be created. Never unset once true.
 	// +optional
 	ResourcesReleased bool `json:"resourcesReleased,omitempty"`
 }
