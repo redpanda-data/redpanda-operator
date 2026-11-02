@@ -110,6 +110,7 @@ func (r *ClusterMetricController) Reconcile(
 		if !curLabels.HasAny(key) {
 			desireRedpandaNodes.DeleteLabelValues(key)
 			actualRedpandaNodes.DeleteLabelValues(key)
+			r.currentLabels.Delete(key)
 		}
 	}
 
@@ -132,6 +133,7 @@ func (r *ClusterMetricController) Reconcile(
 	for _, k := range r.currentConfigurationLabels.Values() {
 		if _, exists := misconfiguredClustersCount[k]; !exists {
 			misconfiguredClusters.DeleteLabelValues(k)
+			r.currentConfigurationLabels.Delete(k)
 		}
 	}
 
