@@ -562,17 +562,7 @@ func Run(
 
 		// Console Reconciler.
 		if opts.enableConsoleController {
-			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
-					// need to set the cache as well.
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			ctl, err := cachedCtl(mgr)
 			if err != nil {
 				return err
 			}
@@ -588,15 +578,7 @@ func Run(
 		// Connect Reconciler (enterprise feature, gated by the operator-level
 		// license from --license-file-path / enterprise.licenseSecretRef).
 		if opts.enableConnectController {
-			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			pipelineCtl, err := cachedCtl(mgr)
 			if err != nil {
 				return err
 			}
@@ -989,4 +971,17 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	}
 
 	return nil
+}
+
+// cachedCtl builds a kube.Ctl that reads through mgr's informer cache, so it
+// sees exactly what mgr.GetClient() sees and never falls out of step with the
+// controllers sharing that cache.
+func cachedCtl(mgr ctrl.Manager) (*kube.Ctl, error) {
+	return kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+		Options: client.Options{
+			Scheme: mgr.GetScheme(),
+			Cache:  &client.CacheOptions{Reader: mgr.GetCache()},
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
 }
