@@ -1256,13 +1256,15 @@
       LISTENER="{\"address\":\"compat-test-basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"compat-test-basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1
@@ -1917,13 +1919,15 @@
       LISTENER="{\"address\":\"compat-test-basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"compat-test-basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1
@@ -2768,13 +2772,15 @@
       LISTENER="{\"address\":\"flat-network-test-pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"flat-network-test-pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1
@@ -3633,13 +3639,15 @@
       LISTENER="{\"address\":\"${SERVICE_NAME}.mcs-network-test.svc.clusterset.local\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}.mcs-network-test.svc.clusterset.local\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1
@@ -4470,13 +4478,15 @@
       LISTENER="{\"address\":\"nodepool-basic-test-basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"nodepool-basic-test-basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1
@@ -5131,13 +5141,15 @@
       LISTENER="{\"address\":\"nodepool-basic-test-basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      EXTERNAL_ADDRESS="${SERVICE_NAME}"
+
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
       LISTENER="{\"address\":\"nodepool-basic-test-basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      LISTENER="{\"address\":\"${EXTERNAL_ADDRESS}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
   type: Opaque
 - apiVersion: v1

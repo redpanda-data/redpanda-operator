@@ -16,6 +16,7 @@ package multicluster
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -54,6 +55,14 @@ type ScriptParams struct {
 	ExternalKafkaListeners []ExternalAdvertisedListener
 	// ExternalHTTPListeners are the external HTTP/pandaproxy listeners to advertise.
 	ExternalHTTPListeners []ExternalAdvertisedListener
+	// ExternalDomain is the expanded External.Domain appended to every
+	// external advertised address. Empty when external access is disabled or
+	// no domain is set, in which case brokers advertise their pod name.
+	ExternalDomain string
+	// ExternalAddresses are the External.Addresses entries of this pool's
+	// brokers in ordinal order. Ordinals past its length advertise their pod
+	// name.
+	ExternalAddresses []string
 
 	// RackAwarenessEnabled indicates whether rack awareness should be configured.
 	RackAwarenessEnabled bool
@@ -141,6 +150,29 @@ func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	return p
 }
 
+// externalAdvertiseInputs returns the expanded External.Domain and the
+// External.Addresses entry of each of the pool's brokers, in ordinal order.
+// Ordinals past the end of addresses, and every ordinal while external access
+// is disabled, use the pod name. The LoadBalancer ExternalDNS hostname and the
+// configurator's advertised address must both come from here, or clients get
+// redirected to a name no LB answers on.
+func externalAdvertiseInputs(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (domain string, addresses []string, err error) {
+	ext := pool.Spec.External
+	if !ext.IsEnabled() {
+		return "", nil, nil
+	}
+
+	domain, err = tplutil.Tpl(ext.GetDomain(), state.tplData())
+	if err != nil {
+		return "", nil, fmt.Errorf("expanding external domain template: %w", err)
+	}
+
+	if len(ext.Addresses) == 1 {
+		return domain, slices.Repeat(ext.Addresses, int(pool.GetReplicas())), nil
+	}
+	return domain, ext.Addresses, nil
+}
+
 // configuratorSh returns the configurator.sh init container script. It runs
 // once per pod before Redpanda starts and performs per-pod customization of
 // the base redpanda.yaml that can't be done at the ConfigMap level:
@@ -161,12 +193,33 @@ func configuratorSh(p ScriptParams) string {
 		`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"`,
 	)
 
+	// External advertised address. User-supplied addresses and domains are
+	// single-quoted so the shell never expands them.
+	if len(p.ExternalKafkaListeners) > 0 || len(p.ExternalHTTPListeners) > 0 {
+		var suffix string
+		if p.ExternalDomain != "" {
+			suffix = "." + p.ExternalDomain
+		}
+		fallback := `"${SERVICE_NAME}"`
+		if suffix != "" {
+			fallback += tplutil.SQuote(suffix)
+		}
+		lines = append(lines, ``, `EXTERNAL_ADDRESS=`+fallback)
+		if len(p.ExternalAddresses) > 0 {
+			lines = append(lines, `case "$POD_ORDINAL" in`)
+			for ord, prefix := range p.ExternalAddresses {
+				lines = append(lines, fmt.Sprintf(`%d) EXTERNAL_ADDRESS=%s ;;`, ord, tplutil.SQuote(prefix+suffix)))
+			}
+			lines = append(lines, `esac`)
+		}
+	}
+
 	// External Kafka advertised listeners
 	for i, ext := range p.ExternalKafkaListeners {
 		lines = append(lines,
 			``,
 			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
-				"address": "${SERVICE_NAME}",
+				"address": "${EXTERNAL_ADDRESS}",
 				"name":    ext.Name,
 				"port":    ext.Port,
 			}))),
@@ -190,7 +243,7 @@ func configuratorSh(p ScriptParams) string {
 		lines = append(lines,
 			``,
 			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
-				"address": "${SERVICE_NAME}",
+				"address": "${EXTERNAL_ADDRESS}",
 				"name":    ext.Name,
 				"port":    ext.Port,
 			}))),

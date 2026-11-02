@@ -73,10 +73,15 @@ func RenderInClusterPoolResources(state *RenderState, pool *redpandav1alpha2.Red
 		return nil, err
 	}
 
+	secrets, err := poolSecrets(state, pool)
+	if err != nil {
+		return nil, err
+	}
+
 	var manifests []kube.Object
 	manifests = appendIfNotNil(manifests, cm)
 	manifests = appendIfNotNil(manifests, rpkProfileConfigMapForPool(state, pool))
-	manifests = appendIfNotNil(manifests, poolSecrets(state, pool)...)
+	manifests = appendIfNotNil(manifests, secrets...)
 	manifests = appendIfNotNil(manifests, lbs...)
 	manifests = appendIfNotNil(manifests, serviceAccountForPool(state, pool))
 	manifests = appendIfNotNil(manifests, serviceMonitorForPool(state, pool))
