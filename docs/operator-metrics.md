@@ -76,6 +76,9 @@ unbounded. The labels you will see:
 | `error_type` | Closed (`timeout` / `canceled` / `unavailable` / `auth` / `marshal` / `other`) | multicluster raft |
 | `result` (raft send) | Closed (`ok` / `error`) | multicluster raft |
 | `le` | Closed (histogram buckets) | Standard Prometheus histogram |
+| `namespace`, `name` (resource-state) | Small (one per Redpanda / Cluster CR the operator manages) | Group 3 resource-state gauges. Scraped through the chart's ServiceMonitor, `namespace` arrives as `exported_namespace` (see Group 3) |
+| `kind` | Closed (`Cluster` / `Redpanda`) | `operator_broker_phase` |
+| `phase` | Closed (the seven Broker phases plus `Unknown`) | `operator_broker_phase` |
 
 ## Group 1: controller-runtime built-ins
 
@@ -171,12 +174,47 @@ carry the `_total` suffix.
 | Metric | Type | Labels | Notes |
 |--------|------|--------|-------|
 | `redpanda_clusters_total` | Gauge | — | Pre-dates the `_total`-is-counters convention. |
-| `desired_redpanda_nodes_total` | GaugeVec | `cluster_name` | Per v1 Cluster CR. |
-| `actual_redpanda_nodes_total` | GaugeVec | `cluster_name` | Per v1 Cluster CR. |
+| `desired_redpanda_nodes_total` | GaugeVec | `cluster` | Per v1 Cluster CR. |
+| `actual_redpanda_nodes_total` | GaugeVec | `cluster` | Per v1 Cluster CR. |
 | `redpanda_misconfigured_clusters_total` | GaugeVec | `reason` | Count of v1 Clusters whose `Configured` condition is not `True`. |
 
 The v1 and v2 metrics never share names, so running both controller modes
 side-by-side during a migration is safe.
+
+### Broker CRs (both controller modes)
+
+Emitted by both metric controllers above, each for the clusters of its own
+API: the v2 reconciler records `kind="Redpanda"`, the v1 controller
+`kind="Cluster"`, so the two never share a series even when a V1 Cluster and
+a V2 Redpanda of the same name coexist during a migration. A Broker is
+attributed through its `spec.clusterRef` (a NodePool reference rolls up to
+its Redpanda) and its `cluster.redpanda.com/cluster-name` label. Only
+clusters that have Broker CRs appear; a StatefulSet-mode cluster has no
+series. Brokers are listed on every pass and at least once a minute rather
+than watched, so a missing Broker CRD is simply tolerated and yields no
+series.
+
+| Metric | Type | Labels | What it tells you |
+|--------|------|--------|-------------------|
+| `operator_broker_phase` | GaugeVec | `namespace`, `kind`, `name`, `phase` | Number of Broker CRs of cluster `name` in each `status.phase`. Every phase (`Pending`, `Provisioning`, `Running`, `Decommissioning`, `Decommissioned`, `Stuck`, `DiskLost`, and `Unknown` for a Broker not yet reconciled) is exported per cluster, zero-filled, so a `> 0` alert resolves by value rather than by the series disappearing. |
+
+Scraped through the chart's ServiceMonitor, which leaves `honorLabels`
+unset, the gauge's own `namespace` label is renamed to `exported_namespace`
+and `namespace` becomes the operator's install namespace. The same applies
+to `redpanda_desired_nodes` and `redpanda_ready_nodes` above. Query with
+`exported_namespace` when you mean the cluster's namespace.
+
+In broker mode there is no StatefulSet, so `kube_statefulset_replicas` is
+gone; this gauge is the mode-independent replacement:
+
+- Live brokers of a cluster: `sum by (exported_namespace, name) (operator_broker_phase{phase!~"Decommissioning|Decommissioned|DiskLost"})`.
+- Running brokers: `operator_broker_phase{phase="Running"}`.
+
+**Suggested alerts** (not yet shipped in the chart's PrometheusRule):
+
+- **Stuck**: `operator_broker_phase{phase="Stuck"} > 0` for 15m → warning. Stuck is also a normal waypoint: a pod on a dead node waits there for `MarkDiskLostAfter` (5m by default) before becoming `DiskLost`, and a bad rollout crash-loops briefly.
+- **Disk lost**: `operator_broker_phase{phase="DiskLost"} > 0` for 2m → warning. The operator is replacing the broker; no action unless it persists.
+- **Recovery stalled**: the same for 30m → warning. The lost `node_id`'s decommission is not completing (a full replacement took about 8.5 minutes in a live test).
 
 ### StretchCluster member status
 
