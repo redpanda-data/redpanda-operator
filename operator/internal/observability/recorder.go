@@ -38,7 +38,13 @@
 package observability
 
 import (
+	"context"
+	"time"
+
+	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redpanda-data/common-go/kube"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
@@ -52,6 +58,11 @@ const (
 	BrokerKindCluster  = "Cluster"
 	BrokerKindRedpanda = "Redpanda"
 )
+
+// ResourceStateRequeue is how often the metric controllers recompute their
+// gauges when no Redpanda or Cluster event arrives. Broker phases are listed
+// rather than watched, so this bounds how stale BrokerPhase can get.
+const ResourceStateRequeue = time.Minute
 
 // BrokerPhaseUnknown is the `phase` label for a Broker whose status.phase is
 // still empty: not yet reconciled, or never, while the Broker controller is
@@ -87,6 +98,28 @@ type BrokerPhaseRecorder struct {
 
 func NewBrokerPhaseRecorder(kind string) *BrokerPhaseRecorder {
 	return &BrokerPhaseRecorder{kind: kind, current: collections.NewConcurrentSet[BrokerClusterKey]()}
+}
+
+// Observe lists every Broker ctl can see and records it. Namespace "" defers
+// to the manager cache's --namespace restriction, as the Redpanda List does.
+//
+// A missing Broker CRD is not an error: the operator runs without it unless
+// the experimental CRDs are installed, and it can be removed under a running
+// operator. Either way there are no Brokers, so the recorder's series are
+// cleared. The metric controllers call this on every pass instead of
+// watching Brokers, so they need no knowledge of whether the CRD exists; the
+// price is one RESTMapper discovery round-trip per pass while it is absent.
+func (r *BrokerPhaseRecorder) Observe(ctx context.Context, ctl *kube.Ctl) error {
+	brokers, err := kube.List[redpandav1alpha2.BrokerList](ctx, ctl, "")
+	switch {
+	case apimeta.IsNoMatchError(err):
+		r.Record(nil)
+		return nil
+	case err != nil:
+		return errors.Wrap(err, "listing Brokers")
+	}
+	r.Record(brokers.Items)
+	return nil
 }
 
 // Record replaces the recorder's series with what brokers implies. Brokers

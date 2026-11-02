@@ -11,8 +11,9 @@ package redpanda
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -46,6 +47,10 @@ type redpandaMetricKey struct {
 type RedpandaMetricsReconciler struct {
 	Client client.Client
 
+	// Brokers lists Broker CRs for operator_broker_phase on every pass; a
+	// missing Broker CRD is tolerated (see BrokerPhaseRecorder.Observe).
+	Brokers *kube.Ctl
+
 	// Labels we previously emitted on the per-cluster gauges. Retained so we
 	// can DeleteLabelValues for Redpandas that have since been deleted —
 	// without this Prometheus would keep reporting their last value forever.
@@ -54,16 +59,19 @@ type RedpandaMetricsReconciler struct {
 	// Misconfiguration reasons we previously emitted; same idea as
 	// currentLabels but for the aggregated misconfigured gauge.
 	currentConfigurationLabels collections.Set[string]
+
+	brokerPhases *observability.BrokerPhaseRecorder
 }
 
-// NewRedpandaMetricsReconciler creates a RedpandaMetricsReconciler bound to
-// the local manager's client. Pass `mcmgr.GetLocalManager()` from a multicluster
-// manager.
-func NewRedpandaMetricsReconciler(mgr ctrl.Manager) *RedpandaMetricsReconciler {
+// NewRedpandaMetricsReconciler creates a RedpandaMetricsReconciler over the
+// local cluster's clients; Redpanda CRs only live there.
+func NewRedpandaMetricsReconciler(c client.Client, brokers *kube.Ctl) *RedpandaMetricsReconciler {
 	return &RedpandaMetricsReconciler{
-		Client:                     mgr.GetClient(),
+		Client:                     c,
+		Brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[redpandaMetricKey](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
+		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindRedpanda),
 	}
 }
 
@@ -74,7 +82,7 @@ func NewRedpandaMetricsReconciler(mgr ctrl.Manager) *RedpandaMetricsReconciler {
 func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	var rps redpandav1alpha2.RedpandaList
 	if err := r.Client.List(ctx, &rps); err != nil {
-		return ctrl.Result{}, fmt.Errorf("listing Redpandas: %w", err)
+		return ctrl.Result{}, errors.Wrap(err, "listing Redpandas")
 	}
 
 	seenLabels := collections.NewSet[redpandaMetricKey]()
@@ -122,7 +130,11 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Reques
 		}
 	}
 
-	return ctrl.Result{}, nil
+	if err := r.brokerPhases.Observe(ctx, r.Brokers); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{RequeueAfter: observability.ResourceStateRequeue}, nil
 }
 
 // SetupWithManager registers the metrics reconciler with the local manager.

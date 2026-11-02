@@ -11,9 +11,10 @@ package vectorized
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 )
 
@@ -60,16 +62,23 @@ func init() {
 // ClusterMetricController provides metrics for nodes and cluster
 type ClusterMetricController struct {
 	client.Client
+	// Brokers lists Broker CRs for operator_broker_phase on every pass; a
+	// missing Broker CRD is tolerated (see BrokerPhaseRecorder.Observe).
+	Brokers *kube.Ctl
+
 	currentLabels              collections.Set[string]
 	currentConfigurationLabels collections.Set[string]
+	brokerPhases               *observability.BrokerPhaseRecorder
 }
 
 // NewClusterMetricsController creates ClusterMetricController
-func NewClusterMetricsController(c client.Client) *ClusterMetricController {
+func NewClusterMetricsController(c client.Client, brokers *kube.Ctl) *ClusterMetricController {
 	return &ClusterMetricController{
 		Client:                     c,
+		Brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[string](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
+		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindCluster),
 	}
 }
 
@@ -83,7 +92,7 @@ func (r *ClusterMetricController) Reconcile(
 	cl := vectorizedv1alpha1.ClusterList{}
 	err := r.List(ctx, &cl, &client.ListOptions{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("unable to list the clusters: %w", err)
+		return ctrl.Result{}, errors.Wrap(err, "unable to list the clusters")
 	}
 
 	redpandaClusters.Set(float64(len(cl.Items)))
@@ -137,7 +146,11 @@ func (r *ClusterMetricController) Reconcile(
 		}
 	}
 
-	return ctrl.Result{}, nil
+	if err := r.brokerPhases.Observe(ctx, r.Brokers); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{RequeueAfter: observability.ResourceStateRequeue}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

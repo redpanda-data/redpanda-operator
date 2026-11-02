@@ -555,7 +555,11 @@ func Run(
 		// ClusterMetricController for parity between operator versions.
 		// Bound to the local manager because the Redpanda CRD only exists
 		// on the local cluster.
-		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr).SetupWithManager(mgr); err != nil {
+		metricsCtl, err := cachedCtl(mgr)
+		if err != nil {
+			return err
+		}
+		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr.GetClient(), metricsCtl).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "RedpandaMetrics")
 			return err
 		}
@@ -928,7 +932,11 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		return err
 	}
 
-	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	metricsCtl, err := cachedCtl(mgr)
+	if err != nil {
+		return err
+	}
+	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient(), metricsCtl).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
 		return err
 	}

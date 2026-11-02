@@ -18,12 +18,25 @@ import (
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-// GaugeSeries reports the value of the gauge series named name whose labels
-// include every pair in labels, scraping the controller-runtime registry the
-// operator exports. found is false when no such series exists, which
-// `vec.WithLabelValues(...)` cannot tell apart from zero because it creates
-// the series it looks up.
-func GaugeSeries(t *testing.T, name string, labels map[string]string) (value float64, found bool) {
+// RequireGauge asserts that the registry the operator exports carries a gauge
+// series named name whose labels include every pair in labels, with value want.
+func RequireGauge(t *testing.T, name string, labels map[string]string, want float64) {
+	t.Helper()
+	got, found := gaugeSeries(t, name, labels)
+	require.True(t, found, "%s%v not exported", name, labels)
+	require.Equal(t, want, got, "%s%v", name, labels)
+}
+
+// RequireNoGauge asserts that no gauge series named name carries every label
+// pair in labels. `vec.WithLabelValues(...)` cannot check this: it creates the
+// series it looks up.
+func RequireNoGauge(t *testing.T, name string, labels map[string]string) {
+	t.Helper()
+	_, found := gaugeSeries(t, name, labels)
+	require.False(t, found, "%s%v still exported", name, labels)
+}
+
+func gaugeSeries(t *testing.T, name string, labels map[string]string) (value float64, found bool) {
 	t.Helper()
 
 	gatherer, ok := ctrlmetrics.Registry.(prometheus.Gatherer)
