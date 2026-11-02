@@ -18,11 +18,29 @@ Feature: Basic cluster tests
           tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
         listeners:
           admin:
             external:
               default:
                 port: 9645
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
     """
     And cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" has named port "admin-default" with value 9645
@@ -41,11 +59,29 @@ Feature: Basic cluster tests
           tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
         listeners:
           admin:
             external:
               default:
                 port: 9640
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
     """
     Then cluster "upgrade" is stable with 1 nodes
     And service "upgrade-external" should have named port "admin-default" with value 9640

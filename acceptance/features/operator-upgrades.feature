@@ -18,6 +18,28 @@ Feature: Upgrading the operator
       name: operator-upgrade
     spec:
       clusterSpec:
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+        listeners:
+          admin:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
         console:
           enabled: false
         statefulset:

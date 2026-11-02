@@ -13,7 +13,9 @@ import (
 	"context"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -103,6 +105,10 @@ func PatchManifest(t framework.TestingT, content string) string {
 			return t.Namespace()
 		}
 
+		if offset, ok := nodePortOffsets[key]; ok {
+			return strconv.Itoa(nodePortBlockFor(t) + offset)
+		}
+
 		// Pass through Redpanda Connect runtime env var interpolations
 		// (e.g., ${RPK_BROKERS}) that are resolved inside the container,
 		// not by the test framework.
@@ -113,4 +119,49 @@ func PatchManifest(t framework.TestingT, content string) string {
 		t.Fatalf("unhandled expansion: %s", key)
 		return "UNREACHABLE"
 	})
+}
+
+// The redpanda chart always sets an explicit nodePort on its external
+// Service, and nodePorts are global to the shared k3d cluster, so parallel
+// features left on the chart defaults fail with "provided port is already
+// allocated". A manifest that keeps external enabled sets each listener's
+// advertisedPorts to these placeholders instead.
+var nodePortOffsets = map[string]int{
+	"NODEPORT_ADMIN": 0,
+	"NODEPORT_KAFKA": 1,
+	"NODEPORT_HTTP":  2,
+	"NODEPORT_SR":    3,
+}
+
+// Blocks come from the static band of the default range (30000-30085), which
+// auto-allocation only falls back to once the rest of the range is exhausted.
+// The band stops short of 30081/30082: the chart's default schema registry and
+// http nodePorts, still used by features whose manifests are docs snippets.
+const (
+	nodePortBandStart = 30000
+	nodePortBandEnd   = 30079
+)
+
+var nodePortBlocks = struct {
+	sync.Mutex
+	byNamespace map[string]int
+}{byNamespace: map[string]int{}}
+
+// nodePortBlockFor returns the first port of the feature's block, keyed by its
+// isolated namespace so every manifest the feature applies (including
+// re-applies of the same resource) advertises the same ports.
+func nodePortBlockFor(t framework.TestingT) int {
+	nodePortBlocks.Lock()
+	defer nodePortBlocks.Unlock()
+
+	if base, ok := nodePortBlocks.byNamespace[t.Namespace()]; ok {
+		return base
+	}
+
+	base := nodePortBandStart + len(nodePortBlocks.byNamespace)*len(nodePortOffsets)
+	if base+len(nodePortOffsets)-1 > nodePortBandEnd {
+		t.Fatalf("static nodePort band %d-%d exhausted; %d features already hold a block", nodePortBandStart, nodePortBandEnd, len(nodePortBlocks.byNamespace))
+	}
+	nodePortBlocks.byNamespace[t.Namespace()] = base
+	return base
 }

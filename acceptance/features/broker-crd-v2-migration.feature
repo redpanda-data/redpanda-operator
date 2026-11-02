@@ -1,4 +1,3 @@
-@serial
 Feature: Broker CRD migration from StatefulSet (V2 Redpanda)
   @skip:gke @skip:aks @skip:eks
   Scenario: Migrate V2 Redpanda from StatefulSet to Broker CRs, scale, and roll back
@@ -10,6 +9,28 @@ Feature: Broker CRD migration from StatefulSet (V2 Redpanda)
         name: broker-v2-migrate
       spec:
         clusterSpec:
+          # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+          listeners:
+            admin:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_ADMIN}
+            kafka:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_KAFKA}
+            http:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_HTTP}
+            schemaRegistry:
+              external:
+                default:
+                  advertisedPorts:
+                  - ${NODEPORT_SR}
           statefulset:
             replicas: 3
           # The harpoon k3d cluster defaults not-ready/unreachable tolerations

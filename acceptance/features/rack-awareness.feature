@@ -13,6 +13,28 @@ Feature: Rack Awareness
       name: rack-awareness
     spec:
       clusterSpec:
+        # Per-feature nodePorts; see nodePortOffsets in acceptance/steps.
+        listeners:
+          admin:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_ADMIN}
+          kafka:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_KAFKA}
+          http:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_HTTP}
+          schemaRegistry:
+            external:
+              default:
+                advertisedPorts:
+                - ${NODEPORT_SR}
         image:
           repository: ${DEFAULT_REDPANDA_REPO}
           tag: ${DEFAULT_REDPANDA_TAG}
