@@ -1,4 +1,4 @@
 project: operator
 kind: Changed
-body: Bumped the default Redpanda Connect image for `Pipeline` resources to 4.115.1.
+body: Bumped the default Redpanda Connect image for `Pipeline` resources to 4.116.1.
 time: 2026-10-23T16:32:43Z
