@@ -551,7 +551,7 @@ func (r *render) deployment() *appsv1.Deployment {
 
 	// Inject cluster connection env vars and TLS volumes when clusterRef is set.
 	if cc := r.clusterConn; cc != nil {
-		clusterEnv, clusterVolumes, clusterMounts := buildClusterConnectionResources(cc, r.pipeline.Name+saslSecretSuffix)
+		clusterEnv, clusterVolumes, clusterMounts := buildClusterConnectionResources(cc, r.userCredentials, r.pipeline.Name+saslSecretSuffix)
 		env = append(env, clusterEnv...)
 		volumes = append(volumes, clusterVolumes...)
 		volumeMounts = append(volumeMounts, clusterMounts...)
@@ -697,7 +697,8 @@ func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
 // mounts needed to connect to a Redpanda cluster via clusterRef.
 // saslSecretName names the Pipeline-owned Secret mirroring an inline SASL
 // password (used only when the connection's password is an inline value).
-func buildClusterConnectionResources(cc *clusterConnection, saslSecretName string) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
+// A userRef's credentials, when set, replace the cluster source's in RPK_SASL_*.
+func buildClusterConnectionResources(cc *clusterConnection, uc *userCredentials, saslSecretName string) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
 	var env []corev1.EnvVar
 	var volumes []corev1.Volume
 	var mounts []corev1.VolumeMount
@@ -840,7 +841,24 @@ func buildClusterConnectionResources(cc *clusterConnection, saslSecretName strin
 		})
 	}
 
-	if cc.SASL != nil {
+	switch {
+	case uc != nil:
+		env = append(env, corev1.EnvVar{
+			Name:  "RPK_SASL_MECHANISM",
+			Value: uc.Mechanism,
+		}, corev1.EnvVar{
+			Name:  "RPK_SASL_USER",
+			Value: uc.Username,
+		})
+		if uc.PasswordRef != nil {
+			env = append(env, corev1.EnvVar{
+				Name: "RPK_SASL_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: uc.PasswordRef,
+				},
+			})
+		}
+	case cc.SASL != nil:
 		env = append(env, corev1.EnvVar{
 			Name:  "RPK_SASL_MECHANISM",
 			Value: cc.SASL.Mechanism,
