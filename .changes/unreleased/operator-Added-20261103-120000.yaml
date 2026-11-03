@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Support for Kubernetes versions 1.34.x through 1.37.x. Per-PR tests run against 1.34.x and nightly tests against 1.37.x.
+time: 2026-11-03T12:00:00.000000-08:00
