@@ -68,6 +68,7 @@ docker run --rm -it \
 	-e INTEGRATION_ARTIFACTS_DIR \
 	-e REDPANDA_SAMPLE_LICENSE \
 	-e TELEMETRY_PRIVATE_KEY \
+	-e K3S_IMAGE \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \

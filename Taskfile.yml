@@ -394,7 +394,7 @@ tasks:
       TEST_COREDNS_VERSION: '{{ .TEST_COREDNS_VERSION | default .DEFAULT_TEST_COREDNS_VERSION }}'
       IMAGES:
       # k3d infrastructure images — pre-pulling avoids slow pulls during cluster creation.
-      - rancher/k3s:v1.34.13-k3s1
+      - '{{.K3S_IMAGE | default "rancher/k3s:v1.34.13-k3s1"}}'
       - ghcr.io/k3d-io/k3d-tools:5.8.3
       - ghcr.io/k3d-io/k3d-proxy:5.8.3
       - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
