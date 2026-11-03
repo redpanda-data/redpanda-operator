@@ -104,6 +104,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{Port: kafkaPort},
 							{External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
@@ -300,6 +301,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -402,6 +404,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -480,6 +483,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -554,6 +558,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -649,6 +654,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -749,6 +755,7 @@ var _ = Describe("RedPandaCluster controller", func() {
 					Version:  redpandaContainerTag,
 					Replicas: ptr.To(int32(replicas)),
 					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 							{
 								Port: kafkaPort,
@@ -955,6 +962,7 @@ func getVersionedRedpanda(
 		Namespace: "default",
 	}
 	config := vectorizedv1alpha1.RedpandaConfig{
+		RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 		KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 			{
 				Port: 9644,

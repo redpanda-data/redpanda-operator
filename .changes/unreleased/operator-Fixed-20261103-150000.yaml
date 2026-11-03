@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: The field-manager migration now fully releases a resource whose only manager is a legacy one (for example `helm-controller` after a Flux install). Before, that manager kept its fields, so on Kubernetes 1.34+ the operator's next apply merged with them and was rejected (for example, an exec and a TCP liveness probe on one container).
+time: 2026-11-03T15:00:00.000000-08:00

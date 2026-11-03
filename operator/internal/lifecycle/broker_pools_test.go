@@ -45,6 +45,7 @@ func TestClientFetchBrokerBackedPools(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{"label": "label"},
 					},
+					Spec: minimalPodSpec(),
 				},
 			},
 		},

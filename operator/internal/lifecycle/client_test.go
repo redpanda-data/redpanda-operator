@@ -45,6 +45,12 @@ func setupContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(parentCtx, 1*time.Minute)
 }
 
+// minimalPodSpec is the smallest pod spec a StatefulSet template can carry:
+// Kubernetes 1.34+ validates the template and rejects one with no containers.
+func minimalPodSpec() corev1.PodSpec {
+	return corev1.PodSpec{Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda"}}}
+}
+
 func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) multicluster.Manager {
 	t.Helper()
 
@@ -404,6 +410,7 @@ func TestClientDeleteAll(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Labels: map[string]string{"label": "label"},
 								},
+								Spec: minimalPodSpec(),
 							},
 						},
 					},
@@ -567,6 +574,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Labels: map[string]string{"label": "label"},
 								},
+								Spec: minimalPodSpec(),
 							},
 						},
 					},
@@ -590,6 +598,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Labels: map[string]string{"label": "label"},
 								},
+								Spec: minimalPodSpec(),
 							},
 						},
 					},
@@ -609,6 +618,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Labels: map[string]string{"label": "label"},
 								},
+								Spec: minimalPodSpec(),
 							},
 						},
 					},

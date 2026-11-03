@@ -181,20 +181,28 @@ func migratesUndesiredManagers(t *testing.T, config *rest.Config) {
 		t.Logf("Initial field managers: %+v", managers)
 		require.True(t, slices.Contains(managers, "*kube.Ctl"))
 
-		// and apply with the new client
-		require.NoError(t, newctl.Apply(t.Context(), newSet))
-		require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+		// and apply with the new client. Kubernetes 1.34+ validates the
+		// StatefulSet pod template, so the duplicate port name is rejected
+		// instead of persisted.
+		merged := true
+		if err := newctl.Apply(t.Context(), newSet); apierrors.IsInvalid(err) {
+			t.Logf("server rejected the merged ports: %v", err)
+			merged = false
+		} else {
+			require.NoError(t, err)
+			require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
 
-		managers = getFieldManagers(set)
-		t.Logf("Updated field managers: %+v", managers)
-		require.True(t, slices.Contains(managers, "*kube.Ctl"))
-		require.True(t, slices.Contains(managers, "new"))
+			managers = getFieldManagers(set)
+			t.Logf("Updated field managers: %+v", managers)
+			require.True(t, slices.Contains(managers, "*kube.Ctl"))
+			require.True(t, slices.Contains(managers, "new"))
 
-		// also check the poorly merged port
-		ports := set.Spec.Template.Spec.Containers[0].Ports
-		require.Len(t, ports, 2)
-		require.Equal(t, "test", ports[0].Name)
-		require.Equal(t, "test", ports[1].Name)
+			// also check the poorly merged port
+			ports := set.Spec.Template.Spec.Containers[0].Ports
+			require.Len(t, ports, 2)
+			require.Equal(t, "test", ports[0].Name)
+			require.Equal(t, "test", ports[1].Name)
+		}
 
 		// now run the migration
 		require.NoError(t, migrateFieldManagers(t.Context(), newctl, k8sClient))
@@ -204,14 +212,19 @@ func migratesUndesiredManagers(t *testing.T, config *rest.Config) {
 		managers = getFieldManagers(set)
 		t.Logf("Migrated field managers: %+v", managers)
 		require.False(t, slices.Contains(managers, "*kube.Ctl"))
+		require.False(t, slices.Contains(managers, "before-first-apply"))
 		require.True(t, slices.Contains(managers, "new"))
 
-		// verify the ports are still messed up (since we just re-applied what was already there)
+		// verify the ports are unchanged (since we just re-applied what was already there)
 		require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
-		ports = set.Spec.Template.Spec.Containers[0].Ports
-		require.Len(t, ports, 2)
+		ports := set.Spec.Template.Spec.Containers[0].Ports
+		if merged {
+			require.Len(t, ports, 2)
+			require.Equal(t, "test", ports[1].Name)
+		} else {
+			require.Len(t, ports, 1)
+		}
 		require.Equal(t, "test", ports[0].Name)
-		require.Equal(t, "test", ports[1].Name)
 
 		// now re-apply with the new client to mimic re-reconciliation and check the ports are fixed
 		require.NoError(t, newctl.Apply(t.Context(), finalSet))
@@ -439,19 +452,25 @@ func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	}
 	finalSet := newSet.DeepCopy()
 
-	require.NoError(t, operatorctl.Apply(t.Context(), newSet))
-	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+	// Kubernetes 1.34+ validates the StatefulSet pod template, so the merged
+	// two-handler probe is rejected instead of persisted.
+	if err := operatorctl.Apply(t.Context(), newSet); apierrors.IsInvalid(err) {
+		t.Logf("server rejected the merged probe: %v", err)
+	} else {
+		require.NoError(t, err)
+		require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
 
-	managers = getFieldManagers(set)
-	t.Logf("After new operator apply, field managers: %+v", managers)
-	require.True(t, slices.Contains(managers, "helm-controller"))
-	require.True(t, slices.Contains(managers, "new"))
+		managers = getFieldManagers(set)
+		t.Logf("After new operator apply, field managers: %+v", managers)
+		require.True(t, slices.Contains(managers, "helm-controller"))
+		require.True(t, slices.Contains(managers, "new"))
 
-	// This is the regression: both exec AND tcpSocket are present on the probe
-	// because helm-controller still owns the exec field and it gets merged.
-	probe := set.Spec.Template.Spec.Containers[0].LivenessProbe
-	require.NotNil(t, probe.Exec, "exec probe should still be present due to field manager conflict")
-	require.NotNil(t, probe.TCPSocket, "tcp probe should also be present due to merge")
+		// This is the regression: both exec AND tcpSocket are present on the probe
+		// because helm-controller still owns the exec field and it gets merged.
+		probe := set.Spec.Template.Spec.Containers[0].LivenessProbe
+		require.NotNil(t, probe.Exec, "exec probe should still be present due to field manager conflict")
+		require.NotNil(t, probe.TCPSocket, "tcp probe should also be present due to merge")
+	}
 
 	// Run the field manager migration
 	require.NoError(t, migrateFieldManagers(t.Context(), operatorctl, k8sClient))
@@ -461,6 +480,7 @@ func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	managers = getFieldManagers(set)
 	t.Logf("After migration, field managers: %+v", managers)
 	require.False(t, slices.Contains(managers, "helm-controller"))
+	require.False(t, slices.Contains(managers, "before-first-apply"))
 	require.True(t, slices.Contains(managers, "new"))
 
 	// Re-apply with the new operator to reconcile — now with only one field manager,
@@ -468,7 +488,7 @@ func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	require.NoError(t, operatorctl.Apply(t.Context(), finalSet))
 	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
 
-	probe = set.Spec.Template.Spec.Containers[0].LivenessProbe
+	probe := set.Spec.Template.Spec.Containers[0].LivenessProbe
 	require.Nil(t, probe.Exec, "exec probe should be gone after migration + re-apply")
 	require.NotNil(t, probe.TCPSocket, "tcp probe should be the only one remaining")
 	require.Equal(t, intstr.FromInt32(9644), probe.TCPSocket.Port)

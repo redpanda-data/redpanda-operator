@@ -93,11 +93,16 @@ func TestEnsure(t *testing.T) {
 		corev1.ResourceCPU:    resource.MustParse("1111"),
 		corev1.ResourceMemory: resource.MustParse("2222Gi"),
 	}
+	// Limits move with requests: Kubernetes 1.34+ rejects a pod template whose
+	// requests exceed its limits.
 	resourcesUpdatedCluster := cluster.DeepCopy()
 	resourcesUpdatedCluster.Spec.NodePools[0].Resources.Requests = newResources
+	resourcesUpdatedCluster.Spec.NodePools[0].Resources.Limits = newResources
 	resourcesUpdatedSts := stsFromCluster(cluster).DeepCopy()
 	resourcesUpdatedSts.Spec.Template.Spec.InitContainers[0].Resources.Requests = newResources
+	resourcesUpdatedSts.Spec.Template.Spec.InitContainers[0].Resources.Limits = newResources
 	resourcesUpdatedSts.Spec.Template.Spec.Containers[0].Resources.Requests = newResources
+	resourcesUpdatedSts.Spec.Template.Spec.Containers[0].Resources.Limits = newResources
 
 	// Check that Redpanda resources don't affect Resource Requests
 	resourcesUpdatedRedpandaCluster := resourcesUpdatedCluster.DeepCopy()
@@ -511,8 +516,11 @@ func pandaCluster() *vectorizedv1alpha1.Cluster {
 				},
 			},
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
-				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 345}},
-				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
+				// Kubernetes 1.34+ validates the StatefulSet pod template, which
+				// rejects the rpc containerPort of 0 left by an unset port.
+				RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
+				AdminAPI:  []vectorizedv1alpha1.AdminAPI{{Port: 345}},
+				KafkaAPI:  []vectorizedv1alpha1.KafkaAPI{{Port: 123, AuthenticationMethod: "none"}},
 			},
 			Sidecars: vectorizedv1alpha1.Sidecars{
 				RpkStatus: &vectorizedv1alpha1.Sidecar{

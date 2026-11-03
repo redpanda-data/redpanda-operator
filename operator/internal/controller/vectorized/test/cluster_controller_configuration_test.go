@@ -784,6 +784,7 @@ func getInitialTestCluster(
 			Version:  versionWithCentralizedConfiguration,
 			Replicas: ptr.To(int32(1)),
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
+				RPCServer: vectorizedv1alpha1.SocketAddress{Port: 33145},
 				KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
 					{
 						Port: 9092,
