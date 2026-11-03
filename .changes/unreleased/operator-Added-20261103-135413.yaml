@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'A Broker now gets a Warning Event, reason DiskLostRemediated, once its disk-lost dismantle has finished: the pod and its persistent volume claims are gone and the slot is free for a replacement broker. The event records when the disk loss was detected and that the operator will decommission the dead node_id itself once the replacement has registered (or, when no node_id was ever recorded, that a ghost member may need decommissioning by hand), so kubectl describe broker and kubectl get events show that a data disk was lost and the operator healed it.'
+time: 2026-11-03T13:54:13.649472078+01:00

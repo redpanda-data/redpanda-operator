@@ -91,7 +91,7 @@ func TestPodMetadataSyncStampsBrokerID(t *testing.T) {
 			for pass := range 2 {
 				state, err := r.fetchState(t.Context(), mcreconcile.Request{}, c, broker)
 				require.NoError(t, err)
-				_, err = r.reconcilePodMetadata(t.Context(), state, &diskLostCluster{client: c})
+				_, err = r.reconcilePodMetadata(t.Context(), state, newDiskLostCluster(c))
 				require.NoError(t, err)
 
 				var live corev1.Pod
