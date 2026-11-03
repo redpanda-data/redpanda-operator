@@ -57,11 +57,18 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 }
 
 func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpandachart.RenderState, error) {
-	return conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{
-		RedpandaImage:    defaultImage(m.redpandaImage),
-		SidecarImage:     defaultImage(m.sideCarImage),
-		ConfiguratorArgs: m.cloudSecrets.AdditionalConfiguratorArgs(),
-	}, cluster.Redpanda, cluster.NodePools)
+	return conversion.ConvertV2ToRenderState(m.kubeConfig, v2Defaulters(m.redpandaImage, m.sideCarImage, m.cloudSecrets), cluster.Redpanda, cluster.NodePools)
+}
+
+// v2Defaulters are the defaults both V2 renderers convert with, so a pool's
+// StatefulSet and its simple resources (e.g. the metrics ConfigMap, which
+// depends on the Redpanda version) agree.
+func v2Defaulters(redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *conversion.V2Defaulters {
+	return &conversion.V2Defaulters{
+		RedpandaImage:    defaultImage(redpandaImage),
+		SidecarImage:     defaultImage(sideCarImage),
+		ConfiguratorArgs: cloudSecrets.AdditionalConfiguratorArgs(),
+	}
 }
 
 func isNodePool(object client.Object) bool {

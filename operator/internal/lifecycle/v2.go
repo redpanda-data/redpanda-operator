@@ -41,6 +41,6 @@ func V2ResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSec
 		NodePoolRenderer[ClusterWithPools, *ClusterWithPools],
 		SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools],
 	) {
-		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewV2SimpleResourceRenderer(mgr)
+		return NewV2OwnershipResolver(), NewV2ClusterStatusUpdater(), NewV2NodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewV2SimpleResourceRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets)
 	}
 }

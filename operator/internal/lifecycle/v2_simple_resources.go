@@ -29,15 +29,21 @@ import (
 
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type V2SimpleResourceRenderer struct {
-	kubeConfig *kube.RESTConfig
+	kubeConfig    *kube.RESTConfig
+	sideCarImage  Image
+	redpandaImage Image
+	cloudSecrets  CloudSecretsFlags
 }
 
 var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleResourceRenderer)(nil)
 
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
-func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
+func NewV2SimpleResourceRenderer(mgr ctrl.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
-		kubeConfig: mgr.GetConfig(),
+		kubeConfig:    mgr.GetConfig(),
+		sideCarImage:  sideCarImage,
+		redpandaImage: redpandaImage,
+		cloudSecrets:  cloudSecrets,
 	}
 }
 
@@ -56,10 +62,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec = &redpandav1alpha2.RedpandaClusterSpec{}
 	}
 
-	// NB: No need for real defaults here as the defaults are leveraged only in the stateful set
-	// images and pod command-line args, neither of which are looked at for rendering simple
-	// resources.
-	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, cluster.NodePools)
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, v2Defaulters(m.redpandaImage, m.sideCarImage, m.cloudSecrets), cluster.Redpanda, cluster.NodePools)
 	if err != nil {
 		return nil, err
 	}
