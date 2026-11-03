@@ -1591,3 +1591,12 @@ listeners:
   admin:
     tls:
       requireClientAuth: true
+
+-- k8s-metrics-configmap --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# Redpanda v26.3.0+ reads the REDPANDA_METRICS_K8S_* telemetry values from a
+# mounted per-pool ConfigMap rather than env vars.
+image:
+  tag: v26.3.1

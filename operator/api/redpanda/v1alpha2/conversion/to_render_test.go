@@ -11,6 +11,7 @@ package conversion
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
 	"strings"
 	"testing"
@@ -218,11 +219,17 @@ func TestNodePoolImagePrecedence(t *testing.T) {
 // TestPodTemplateStableAcrossChartVersions guards against rolling every broker
 // on an operator upgrade: the operator embeds the redpanda chart, so its
 // version must not reach the pod template, while a sidecar image change still
-// must.
+// must. The same holds for the operator and Kubernetes versions in telemetry
+// once Redpanda reads them from the metrics ConfigMap (CORE-18071); older
+// Redpanda versions keep them in env vars and still roll.
 func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
-	render := func(t *testing.T, chartVersion, sidecarTag string) map[string]corev1.PodTemplateSpec {
-		sets := renderOperatorPools(t, sidecarTag, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpandachart.RenderState) {
-			state.Chart.Version = chartVersion
+	type versions struct{ chart, operator, kube, sidecar string }
+
+	render := func(t *testing.T, redpandaTag string, v versions) map[string]corev1.PodTemplateSpec {
+		sets := renderOperatorPools(t, redpandaTag, v.sidecar, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpandachart.RenderState) {
+			state.Chart.Version = v.chart
+			state.OperatorVersion = v.operator
+			state.Dot.Capabilities.KubeVersion.Version = v.kube
 		})
 
 		templates := map[string]corev1.PodTemplateSpec{}
@@ -232,26 +239,105 @@ func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
 		return templates
 	}
 
-	baseline := render(t, "26.1.1", "v26.1.1")
+	baseline := versions{chart: "26.1.1", operator: "v26.1.1", kube: "v1.33.4", sidecar: "v26.1.1"}
 
 	cases := []struct {
-		name         string
-		chartVersion string
-		sidecarTag   string
-		wantRoll     bool
+		name        string
+		redpandaTag string
+		upgrade     func(*versions)
+		wantRoll    bool
 	}{
-		{name: "chart version bump", chartVersion: "26.2.1", sidecarTag: "v26.1.1", wantRoll: false},
-		{name: "sidecar image change", chartVersion: "26.1.1", sidecarTag: "v26.2.1", wantRoll: true},
+		{name: "chart version bump", redpandaTag: "v26.1.1", upgrade: func(v *versions) { v.chart = "26.2.1" }, wantRoll: false},
+		{name: "sidecar image change", redpandaTag: "v26.1.1", upgrade: func(v *versions) { v.sidecar = "v26.2.1" }, wantRoll: true},
+		{name: "operator upgrade, telemetry in env", redpandaTag: "v26.1.1", upgrade: func(v *versions) { v.operator = "v26.2.1" }, wantRoll: true},
+		{name: "operator upgrade, telemetry in configmap", redpandaTag: "v26.3.1", upgrade: func(v *versions) { v.operator = "v26.2.1" }, wantRoll: false},
+		{name: "kubernetes upgrade, telemetry in configmap", redpandaTag: "v26.3.1", upgrade: func(v *versions) { v.kube = "v1.34.1" }, wantRoll: false},
+		{name: "sidecar image change, telemetry in configmap", redpandaTag: "v26.3.1", upgrade: func(v *versions) { v.sidecar = "v26.2.1" }, wantRoll: true},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			upgraded := render(t, tc.chartVersion, tc.sidecarTag)
-			for name, template := range baseline {
+			upgraded := baseline
+			tc.upgrade(&upgraded)
+
+			before := render(t, tc.redpandaTag, baseline)
+			after := render(t, tc.redpandaTag, upgraded)
+			for name, template := range before {
 				if tc.wantRoll {
-					require.NotEqual(t, template, upgraded[name], "%s pod template", name)
+					require.NotEqual(t, template, after[name], "%s pod template", name)
 				} else {
-					require.Equal(t, template, upgraded[name], "%s pod template", name)
+					require.Equal(t, template, after[name], "%s pod template", name)
+				}
+			}
+		})
+	}
+}
+
+// TestMetricsConfigMap pins where the REDPANDA_METRICS_K8S_* values go: a
+// per-pool ConfigMap mounted into the redpanda container for Redpanda versions
+// that read them from REDPANDA_METRICS_K8S_DIR, env vars otherwise.
+func TestMetricsConfigMap(t *testing.T) {
+	cases := []struct {
+		redpandaTag string
+		disabled    bool
+		fromDir     bool
+	}{
+		{redpandaTag: "v26.2.6"},
+		{redpandaTag: "v26.3.0-rc1", fromDir: true},
+		{redpandaTag: "v26.3.1", fromDir: true},
+		{redpandaTag: "v26.3.1", disabled: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("%s disabled=%t", tc.redpandaTag, tc.disabled), func(t *testing.T) {
+			state := operatorRenderState(t, tc.redpandaTag, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{})
+			state.OperatorVersion = "v26.2.1"
+			state.Values.Logging.UsageStats.Enabled = !tc.disabled
+
+			sets, err := redpandachart.RenderNodePools(state)
+			require.NoError(t, err)
+			require.Len(t, sets, 2)
+			objs, err := redpandachart.RenderResources(state)
+			require.NoError(t, err)
+
+			configMaps := map[string]*corev1.ConfigMap{}
+			for _, obj := range objs {
+				if cm, ok := obj.(*corev1.ConfigMap); ok {
+					configMaps[cm.Name] = cm
+				}
+			}
+
+			for _, set := range sets {
+				var container corev1.Container
+				for _, c := range set.Spec.Template.Spec.Containers {
+					if c.Name == redpandachart.RedpandaContainerName {
+						container = c
+					}
+				}
+				env := map[string]string{}
+				for _, e := range container.Env {
+					if strings.HasPrefix(e.Name, "REDPANDA_METRICS_K8S_") {
+						env[e.Name] = e.Value
+					}
+				}
+				cmName := redpanda.MetricsConfigMapName(set.Name)
+
+				switch {
+				case tc.disabled:
+					require.Empty(t, env, set.Name)
+					require.NotContains(t, configMaps, cmName)
+				case tc.fromDir:
+					require.Equal(t, map[string]string{redpanda.MetricsDirEnvVar: redpanda.MetricsMountPath}, env, set.Name)
+					require.Contains(t, configMaps, cmName)
+					require.Equal(t, "operator", configMaps[cmName].Data["REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE"])
+					require.Equal(t, "v26.2.1", configMaps[cmName].Data["REDPANDA_METRICS_K8S_CHART_VERSION"])
+					require.Equal(t, "redpandadata/redpanda-operator:v26.1.1", configMaps[cmName].Data["REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION"])
+					require.Contains(t, set.Spec.Template.Spec.Volumes, redpanda.MetricsVolume(set.Name))
+					require.Contains(t, container.VolumeMounts, redpanda.MetricsVolumeMount())
+				default:
+					require.Equal(t, "v26.2.1", env["REDPANDA_METRICS_K8S_CHART_VERSION"], set.Name)
+					require.NotContains(t, env, redpanda.MetricsDirEnvVar)
+					require.NotContains(t, configMaps, cmName)
 				}
 			}
 		})
@@ -290,7 +376,7 @@ func TestPodTemplateChartLabel(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			sets := renderOperatorPools(t, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{
+			sets := renderOperatorPools(t, "v26.1.1", "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{
 				AdditionalSelectorLabels: tc.poolSelector,
 			}, func(state *redpandachart.RenderState) {
 				// What FetchStatefulSetPodSelector reads from a live StatefulSet.
@@ -308,7 +394,25 @@ func TestPodTemplateChartLabel(t *testing.T) {
 // renderOperatorPools renders the default pool and one NodePool, keyed by
 // StatefulSet name, through the operator's conversion path with images
 // pinned. mutate runs on the RenderState before rendering.
-func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpandachart.RenderState)) map[string]*appsv1.StatefulSet {
+func renderOperatorPools(t *testing.T, redpandaTag, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpandachart.RenderState)) map[string]*appsv1.StatefulSet {
+	state := operatorRenderState(t, redpandaTag, sidecarTag, poolSpec)
+	mutate(state)
+
+	sets, err := redpandachart.RenderNodePools(state)
+	require.NoError(t, err)
+	require.Len(t, sets, 2)
+
+	byName := map[string]*appsv1.StatefulSet{}
+	for _, set := range sets {
+		requireSelectorsMatch(t, set)
+		byName[set.Name] = set
+	}
+	return byName
+}
+
+// operatorRenderState converts a Redpanda with one NodePool through the
+// operator's conversion path with images pinned.
+func operatorRenderState(t *testing.T, redpandaTag, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec) *redpandachart.RenderState {
 	cluster := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
 	}
@@ -323,7 +427,7 @@ func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alp
 	}
 
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
-		RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
+		RedpandaImage: pin("redpandadata/redpanda", redpandaTag),
 		SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
 	}, cluster, []*redpandav1alpha2.NodePool{pool})
 	require.NoError(t, err)
@@ -331,18 +435,7 @@ func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alp
 	// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and
 	// falls back to the chart version; pin it to isolate the chart.
 	state.OperatorVersion = "v26.1.1"
-	mutate(state)
-
-	sets, err := redpandachart.RenderNodePools(state)
-	require.NoError(t, err)
-	require.Len(t, sets, 2)
-
-	byName := map[string]*appsv1.StatefulSet{}
-	for _, set := range sets {
-		requireSelectorsMatch(t, set)
-		byName[set.Name] = set
-	}
-	return byName
+	return state
 }
 
 // requireSelectorsMatch asserts that both the StatefulSet's selector and the

@@ -25,10 +25,17 @@ import (
 )
 
 func ConfigMaps(state *RenderState, listeners *redpanda.Listeners) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, listeners, Pool{Statefulset: state.Values.Statefulset})}
+	defaultPool := Pool{Statefulset: state.Values.Statefulset}
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, listeners, defaultPool)}
+	if cm := MetricsConfigMap(state, defaultPool); cm != nil {
+		cms = append(cms, cm)
+	}
 
 	for _, set := range state.Pools {
 		cms = append(cms, RedpandaConfigMap(state, listeners, set))
+		if cm := MetricsConfigMap(state, set); cm != nil {
+			cms = append(cms, cm)
+		}
 	}
 
 	return append(cms, RPKProfile(state, listeners))

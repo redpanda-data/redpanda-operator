@@ -209,6 +209,10 @@ func StatefulSetVolumes(state *RenderState, pki *redpanda.PKI, listeners *redpan
 		volumes = append(volumes, redpanda.HostTunerVolumes()...)
 	}
 
+	if metricsFromDir(state) {
+		volumes = append(volumes, redpanda.MetricsVolume(poolFullname))
+	}
+
 	return volumes
 }
 
@@ -521,6 +525,10 @@ func statefulSetContainerRedpanda(state *RenderState, pki *redpanda.PKI, listene
 	}
 
 	container.Ports = append(container.Ports, listeners.ContainerPorts()...)
+
+	if metricsFromDir(state) {
+		container.VolumeMounts = append(container.VolumeMounts, redpanda.MetricsVolumeMount())
+	}
 
 	if state.Values.Storage.IsTieredStorageEnabled() && state.Values.Storage.TieredMountType() != "none" {
 		name := "tiered-storage-dir"

@@ -353,3 +353,46 @@ func selectorNilOverride() *applycorev1.ServiceSpecApplyConfiguration {
 		Selector: map[string]string{},
 	}
 }
+
+// TestPodTemplateStableAcrossOperatorVersions guards against rolling every
+// broker on an operator upgrade with pinned images: the operator version
+// reaches telemetry through the metrics ConfigMap, not the pod template, for
+// Redpanda versions that read it from there. Older ones still roll.
+func TestPodTemplateStableAcrossOperatorVersions(t *testing.T) {
+	origOperatorTag := redpandav1alpha2.DefaultOperatorImageTag
+	t.Cleanup(func() { redpandav1alpha2.DefaultOperatorImageTag = origOperatorTag })
+
+	render := func(t *testing.T, redpandaTag, operatorVersion string) (corev1.PodTemplateSpec, *corev1.ConfigMap) {
+		redpandav1alpha2.DefaultOperatorImageTag = operatorVersion
+		cluster := &redpandav1alpha2.StretchCluster{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"}}
+		pool := &redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+			Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To(redpandaTag)},
+				SidecarImage: &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v26.1.1")},
+			}},
+		}
+		pools := []*redpandav1alpha2.RedpandaBrokerPool{pool}
+		state, err := NewRenderState(nil, cluster, pools, pools, "test")
+		require.NoError(t, err)
+
+		set, err := statefulSet(state, pool)
+		require.NoError(t, err)
+		return set.Spec.Template, metricsConfigMap(state, pool)
+	}
+
+	t.Run("telemetry in env", func(t *testing.T) {
+		before, cm := render(t, "v26.1.1", "v26.1.1")
+		after, _ := render(t, "v26.1.1", "v26.2.1")
+		require.Nil(t, cm)
+		require.NotEqual(t, before, after)
+	})
+
+	t.Run("telemetry in configmap", func(t *testing.T) {
+		before, beforeCM := render(t, "v26.3.1", "v26.1.1")
+		after, afterCM := render(t, "v26.3.1", "v26.2.1")
+		require.Equal(t, before, after)
+		require.Equal(t, "v26.1.1", beforeCM.Data["REDPANDA_METRICS_K8S_CHART_VERSION"])
+		require.Equal(t, "v26.2.1", afterCM.Data["REDPANDA_METRICS_K8S_CHART_VERSION"])
+	})
+}

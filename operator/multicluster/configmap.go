@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -29,6 +30,9 @@ func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 			return nil, err
 		}
 		cms = append(cms, cm)
+		if cm := metricsConfigMap(state, pool); cm != nil {
+			cms = append(cms, cm)
+		}
 	}
 	cms = append(cms, rpkProfileConfigMap(state)...)
 	return cms, nil
@@ -58,4 +62,24 @@ func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 			"redpanda.yaml":         redpanda,
 		},
 	}, nil
+}
+
+// metricsConfigMap returns the pool's ConfigMap of REDPANDA_METRICS_K8S_*
+// values, or nil when they're passed as env vars.
+func metricsConfigMap(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.ConfigMap {
+	if !metricsFromDir(state, pool) {
+		return nil
+	}
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      redpanda.MetricsConfigMapName(state.poolFullname(pool)),
+			Namespace: state.namespace,
+			Labels:    state.commonLabels(),
+		},
+		Data: redpanda.MetricsConfigMapData(metricsValues(state, pool)),
+	}
 }

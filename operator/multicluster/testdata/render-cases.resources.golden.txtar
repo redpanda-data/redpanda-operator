@@ -298,6 +298,21 @@
     namespace: audit-logging
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: audit-logging
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: audit-logging-pool-a-k8s-metrics
+    namespace: audit-logging
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -1188,6 +1203,23 @@
       env: staging
       team: platform
     name: common-labels-pool-a
+    namespace: common-labels
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: common-labels
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      env: staging
+      team: platform
+    name: common-labels-pool-a-k8s-metrics
     namespace: common-labels
 - apiVersion: v1
   data:
@@ -2102,6 +2134,21 @@
     namespace: custom-cluster-domain
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-cluster-domain
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-cluster-domain-pool-a-k8s-metrics
+    namespace: custom-cluster-domain
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -2983,6 +3030,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: custom-config-pool-a
+    namespace: custom-config
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-config
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-config-pool-a-k8s-metrics
     namespace: custom-config
 - apiVersion: v1
   data:
@@ -4752,6 +4814,21 @@
     namespace: custom-resources
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-pool-a-k8s-metrics
+    namespace: custom-resources
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -5632,6 +5709,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: custom-resources-explicit-pool-a
+    namespace: custom-resources-explicit
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources-explicit
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-explicit-pool-a-k8s-metrics
     namespace: custom-resources-explicit
 - apiVersion: v1
   data:
@@ -6518,6 +6610,21 @@
     namespace: enterprise
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: enterprise
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: enterprise-pool-a-k8s-metrics
+    namespace: enterprise
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -7339,6 +7446,21 @@
       app.kubernetes.io/name: redpanda
     name: external-disabled-domain-pool-a
     namespace: external-disabled-domain
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-disabled-domain
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-disabled-domain-pool-a-k8s-metrics
+    namespace: external-disabled-domain
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
@@ -8153,6 +8275,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: external-loadbalancer-pool-a
+    namespace: external-loadbalancer
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-loadbalancer-pool-a-k8s-metrics
     namespace: external-loadbalancer
 - apiVersion: v1
   data:
@@ -8980,6 +9117,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: external-loadbalancer-addresses-pool-a
+    namespace: external-loadbalancer-addresses
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer-addresses
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-loadbalancer-addresses-pool-a-k8s-metrics
     namespace: external-loadbalancer-addresses
 - apiVersion: v1
   data:
@@ -10768,6 +10920,21 @@
     namespace: external-nodeport
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-nodeport
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-nodeport-pool-a-k8s-metrics
+    namespace: external-nodeport
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -11651,6 +11818,21 @@
     namespace: external-tls
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-tls-pool-a-k8s-metrics
+    namespace: external-tls
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -12521,6 +12703,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: flat-network-pool-a
+    namespace: flat-network
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-pool-a-k8s-metrics
     namespace: flat-network
 - apiVersion: v1
   data:
@@ -13476,6 +13673,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: flat-network-tls-pool-a
+    namespace: flat-network-tls
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a-k8s-metrics
     namespace: flat-network-tls
 - apiVersion: v1
   data:
@@ -14698,6 +14910,22 @@
     namespace: full-featured
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-k8s-metrics
+    namespace: full-featured
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"true","cloud_storage_bucket":"\"prod-tiered\"","cloud_storage_cache_size":"21474836480","cloud_storage_credentials_source":"\"aws_instance_metadata\"","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"true","cloud_storage_region":"\"us-east-1\"","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"true","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"true","log_segment_size":"134217728","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"5368709120","superusers":"[\"kubernetes-controller\"]"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -14911,6 +15139,22 @@
       app.kubernetes.io/name: redpanda
       team: data-platform
     name: full-featured-pool-hot
+    namespace: full-featured
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-k8s-metrics
     namespace: full-featured
 - apiVersion: v1
   data:
@@ -16421,6 +16665,21 @@
     namespace: host-tuners
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: host-tuners
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: host-tuners-pool-a-k8s-metrics
+    namespace: host-tuners
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -17301,6 +17560,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: init-containers-pool-a
+    namespace: init-containers
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: init-containers
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: init-containers-pool-a-k8s-metrics
     namespace: init-containers
 - apiVersion: v1
   data:
@@ -18229,6 +18503,21 @@
     namespace: mcs-network
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-pool-a-k8s-metrics
+    namespace: mcs-network
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -19101,6 +19390,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: mcs-network-tls-pool-a
+    namespace: mcs-network-tls
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a-k8s-metrics
     namespace: mcs-network-tls
 - apiVersion: v1
   data:
@@ -20040,6 +20344,21 @@
     namespace: memory-locking
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: memory-locking
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: memory-locking-pool-a-k8s-metrics
+    namespace: memory-locking
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -20920,6 +21239,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: minimal-pool-a
+    namespace: minimal
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: minimal
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: minimal-pool-a-k8s-metrics
     namespace: minimal
 - apiVersion: v1
   data:
@@ -21831,6 +22165,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: monitoring-pool-a
+    namespace: monitoring
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: monitoring-pool-a-k8s-metrics
     namespace: monitoring
 - apiVersion: v1
   data:
@@ -22794,6 +23143,21 @@
     namespace: multi-pool
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-a-k8s-metrics
+    namespace: multi-pool
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -22986,6 +23350,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: multi-pool-pool-b
+    namespace: multi-pool
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-k8s-metrics
     namespace: multi-pool
 - apiVersion: v1
   data:
@@ -24504,6 +24883,21 @@
     namespace: multi-pool-heterogeneous-ports
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-a-k8s-metrics
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -24678,6 +25072,21 @@
     namespace: multi-pool-heterogeneous-ports
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-b-k8s-metrics
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -24849,6 +25258,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: multi-pool-heterogeneous-ports-pool-c
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-c-k8s-metrics
     namespace: multi-pool-heterogeneous-ports
 - apiVersion: v1
   data:
@@ -26555,6 +26979,21 @@
     namespace: per-pod-service-overrides
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-pool-a-k8s-metrics
+    namespace: per-pod-service-overrides
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -27325,6 +27764,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: per-pod-service-remote-disabled-pool-a
+    namespace: per-pod-service-remote-disabled
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-pool-a-k8s-metrics
     namespace: per-pod-service-remote-disabled
 - apiVersion: v1
   data:
@@ -28115,6 +28569,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: pool-overrides-cluster-pool-a
+    namespace: pool-overrides-cluster
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: pool-overrides-cluster
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: pool-overrides-cluster-pool-a-k8s-metrics
     namespace: pool-overrides-cluster
 - apiVersion: v1
   data:
@@ -29001,6 +29470,21 @@
     namespace: probe-overrides
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: probe-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: probe-overrides-pool-a-k8s-metrics
+    namespace: probe-overrides
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -29884,6 +30368,21 @@
     namespace: pvc-retention-policy
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: pvc-retention-policy
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: pvc-retention-policy-pool-a-k8s-metrics
+    namespace: pvc-retention-policy
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -30764,6 +31263,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: rack-awareness-pool-a
+    namespace: rack-awareness
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: rack-awareness
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: rack-awareness-pool-a-k8s-metrics
     namespace: rack-awareness
 - apiVersion: v1
   data:
@@ -31651,6 +32165,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: sasl-scram256-pool-a
+    namespace: sasl-scram256
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram256
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram256-pool-a-k8s-metrics
     namespace: sasl-scram256
 - apiVersion: v1
   data:
@@ -32556,6 +33085,21 @@
     namespace: sasl-scram512-with-tls
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram512-with-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram512-with-tls-pool-a-k8s-metrics
+    namespace: sasl-scram512-with-tls
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -33434,6 +33978,21 @@
     namespace: single-replica
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: single-replica
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: single-replica-pool-a-k8s-metrics
+    namespace: single-replica
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -34221,6 +34780,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: storage-hostpath-pool-a
+    namespace: storage-hostpath
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-hostpath-pool-a-k8s-metrics
     namespace: storage-hostpath
 - apiVersion: v1
   data:
@@ -35107,6 +35681,21 @@
     namespace: storage-pv-custom
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-pv-custom
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-pv-custom-pool-a-k8s-metrics
+    namespace: storage-pv-custom
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -35987,6 +36576,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: tiered-storage-emptydir-pool-a
+    namespace: tiered-storage-emptydir
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-emptydir
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-emptydir-pool-a-k8s-metrics
     namespace: tiered-storage-emptydir
 - apiVersion: v1
   data:
@@ -36873,6 +37477,21 @@
     namespace: tiered-storage-hostpath
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-hostpath-pool-a-k8s-metrics
+    namespace: tiered-storage-hostpath
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -37756,6 +38375,21 @@
     namespace: tiered-storage-pv
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-pv
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-pv-pool-a-k8s-metrics
+    namespace: tiered-storage-pv
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -38570,6 +39204,21 @@
     namespace: tls-disabled
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-disabled-pool-a-k8s-metrics
+    namespace: tls-disabled
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -39337,6 +39986,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: tls-issuer-ref-pool-a
+    namespace: tls-issuer-ref
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-pool-a-k8s-metrics
     namespace: tls-issuer-ref
 - apiVersion: v1
   data:
@@ -40223,6 +40887,21 @@
     namespace: tls-issuer-ref-mtls
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-mtls-pool-a-k8s-metrics
+    namespace: tls-issuer-ref-mtls
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []
@@ -41103,6 +41782,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: tls-mtls-pool-a
+    namespace: tls-mtls
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-mtls-pool-a-k8s-metrics
     namespace: tls-mtls
 - apiVersion: v1
   data:
@@ -41996,6 +42690,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: tls-multi-cert-listener-order-pool-a
+    namespace: tls-multi-cert-listener-order
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-multi-cert-listener-order
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-multi-cert-listener-order-pool-a-k8s-metrics
     namespace: tls-multi-cert-listener-order
 - apiVersion: v1
   data:
@@ -42980,6 +43689,21 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
     name: tls-self-signed-pool-a
+    namespace: tls-self-signed
+- apiVersion: v1
+  data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-self-signed
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-self-signed-pool-a-k8s-metrics
     namespace: tls-self-signed
 - apiVersion: v1
   data:
