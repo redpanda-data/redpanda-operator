@@ -175,7 +175,7 @@ These are pinned independently; a missed one surfaces as an unrelated-looking te
 | envtest | `flake.nix`: `{ name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.XX.x)"; }` |
 | Kube component images | `Taskfile.yml` `DEFAULT_TEST_KUBE_VERSION`, plus hardcoded `registry.k8s.io/kube-{apiserver,controller-manager}` refs in the three test files below |
 | vcluster | `pkg/testutil/testutil.go` `VClusterVersion`, `Taskfile.yml` `DEFAULT_TEST_VCLUSTER_VERSION`, and `ghcr.io/loft-sh/vcluster-pro` refs in the three test files below |
-| vcluster distro image | `ghcr.io/loft-sh/kubernetes` tag in **three** places that must match: `pkg/vcluster/vcluster.go` `DefaultValues`, `Taskfile.yml` pre-pull list, `acceptance/main_test.go` `WithImportedImages`. Must be supported by the vcluster chart version above |
+| vcluster distro image | `ghcr.io/loft-sh/kubernetes` tag in **three** places that must match: `pkg/vcluster/vcluster.go` `DefaultValues`, `Taskfile.yml` pre-pull list, `acceptance/main_test.go` `WithImportedImages`. Must be supported by the vcluster chart version above (vcluster ≤ 0.37.x cannot run a 1.37 distro: its kube-controller-manager args still name `cloud-node-lifecycle`, which 1.37 removed) |
 | cert-manager (inside vclusters, for webhook TLS) | `pkg/testutil/testutil.go` `CertManagerVersion`, `Taskfile.yml` `DEFAULT_SECOND_TEST_CERTMANAGER_VERSION`, `quay.io/jetstack/cert-manager-*` refs in the three test files below |
 | Acceptance upgrade baselines | `--version vXX.Y.Z` in `acceptance/features/operator-upgrades.feature`, `console-upgrades.feature`, and `upgrade-regressions.feature` (whose intermediate step uses the local `../operator/chart`), plus `DefaultRedpandaRepo`/`DefaultRedpandaTag` in `acceptance/steps/defaults.go` |
 

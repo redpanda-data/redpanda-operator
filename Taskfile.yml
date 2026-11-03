@@ -418,7 +418,7 @@ tasks:
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
       # vcluster's embedded k8s distro — the tag is hardcoded in
       # pkg/vcluster/vcluster.go's DefaultValues.
-      - ghcr.io/loft-sh/kubernetes:v1.37.2
+      - ghcr.io/loft-sh/kubernetes:v1.36.6
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}
