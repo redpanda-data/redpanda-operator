@@ -10,12 +10,17 @@
 package observability
 
 import (
+	"context"
 	"testing"
+	"time"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -178,6 +183,41 @@ func TestBrokerPhaseRecorder(t *testing.T) {
 
 	r.Record(nil)
 	assert.False(t, hasGauge(t, metric, series("a", "Running")))
+}
+
+// A Broker List that never returns must not wedge the controller: Observe
+// gives up after observeTimeout and the series keep their last values.
+func TestBrokerPhaseRecorderObserveTimeout(t *testing.T) {
+	t.Cleanup(BrokerPhase.Reset)
+	restore := observeTimeout
+	observeTimeout = 50 * time.Millisecond
+	t.Cleanup(func() { observeTimeout = restore })
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, redpandav1alpha2.AddToScheme(scheme))
+	// Nothing reaches the host: typed reads go to the cache reader, which is
+	// what blocks in production while an informer waits to sync.
+	ctl, err := kube.FromRESTConfig(&kube.RESTConfig{Host: "http://127.0.0.1:1"}, kube.Options{Options: client.Options{
+		Scheme: scheme,
+		Cache:  &client.CacheOptions{Reader: neverSyncingReader{}},
+	}})
+	require.NoError(t, err)
+
+	r := NewBrokerPhaseRecorder(BrokerKindRedpanda)
+	r.Record([]redpandav1alpha2.Broker{testBroker("rec", v2Ref, "a", redpandav1alpha2.BrokerPhaseRunning)})
+
+	start := time.Now()
+	require.Error(t, r.Observe(t.Context(), ctl))
+	require.Less(t, time.Since(start), 5*time.Second)
+	assert.Equal(t, 1.0, readGauge(t, "operator_broker_phase", map[string]string{"namespace": "rec", "kind": BrokerKindRedpanda, "name": "a", "phase": "Running"}))
+}
+
+// neverSyncingReader is a cache whose List blocks until the context ends.
+type neverSyncingReader struct{ client.Reader }
+
+func (neverSyncingReader) List(ctx context.Context, _ client.ObjectList, _ ...client.ListOption) error {
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 func testBroker(namespace string, ref redpandav1alpha2.ClusterRef, clusterLabel string, phase redpandav1alpha2.BrokerPhase) redpandav1alpha2.Broker {

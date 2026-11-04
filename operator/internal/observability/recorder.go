@@ -39,6 +39,7 @@ package observability
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -111,6 +112,9 @@ var brokerPhases = []string{
 	BrokerPhaseUnknown,
 }
 
+// observeTimeout bounds one Observe; a var so the test can shorten it.
+var observeTimeout = 30 * time.Second
+
 // BrokerClusterKey identifies one cluster's series on BrokerPhase.
 type BrokerClusterKey struct {
 	Namespace, Kind, Name string
@@ -137,7 +141,17 @@ func NewBrokerPhaseRecorder(kind string) *BrokerPhaseRecorder {
 // cleared. The metric controllers call this on every pass whether or not they
 // watch Brokers, so they need no knowledge of whether the CRD exists; the
 // price is one RESTMapper discovery round-trip per pass while it is absent.
+//
+// The List is bounded by observeTimeout. Through a cache-backed ctl the
+// first List starts the Broker informer and blocks until it has synced, and
+// a reconcile context carries no deadline of its own, so an informer that
+// never syncs (RBAC, a broken conversion webhook) would wedge the metric
+// controller and freeze every other gauge it writes. On timeout the pass
+// fails and the series keep their last values; controller-runtime logs the
+// error and retries with backoff.
 func (r *BrokerPhaseRecorder) Observe(ctx context.Context, ctl *kube.Ctl) error {
+	ctx, cancel := context.WithTimeout(ctx, observeTimeout)
+	defer cancel()
 	brokers, err := kube.List[redpandav1alpha2.BrokerList](ctx, ctl, "")
 	switch {
 	case apimeta.IsNoMatchError(err):
