@@ -1,0 +1,5 @@
+project: operator
+kind: Changed
+body: |-
+    Redpanda Connect support in the operator is now GA, including the `Pipeline` CRD and the Connect controller. The `Pipeline` spec and the chart's `connectController` values are stable and no longer subject to backwards-incompatible changes. The controller stays opt-in (`--enable-connect` / `connectController.enabled`) and requires an enterprise license with the Connect product.
+time: 2026-11-03T13:00:00.000000-05:00
