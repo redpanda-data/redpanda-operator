@@ -65,9 +65,9 @@ func init() {
 // ClusterMetricController provides metrics for nodes and cluster
 type ClusterMetricController struct {
 	client.Client
-	// Brokers lists Broker CRs for operator_broker_phase on every pass; a
+	// brokers lists Broker CRs for operator_broker_phase on every pass; a
 	// missing Broker CRD is tolerated (see BrokerPhaseRecorder.Observe).
-	Brokers *kube.Ctl
+	brokers *kube.Ctl
 
 	currentLabels              collections.Set[string]
 	currentConfigurationLabels collections.Set[string]
@@ -83,7 +83,7 @@ type ClusterMetricController struct {
 func NewClusterMetricsController(c client.Client, brokers *kube.Ctl, watchBrokers bool) *ClusterMetricController {
 	return &ClusterMetricController{
 		Client:                     c,
-		Brokers:                    brokers,
+		brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[string](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindCluster),
@@ -155,7 +155,7 @@ func (r *ClusterMetricController) Reconcile(
 		}
 	}
 
-	if err := r.brokerPhases.Observe(ctx, r.Brokers); err != nil {
+	if err := r.brokerPhases.Observe(ctx, r.brokers); err != nil {
 		return ctrl.Result{}, err
 	}
 

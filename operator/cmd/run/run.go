@@ -983,12 +983,15 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 
 // cachedCtl builds a kube.Ctl that reads through mgr's informer cache, so it
 // sees exactly what mgr.GetClient() sees and never falls out of step with the
-// controllers sharing that cache.
+// controllers sharing that cache. It shares mgr's HTTP client and RESTMapper
+// too, so it runs no discovery of its own.
 func cachedCtl(mgr ctrl.Manager) (*kube.Ctl, error) {
 	return kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
 		Options: client.Options{
-			Scheme: mgr.GetScheme(),
-			Cache:  &client.CacheOptions{Reader: mgr.GetCache()},
+			HTTPClient: mgr.GetHTTPClient(),
+			Scheme:     mgr.GetScheme(),
+			Mapper:     mgr.GetRESTMapper(),
+			Cache:      &client.CacheOptions{Reader: mgr.GetCache()},
 		},
 		FieldManager: string(lifecycle.DefaultFieldOwner),
 	})

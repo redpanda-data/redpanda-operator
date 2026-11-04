@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	promtestutil "github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 var (
@@ -160,29 +162,32 @@ func TestBrokerPhaseRecorder(t *testing.T) {
 
 	r := NewBrokerPhaseRecorder(BrokerKindRedpanda)
 	r.Record([]redpandav1alpha2.Broker{a, b})
-	assert.Equal(t, 1.0, readGauge(t, metric, series("a", "Running")))
-	assert.Equal(t, 1.0, readGauge(t, metric, series("b", "Stuck")))
-	assert.True(t, hasGauge(t, metric, series("a", "Stuck")), "zero-filled phase must be exported")
+	testutils.RequireGauge(t, metric, series("a", "Running"), 1)
+	testutils.RequireGauge(t, metric, series("b", "Stuck"), 1)
+	// The zero-filled phases are exported too.
+	testutils.RequireGauge(t, metric, series("a", "Stuck"), 0)
 
 	// A cluster whose brokers are gone loses every series, not just the
 	// non-zero ones.
 	r.Record([]redpandav1alpha2.Broker{a})
-	assert.True(t, hasGauge(t, metric, series("a", "Running")))
+	testutils.RequireGauge(t, metric, series("a", "Running"), 1)
 	for _, phase := range brokerPhases {
-		assert.False(t, hasGauge(t, metric, series("b", phase)), "b/%s still exported", phase)
+		testutils.RequireNoGauge(t, metric, series("b", phase))
 	}
 
-	// Re-recording the same input is a no-op.
+	// Re-recording the same input neither adds nor drops a series.
+	before := promtestutil.CollectAndCount(BrokerPhase)
 	r.Record([]redpandav1alpha2.Broker{a})
-	assert.Equal(t, 1.0, readGauge(t, metric, series("a", "Running")))
+	assert.Equal(t, before, promtestutil.CollectAndCount(BrokerPhase))
+	testutils.RequireGauge(t, metric, series("a", "Running"), 1)
 
 	// A recorder of the other kind owns disjoint series and must not touch
 	// these.
 	NewBrokerPhaseRecorder(BrokerKindCluster).Record(nil)
-	assert.True(t, hasGauge(t, metric, series("a", "Running")))
+	testutils.RequireGauge(t, metric, series("a", "Running"), 1)
 
 	r.Record(nil)
-	assert.False(t, hasGauge(t, metric, series("a", "Running")))
+	testutils.RequireNoGauge(t, metric, series("a", "Running"))
 }
 
 // A Broker List that never returns must not wedge the controller: Observe
@@ -194,7 +199,7 @@ func TestBrokerPhaseRecorderObserveTimeout(t *testing.T) {
 	t.Cleanup(func() { observeTimeout = restore })
 
 	scheme := runtime.NewScheme()
-	require.NoError(t, redpandav1alpha2.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
 	// Nothing reaches the host: typed reads go to the cache reader, which is
 	// what blocks in production while an informer waits to sync.
 	ctl, err := kube.FromRESTConfig(&kube.RESTConfig{Host: "http://127.0.0.1:1"}, kube.Options{Options: client.Options{
@@ -209,7 +214,7 @@ func TestBrokerPhaseRecorderObserveTimeout(t *testing.T) {
 	start := time.Now()
 	require.Error(t, r.Observe(t.Context(), ctl))
 	require.Less(t, time.Since(start), 5*time.Second)
-	assert.Equal(t, 1.0, readGauge(t, "operator_broker_phase", map[string]string{"namespace": "rec", "kind": BrokerKindRedpanda, "name": "a", "phase": "Running"}))
+	testutils.RequireGauge(t, "operator_broker_phase", map[string]string{"namespace": "rec", "kind": BrokerKindRedpanda, "name": "a", "phase": "Running"}, 1)
 }
 
 // neverSyncingReader is a cache whose List blocks until the context ends.
@@ -230,19 +235,4 @@ func testBroker(namespace string, ref redpandav1alpha2.ClusterRef, clusterLabel 
 		b.Labels = map[string]string{redpandav1alpha2.ClusterNameLabel: clusterLabel}
 	}
 	return b
-}
-
-func hasGauge(t *testing.T, name string, labels map[string]string) bool {
-	t.Helper()
-	for _, fam := range gather(t) {
-		if fam.GetName() != name {
-			continue
-		}
-		for _, m := range fam.GetMetric() {
-			if labelsContain(m.GetLabel(), labels) {
-				return true
-			}
-		}
-	}
-	return false
 }

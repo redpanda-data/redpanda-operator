@@ -214,9 +214,9 @@ gone; this gauge is the mode-independent replacement:
 
 **Suggested alerts** (not yet shipped in the chart's PrometheusRule):
 
-- **Stuck**: `operator_broker_phase{phase="Stuck"} > 0` for 15m → warning. Stuck is also a normal waypoint: a pod on a dead node waits there for `MarkDiskLostAfter` (5m by default) before becoming `DiskLost`, and a bad rollout crash-loops briefly.
+- **Stuck**: `operator_broker_phase{phase="Stuck"} > 0` for 15m → warning. Stuck is also a normal waypoint: a pod on a dead node waits there five minutes before becoming `DiskLost`, and a bad rollout crash-loops briefly.
 - **Disk lost**: `operator_broker_phase{phase="DiskLost"} > 0` for 2m → warning. The operator is replacing the broker; no action unless it persists.
-- **Recovery stalled**: the same for 30m → warning. The lost `node_id`'s decommission is not completing (a full replacement took about 8.5 minutes in a live test).
+- **Recovery stalled**: the same for 30m → warning. A healthy replacement finishes well inside this window; past it, the lost `node_id`'s decommission is not completing.
 
 ### StretchCluster member status
 

@@ -49,9 +49,9 @@ type redpandaMetricKey struct {
 type RedpandaMetricsReconciler struct {
 	Client client.Client
 
-	// Brokers lists Broker CRs for operator_broker_phase on every pass; a
+	// brokers lists Broker CRs for operator_broker_phase on every pass; a
 	// missing Broker CRD is tolerated (see BrokerPhaseRecorder.Observe).
-	Brokers *kube.Ctl
+	brokers *kube.Ctl
 
 	// Labels we previously emitted on the per-cluster gauges. Retained so we
 	// can DeleteLabelValues for Redpandas that have since been deleted —
@@ -75,7 +75,7 @@ type RedpandaMetricsReconciler struct {
 func NewRedpandaMetricsReconciler(c client.Client, brokers *kube.Ctl, watchBrokers bool) *RedpandaMetricsReconciler {
 	return &RedpandaMetricsReconciler{
 		Client:                     c,
-		Brokers:                    brokers,
+		brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[redpandaMetricKey](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindRedpanda),
@@ -138,7 +138,7 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Reques
 		}
 	}
 
-	if err := r.brokerPhases.Observe(ctx, r.Brokers); err != nil {
+	if err := r.brokerPhases.Observe(ctx, r.brokers); err != nil {
 		return ctrl.Result{}, err
 	}
 
