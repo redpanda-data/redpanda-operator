@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+    Gateway API TLSRoute support for external access is now GA. The `listeners.<proto>.external.<name>.type: tlsroute` and `external.gateway` values are stable and no longer subject to backwards-incompatible changes.
+time: 2026-11-03T12:00:00.000000-05:00
