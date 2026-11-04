@@ -26,6 +26,16 @@ var (
 	poolRef = redpandav1alpha2.ClusterRef{Kind: ptr.To(redpandav1alpha2.NodePoolKind), Name: "pool"}
 )
 
+// A new BrokerPhase has to be added to brokerPhases, and to the gauge's docs
+// and suggested alerts; until it is, brokers in it count as Unknown.
+func TestBrokerPhasesMatchAPI(t *testing.T) {
+	want := []string{BrokerPhaseUnknown}
+	for _, p := range redpandav1alpha2.BrokerPhases() {
+		want = append(want, string(p))
+	}
+	assert.ElementsMatch(t, want, brokerPhases)
+}
+
 func TestBrokerPhaseCounts(t *testing.T) {
 	key := func(kind, name string) BrokerClusterKey {
 		return BrokerClusterKey{Namespace: "ns", Kind: kind, Name: name}
@@ -84,6 +94,16 @@ func TestBrokerPhaseCounts(t *testing.T) {
 			kind: BrokerKindRedpanda,
 			brokers: []redpandav1alpha2.Broker{
 				testBroker("ns", v2Ref, "rp", ""),
+			},
+			want: map[BrokerClusterKey]map[string]float64{
+				key(BrokerKindRedpanda, "rp"): {BrokerPhaseUnknown: 1},
+			},
+		},
+		{
+			name: "a phase this operator does not know counts as Unknown",
+			kind: BrokerKindRedpanda,
+			brokers: []redpandav1alpha2.Broker{
+				testBroker("ns", v2Ref, "rp", "Rebalancing"),
 			},
 			want: map[BrokerClusterKey]map[string]float64{
 				key(BrokerKindRedpanda, "rp"): {BrokerPhaseUnknown: 1},

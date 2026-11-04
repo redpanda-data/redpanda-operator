@@ -196,7 +196,7 @@ series.
 
 | Metric | Type | Labels | What it tells you |
 |--------|------|--------|-------------------|
-| `operator_broker_phase` | GaugeVec | `namespace`, `kind`, `name`, `phase` | Number of Broker CRs of cluster `name` in each `status.phase`. Every phase (`Pending`, `Provisioning`, `Running`, `Decommissioning`, `Decommissioned`, `Stuck`, `DiskLost`, and `Unknown` for a Broker not yet reconciled) is exported per cluster, zero-filled, so a `> 0` alert resolves by value rather than by the series disappearing. |
+| `operator_broker_phase` | GaugeVec | `namespace`, `kind`, `name`, `phase` | Number of Broker CRs of cluster `name` in each `status.phase`. Every phase (`Pending`, `Provisioning`, `Running`, `Decommissioning`, `Decommissioned`, `Stuck`, `DiskLost`, and `Unknown` for a Broker not yet reconciled or in a phase this operator version does not know) is exported per cluster, zero-filled, so a `> 0` alert resolves by value rather than by the series disappearing. |
 
 Scraped through the chart's ServiceMonitor, which leaves `honorLabels`
 unset, the gauge's own `namespace` label is renamed to `exported_namespace`

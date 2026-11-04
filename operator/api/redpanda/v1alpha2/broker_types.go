@@ -39,6 +39,20 @@ const (
 	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
+// BrokerPhases lists every BrokerPhase. Code that enumerates phases, such as
+// the operator_broker_phase gauge, checks itself against this list.
+func BrokerPhases() []BrokerPhase {
+	return []BrokerPhase{
+		BrokerPhasePending,
+		BrokerPhaseProvisioning,
+		BrokerPhaseRunning,
+		BrokerPhaseDecommissioning,
+		BrokerPhaseDecommissioned,
+		BrokerPhaseStuck,
+		BrokerPhaseDiskLost,
+	}
+}
+
 // BrokerConfigChecksumAnnotation carries the config checksum on both the
 // Broker's desired pod template annotations and the live pod's annotations.
 // A mismatch between the two marks the pod as needing rotation.

@@ -268,7 +268,7 @@ var (
 	BrokerPhase = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Name:      "broker_phase",
-		Help:      "Number of Broker CRs per owning cluster in each status.phase. kind is the cluster CR the broker belongs to: Cluster (redpanda.vectorized.io) or Redpanda (cluster.redpanda.com; NodePool-referenced brokers count under their Redpanda). phase=Unknown is a broker not yet reconciled.",
+		Help:      "Number of Broker CRs per owning cluster in each status.phase. kind is the cluster CR the broker belongs to: Cluster (redpanda.vectorized.io) or Redpanda (cluster.redpanda.com; NodePool-referenced brokers count under their Redpanda). phase=Unknown is a broker not yet reconciled, or one in a phase this operator version does not know.",
 	}, []string{"namespace", "kind", "name", "phase"})
 )
 

@@ -64,14 +64,18 @@ const (
 // rather than watched, so this bounds how stale BrokerPhase can get.
 const ResourceStateRequeue = time.Minute
 
-// BrokerPhaseUnknown is the `phase` label for a Broker whose status.phase is
-// still empty: not yet reconciled, or never, while the Broker controller is
-// disabled.
+// BrokerPhaseUnknown is the `phase` label for a Broker whose status.phase this
+// operator cannot place: still empty (not yet reconciled, or never, while the
+// Broker controller is disabled), or a value outside brokerPhases, which a
+// newer operator leaves behind before a rollback. Folding such a value in here
+// keeps the label vocabulary closed; a series for a phase nobody enumerated
+// would never be deleted once the broker moved on.
 const BrokerPhaseUnknown = "Unknown"
 
 // brokerPhases is every value the `phase` label takes. Each cluster gets all
 // of them, zero-filled, so a `> 0` alert resolves by value rather than by
-// the series disappearing.
+// the series disappearing. TestBrokerPhasesMatchAPI fails when the API grows
+// a phase this list lacks: the gauge's docs and alerts need it too.
 var brokerPhases = []string{
 	string(redpandav1alpha2.BrokerPhasePending),
 	string(redpandav1alpha2.BrokerPhaseProvisioning),
@@ -173,8 +177,10 @@ func brokerPhaseCounts(brokers []redpandav1alpha2.Broker, kind string) map[Broke
 			}
 			counts[key] = phases
 		}
+		// phases holds exactly brokerPhases, so the lookup is the enumeration
+		// check; it also catches the empty phase.
 		phase := string(b.Status.Phase)
-		if phase == "" {
+		if _, known := phases[phase]; !known {
 			phase = BrokerPhaseUnknown
 		}
 		phases[phase]++
