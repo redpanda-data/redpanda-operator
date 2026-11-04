@@ -778,7 +778,7 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 	if replace {
 		log.Info("Broker cannot start. Deleting pod without maintenance mode",
 			"pod-name", pod.Name, "patch", patchResult.Patch)
-		if err = r.deletePod(ctx, pod, failedpods.Unchanged(pod)); err != nil {
+		if err = r.deletePod(ctx, pod); err != nil {
 			return err
 		}
 		return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "wait for pod restart"}
@@ -827,10 +827,11 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 
 // deletePod deletes pod as the pass's one disruption: the pools reconciled
 // after it read a cache that can't show the delete yet, which may have
-// happened even if it reports an error.
-func (r *StatefulSetResource) deletePod(ctx context.Context, pod *corev1.Pod, opts ...k8sclient.DeleteOption) error {
+// happened even if it reports an error. Only as read: a delete decided from a
+// stale cache entry would otherwise restart its replacement.
+func (r *StatefulSetResource) deletePod(ctx context.Context, pod *corev1.Pod) error {
 	r.arbitration.MarkRollGrant()
-	if err := r.Delete(ctx, pod, opts...); err != nil {
+	if err := r.Delete(ctx, pod, failedpods.Unchanged(pod)); err != nil {
 		return fmt.Errorf("unable to remove Redpanda pod: %w", err)
 	}
 	return nil
