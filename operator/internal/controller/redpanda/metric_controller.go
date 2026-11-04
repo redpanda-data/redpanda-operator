@@ -18,8 +18,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -61,17 +63,23 @@ type RedpandaMetricsReconciler struct {
 	currentConfigurationLabels collections.Set[string]
 
 	brokerPhases *observability.BrokerPhaseRecorder
+
+	// watchBrokers adds the Broker watch; false while the Broker controller
+	// is off, see SetupWithManager.
+	watchBrokers bool
 }
 
 // NewRedpandaMetricsReconciler creates a RedpandaMetricsReconciler over the
-// local cluster's clients; Redpanda CRs only live there.
-func NewRedpandaMetricsReconciler(c client.Client, brokers *kube.Ctl) *RedpandaMetricsReconciler {
+// local cluster's clients; Redpanda CRs only live there. watchBrokers is
+// whether the Broker controller runs.
+func NewRedpandaMetricsReconciler(c client.Client, brokers *kube.Ctl, watchBrokers bool) *RedpandaMetricsReconciler {
 	return &RedpandaMetricsReconciler{
 		Client:                     c,
 		Brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[redpandaMetricKey](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindRedpanda),
+		watchBrokers:               watchBrokers,
 	}
 }
 
@@ -134,22 +142,29 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: observability.ResourceStateRequeue}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager registers the metrics reconciler with the local manager.
+// Every watch feeds SingletonRequest, so a burst of events is one pass and a
+// deleted object leaves no key behind. Brokers are watched only while the
+// Broker controller runs: without it no phase ever changes, and a watch on
+// the then possibly absent Broker CRD would fail the controller's start.
 // The operator's `--namespace` flag is honored implicitly: when set, the
 // manager's cache is restricted to that namespace (see `cmd/run`), which
-// scopes both the watch and the List in Reconcile.
+// scopes both the watches and the Lists in Reconcile.
 func (r *RedpandaMetricsReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	b := ctrl.NewControllerManagedBy(mgr).
 		Named("redpanda-metrics").
-		For(&redpandav1alpha2.Redpanda{}).
+		Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest)).
 		WithOptions(ctrlcontroller.Options{
 			// Matches the convention used by other v2 controllers in this
 			// package; avoids a duplicate-name panic when controller-runtime
 			// reuses controller names across registrations during tests.
 			SkipNameValidation: ptr.To(true),
-		}).
-		Complete(r)
+		})
+	if r.watchBrokers {
+		b = b.Watches(&redpandav1alpha2.Broker{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest), builder.WithPredicates(observability.BrokerPhaseChanged))
+	}
+	return b.Complete(r)
 }

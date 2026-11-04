@@ -190,9 +190,11 @@ a V2 Redpanda of the same name coexist during a migration. A Broker is
 attributed through its `spec.clusterRef` (a NodePool reference rolls up to
 its Redpanda) and its `cluster.redpanda.com/cluster-name` label. Only
 clusters that have Broker CRs appear; a StatefulSet-mode cluster has no
-series. Brokers are listed on every pass and at least once a minute rather
-than watched, so a missing Broker CRD is simply tolerated and yields no
-series.
+series. Each controller recomputes on its own cluster CR's events and, when
+the Broker controller is enabled (`--enable-broker`), on Broker phase
+changes, so the gauge follows `status.phase` as it changes. With the Broker
+controller disabled nothing changes Broker phases, no Broker watch is set
+up, and a missing Broker CRD is simply tolerated and yields no series.
 
 | Metric | Type | Labels | What it tells you |
 |--------|------|--------|-------------------|

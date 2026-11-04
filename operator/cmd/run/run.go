@@ -559,7 +559,7 @@ func Run(
 		if err != nil {
 			return err
 		}
-		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr.GetClient(), metricsCtl).SetupWithManager(mgr); err != nil {
+		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr.GetClient(), metricsCtl, opts.enableBrokerController).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "RedpandaMetrics")
 			return err
 		}
@@ -936,7 +936,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	if err != nil {
 		return err
 	}
-	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient(), metricsCtl).SetupWithManager(mgr); err != nil {
+	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient(), metricsCtl, opts.enableBrokerController).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
 		return err
 	}

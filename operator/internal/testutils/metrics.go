@@ -12,6 +12,7 @@ package testutils
 import (
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,8 @@ import (
 // series named name whose labels include every pair in labels, with value want.
 func RequireGauge(t *testing.T, name string, labels map[string]string, want float64) {
 	t.Helper()
-	got, found := gaugeSeries(t, name, labels)
+	got, found, err := GaugeValue(name, labels)
+	require.NoError(t, err)
 	require.True(t, found, "%s%v not exported", name, labels)
 	require.Equal(t, want, got, "%s%v", name, labels)
 }
@@ -32,17 +34,23 @@ func RequireGauge(t *testing.T, name string, labels map[string]string, want floa
 // series it looks up.
 func RequireNoGauge(t *testing.T, name string, labels map[string]string) {
 	t.Helper()
-	_, found := gaugeSeries(t, name, labels)
+	_, found, err := GaugeValue(name, labels)
+	require.NoError(t, err)
 	require.False(t, found, "%s%v still exported", name, labels)
 }
 
-func gaugeSeries(t *testing.T, name string, labels map[string]string) (value float64, found bool) {
-	t.Helper()
-
+// GaugeValue reads the gauge series named name whose labels include every
+// pair in labels from the registry the operator exports. It fails no test
+// itself, so a polling assertion can call it from its own goroutine.
+func GaugeValue(name string, labels map[string]string) (float64, bool, error) {
 	gatherer, ok := ctrlmetrics.Registry.(prometheus.Gatherer)
-	require.True(t, ok, "controller-runtime metrics.Registry must implement prometheus.Gatherer")
+	if !ok {
+		return 0, false, errors.New("controller-runtime metrics.Registry does not implement prometheus.Gatherer")
+	}
 	families, err := gatherer.Gather()
-	require.NoError(t, err)
+	if err != nil {
+		return 0, false, err
+	}
 
 	for _, fam := range families {
 		if fam.GetName() != name {
@@ -50,11 +58,11 @@ func gaugeSeries(t *testing.T, name string, labels map[string]string) (value flo
 		}
 		for _, m := range fam.GetMetric() {
 			if g := m.GetGauge(); g != nil && labelsContain(m.GetLabel(), labels) {
-				return g.GetValue(), true
+				return g.GetValue(), true, nil
 			}
 		}
 	}
-	return 0, false
+	return 0, false, nil
 }
 
 func labelsContain(pairs []*dto.LabelPair, want map[string]string) bool {

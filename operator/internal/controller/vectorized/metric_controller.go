@@ -18,10 +18,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
@@ -69,16 +72,22 @@ type ClusterMetricController struct {
 	currentLabels              collections.Set[string]
 	currentConfigurationLabels collections.Set[string]
 	brokerPhases               *observability.BrokerPhaseRecorder
+
+	// watchBrokers adds the Broker watch; false while the Broker controller
+	// is off, see SetupWithManager.
+	watchBrokers bool
 }
 
-// NewClusterMetricsController creates ClusterMetricController
-func NewClusterMetricsController(c client.Client, brokers *kube.Ctl) *ClusterMetricController {
+// NewClusterMetricsController creates ClusterMetricController. watchBrokers
+// is whether the Broker controller runs.
+func NewClusterMetricsController(c client.Client, brokers *kube.Ctl, watchBrokers bool) *ClusterMetricController {
 	return &ClusterMetricController{
 		Client:                     c,
 		Brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[string](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindCluster),
+		watchBrokers:               watchBrokers,
 	}
 }
 
@@ -150,14 +159,21 @@ func (r *ClusterMetricController) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: observability.ResourceStateRequeue}, nil
+	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
+// SetupWithManager sets up the controller with the Manager. Every watch feeds
+// SingletonRequest and the Broker watch is conditional, for the reasons
+// RedpandaMetricsReconciler.SetupWithManager gives. Pods need no watch of
+// their own: a pod change reaches this controller through the Cluster status
+// update that follows it.
 func (r *ClusterMetricController) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&vectorizedv1alpha1.Cluster{}).
-		Owns(&corev1.Pod{}).
-		WithOptions(controller.Options{SkipNameValidation: ptr.To(true)}).
-		Complete(r)
+	b := ctrl.NewControllerManagedBy(mgr).
+		Named("cluster-metrics").
+		Watches(&vectorizedv1alpha1.Cluster{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest)).
+		WithOptions(controller.Options{SkipNameValidation: ptr.To(true)})
+	if r.watchBrokers {
+		b = b.Watches(&redpandav1alpha2.Broker{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest), builder.WithPredicates(observability.BrokerPhaseChanged))
+	}
+	return b.Complete(r)
 }

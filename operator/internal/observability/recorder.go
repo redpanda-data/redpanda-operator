@@ -39,12 +39,15 @@ package observability
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redpanda-data/common-go/kube"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
@@ -59,10 +62,31 @@ const (
 	BrokerKindRedpanda = "Redpanda"
 )
 
-// ResourceStateRequeue is how often the metric controllers recompute their
-// gauges when no Redpanda or Cluster event arrives. Broker phases are listed
-// rather than watched, so this bounds how stale BrokerPhase can get.
-const ResourceStateRequeue = time.Minute
+// SingletonRequest is the handler for every watch of a metric controller.
+// Reconcile ignores the request and recomputes all gauges, so every event
+// maps to the same empty request: the workqueue coalesces a burst into one
+// pass, and no per-object key outlives its object.
+func SingletonRequest(context.Context, client.Object) []reconcile.Request {
+	return []reconcile.Request{{}}
+}
+
+// BrokerPhaseChanged passes the Broker events that can move BrokerPhase:
+// creation, deletion, and an update that changes status.phase. The gauge
+// reads nothing else from a Broker, and a Broker rewrites its status on
+// every reconcile.
+var BrokerPhaseChanged = predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		oldBroker, ok := e.ObjectOld.(*redpandav1alpha2.Broker)
+		if !ok {
+			return true
+		}
+		newBroker, ok := e.ObjectNew.(*redpandav1alpha2.Broker)
+		if !ok {
+			return true
+		}
+		return oldBroker.Status.Phase != newBroker.Status.Phase
+	},
+}
 
 // BrokerPhaseUnknown is the `phase` label for a Broker whose status.phase this
 // operator cannot place: still empty (not yet reconciled, or never, while the
@@ -110,8 +134,8 @@ func NewBrokerPhaseRecorder(kind string) *BrokerPhaseRecorder {
 // A missing Broker CRD is not an error: the operator runs without it unless
 // the experimental CRDs are installed, and it can be removed under a running
 // operator. Either way there are no Brokers, so the recorder's series are
-// cleared. The metric controllers call this on every pass instead of
-// watching Brokers, so they need no knowledge of whether the CRD exists; the
+// cleared. The metric controllers call this on every pass whether or not they
+// watch Brokers, so they need no knowledge of whether the CRD exists; the
 // price is one RESTMapper discovery round-trip per pass while it is absent.
 func (r *BrokerPhaseRecorder) Observe(ctx context.Context, ctl *kube.Ctl) error {
 	brokers, err := kube.List[redpandav1alpha2.BrokerList](ctx, ctl, "")

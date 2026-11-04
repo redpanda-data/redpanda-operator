@@ -23,7 +23,15 @@ import (
 func InstallCRDs(t *testing.T, ctl *kube.Ctl, crds ...*apiextensionsv1.CustomResourceDefinition) {
 	t.Helper()
 
-	require.NoError(t, kube.ApplyAll(t.Context(), ctl, crds...))
+	// Apply writes the server's uid and resourceVersion into the object it is
+	// given, and crds.ByName hands out package-level objects: applied as-is a
+	// second time, to the next test's API server, they fail with a uid
+	// mismatch.
+	copies := make([]*apiextensionsv1.CustomResourceDefinition, 0, len(crds))
+	for _, crd := range crds {
+		copies = append(copies, crd.DeepCopy())
+	}
+	require.NoError(t, kube.ApplyAll(t.Context(), ctl, copies...))
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
