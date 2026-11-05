@@ -39,8 +39,8 @@ import (
 //  1. Revoke completed grants, any on a Broker that won't roll, and a no-drain
 //     grant on an undeleted pod the rule no longer allows or whose template
 //     moved on; release expired ones; hold one while its pod terminates.
-//     Re-key this pool's grants whose template went stale mid-roll IN PLACE:
-//     the holder may be half drained, one broker at a time in maintenance.
+//     Re-key this pool's stale grants, or make one no-drain the rule allows,
+//     IN PLACE: the holder may be half drained, one at a time in maintenance.
 //  2. Wait while any unexpired grant remains.
 //  3. This pool's first outdated pod that cannot start and failedpods allows
 //     gets a no-drain grant, without the health check its own outage fails,
@@ -218,9 +218,10 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger, keep in
 				// it came back. The grant skipped the drain and the health
 				// check for a down broker on that template: the rule decides
 				// again next pass, and the normal, health-gated grant can drive
-				// a live roll. Its holder never drained, so nothing is
-				// stranded. Once the pod is deleted, though, it holds until the
-				// pod is back.
+				// a live roll. A holder that began draining before its grant
+				// switched to no-drain is parked, and its maintenance mode
+				// cleared, once it holds none. Once the pod is deleted, though,
+				// it holds until the pod is back.
 				l.Info("revoking a no-drain roll-grant decided on what has changed", "broker", b.Name)
 				if err := s.revokeRollGrant(ctx, b); err != nil {
 					return err
@@ -250,6 +251,16 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger, keep in
 				// template: a pod is created on the newest.
 				l.Info("re-keying mid-roll grant after desired-template change", "broker", b.Name)
 				if err := s.grantRoll(ctx, b, desiredHash, now, b.HasNoDrainRollGrant() || noDrainHold(b) == ""); err != nil {
+					return err
+				}
+				activeGrants++
+			case !b.HasNoDrainRollGrant() && s.ownBroker(b) && noDrainHold(b) == "":
+				// Its broker went down since the grant was keyed, as one rolled
+				// onto a template that can't start, then reverted, within
+				// startFailureWindow: it never finishes draining. The Broker
+				// controller clears maintenance mode before a no-drain delete.
+				l.Info("switching a roll-grant to no-drain: its broker cannot start", "broker", b.Name)
+				if err := s.grantRoll(ctx, b, desiredHash, now, true); err != nil {
 					return err
 				}
 				activeGrants++

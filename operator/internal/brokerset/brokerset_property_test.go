@@ -94,7 +94,7 @@ func TestBrokerSetPassProperties(t *testing.T) {
 	// Only a Broker's own pool knows whether a scale-down removes it, which
 	// decides whether it may skip the drain.
 	t.Run("OnlyItsOwnPoolGrantsANoDrainRoll", rapid.MakeCheck(func(t *rapid.T) {
-		r := genWorldFor(t, "candidate in the other pool").pass(ctx, t)
+		r := genWorldFor(t, "candidate in the other pool", "grant held in pb, beside its scale-down's excess").pass(ctx, t)
 		for name, pool := range r.noDrainBy {
 			require.Equal(t, r.pre[name].Labels[redpandav1alpha2.NodePoolLabel], pool, "pool %s gave %s a no-drain roll", pool, name)
 		}
@@ -216,12 +216,13 @@ func TestBrokerSetPassProperties(t *testing.T) {
 			"another pool revoked %s's grant", holder.Name)
 	}))
 
-	// Mid-roll, the rule may let it skip a drain it can't finish.
-	t.Run("AStaleGrantOnAPodThatCannotStartBecomesNoDrain", rapid.MakeCheck(func(t *rapid.T) {
-		w := genDecisionWith(t, "stale grant on the candidate")
+	// Mid-roll, the rule may let it skip a drain it can't finish, whether its
+	// template moved on since or before it went down.
+	t.Run("AGrantOnAPodThatCannotStartBecomesNoDrain", rapid.MakeCheck(func(t *rapid.T) {
+		w := genDecisionWith(t, rapid.SampledFrom([]string{"stale grant on the candidate", "grant held by the candidate"}).Draw(t, "change"))
 		w.staleReads = false
 		r := w.pass(ctx, t)
-		require.True(t, r.post[w.brokers[0].Name].HasNoDrainRollGrant(), "%s's re-keyed grant still drains", w.brokers[0].Name)
+		require.True(t, r.post[w.brokers[0].Name].HasNoDrainRollGrant(), "%s: %s's grant still drains", w.change, w.brokers[0].Name)
 	}))
 
 	// The converse: the candidate the rule allows is replaced, one whose
@@ -241,7 +242,7 @@ func TestBrokerSetPassProperties(t *testing.T) {
 			}
 		}
 		if holder := w.brokers[0]; holder.HasRollGrant() && want != holder {
-			// Its stale grant is re-keyed in place, so nothing else goes.
+			// Its grant stays in place, so nothing else goes.
 			require.False(t, r.post[holder.Name].HasNoDrainRollGrant(), "%s: re-keyed %s's grant to skip its drain while it waits", w.change, holder.Name)
 			return
 		}
@@ -607,8 +608,9 @@ var decisionChanges = []string{
 	"reported down", "silent", "starting", "hung", "hung seen alive", "node gone", "unmigrated pool", "no-drain held", "normal grant",
 	"candidate hung", "kubelet restarted", "kubelet restarted, alone", "candidate unschedulable", "candidate not yet adopted",
 	"candidate unschedulable beside one that runs", "candidate never joined",
-	"stale grant on the candidate",
+	"stale grant on the candidate", "grant held by the candidate",
 	"unready current", "candidate in the other pool", "scale-down removes a failing pod",
+	"grant held in pb, beside its scale-down's excess",
 }
 
 // genWorldFor draws a world as genWorld does, but half the time the decision
@@ -655,15 +657,16 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 				least = 3
 			}
 		}
-		if pool == "pb" && strings.HasPrefix(w.change, "no-drain held in pb") {
+		pbScalesDown := strings.HasSuffix(w.change, "in pb, beside its scale-down's excess")
+		if pool == "pb" && pbScalesDown {
 			least = 3
 		}
 		n := rapid.Int32Range(least, propertyIndexes).Draw(t, pool+" brokers")
-		if pool == "pb" && strings.HasPrefix(w.change, "no-drain held in pb") {
+		if pool == "pb" && pbScalesDown {
 			n = 3
 		}
 		replicas := n
-		if pool == "pa" && strings.HasPrefix(w.change, "scale-down") || pool == "pb" && strings.HasPrefix(w.change, "no-drain held in pb") {
+		if pool == "pa" && strings.HasPrefix(w.change, "scale-down") || pool == "pb" && pbScalesDown {
 			replicas--
 		}
 		w.pools = append(w.pools, propertyPool{name: pool, desired: poolStatefulSet(pool, desired[pool]), replicas: replicas})
@@ -752,9 +755,14 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 		// Mid-migration, its StatefulSet was orphan-deleted, and its Broker
 		// hasn't adopted its pod.
 		w.pod(candidate).OwnerReferences = nil
-	case "stale grant on the candidate":
-		// Its template moved on mid-roll; it never could drain.
-		candidate.SetRollGrant("stale", time.Now().Add(5*time.Minute))
+	case "stale grant on the candidate", "grant held by the candidate":
+		// Its template moved on mid-roll; it never could drain. Held, it was
+		// re-keyed before its broker was seen failing.
+		checksum := "stale"
+		if w.change == "grant held by the candidate" {
+			checksum = candidate.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+		}
+		candidate.SetRollGrant(checksum, time.Now().Add(5*time.Minute))
 	case "no-drain held in pb, beside its scale-down's excess":
 		// pb/0 holds a grant its pool allows: pb/1 runs on the old template
 		// too, and pb/2, on its own, is one pb's scale-down removes. Another
@@ -764,6 +772,16 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 		set(pb[1], other("pb"), "ready")
 		set(pb[2], desired["pb"], "crash-looping")
 		pb[0].SetNoDrainRollGrant(pb[0].Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation], time.Now().Add(5*time.Minute))
+		w.holder = pb[0].Name
+	case "grant held in pb, beside its scale-down's excess":
+		// pb/0 holds a grant keyed on its template, and is down; on that
+		// template pb/1 is down too, and pb/2, which pb's scale-down removes,
+		// runs. Only another pool sees that template as shown to run.
+		pb := slices.DeleteFunc(slices.Clone(w.brokers), func(b *redpandav1alpha2.Broker) bool { return b.Labels[redpandav1alpha2.NodePoolLabel] != "pb" })
+		set(pb[0], other("pb"), "crash-looping")
+		set(pb[1], desired["pb"], "crash-looping")
+		set(pb[2], desired["pb"], "ready")
+		pb[0].SetRollGrant(pb[0].Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation], time.Now().Add(5*time.Minute))
 		w.holder = pb[0].Name
 
 	case "kubelet restarted", "kubelet restarted, alone":
@@ -932,11 +950,15 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 		b := w.brokers[slices.IndexFunc(w.brokers, func(b *redpandav1alpha2.Broker) bool { return b.Labels[redpandav1alpha2.NodePoolLabel] == "pb" })]
 		set(b, other("pb"), "crash-looping")
 	}
-	// Or the candidate held a grant its template outran, so the rule decides
-	// on a re-key too.
-	if !slices.Contains([]string{"normal grant", "grant held into a decommission", "decommission in flight", "lost disk", "stale grant on the candidate", "scale-down", "scale-down removes a failing pod", "started mid-pass"}, w.change) &&
-		!strings.HasPrefix(w.change, "no-drain held") && rapid.Bool().Draw(t, "via a stale grant") {
-		candidate.SetRollGrant("stale", time.Now().Add(5*time.Minute))
+	// Or the candidate held a grant, its template since outran or not, so the
+	// rule decides on a re-key or a switch to no-drain too.
+	if !slices.Contains([]string{"normal grant", "grant held into a decommission", "decommission in flight", "lost disk", "stale grant on the candidate", "grant held by the candidate", "scale-down", "scale-down removes a failing pod", "started mid-pass", "grant held in pb, beside its scale-down's excess"}, w.change) &&
+		!strings.HasPrefix(w.change, "no-drain held") && rapid.Bool().Draw(t, "via a held grant") {
+		checksum := "stale"
+		if rapid.Bool().Draw(t, "keyed on its template") {
+			checksum = candidate.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+		}
+		candidate.SetRollGrant(checksum, time.Now().Add(5*time.Minute))
 	}
 	return w
 }
