@@ -10088,6 +10088,21 @@
     namespace: external-loadbalancer-pool
 - apiVersion: v1
   data:
+    REDPANDA_METRICS_K8S_CHART_VERSION: v99.9.9
+    REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE: operator
+    REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-loadbalancer-pool-pool-a-k8s-metrics
+    namespace: external-loadbalancer-pool
+- apiVersion: v1
+  data:
     profile: |-
       admin_api:
         addresses: []

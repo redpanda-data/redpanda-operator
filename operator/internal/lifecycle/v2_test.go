@@ -199,7 +199,7 @@ func TestV2ResourceClient(t *testing.T) {
 // Not parallel: it sets the operator version global that rendering reads.
 func TestV2OperatorUpgradeDoesNotRollBrokers(t *testing.T) {
 	ctx, cancel := context.WithTimeout(parentCtx, 2*time.Minute)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	manager := startV2Manager(ctx, t)
 

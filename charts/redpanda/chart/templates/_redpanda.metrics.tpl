@@ -6,7 +6,7 @@
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (get (fromJson (include "redpanda.metricsFromDir" (dict "a" (list $state)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.metricsFromDir" (dict "a" (list $state $pool)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "_redpanda.MetricsDirEnv" (dict "a" (list)))) "r")) | toJson -}}
 {{- break -}}
@@ -22,7 +22,7 @@
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (not (get (fromJson (include "redpanda.metricsFromDir" (dict "a" (list $state)))) "r")) -}}
+{{- if (not (get (fromJson (include "redpanda.metricsFromDir" (dict "a" (list $state $pool)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -35,10 +35,35 @@
 
 {{- define "redpanda.metricsFromDir" -}}
 {{- $state := (index .a 0) -}}
+{{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (and (get (fromJson (include "redpanda.metricsEnabled" (dict "a" (list $state)))) "r") (get (fromJson (include "_redpanda.MetricsFromDir" (dict "a" (list (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r"))))) "r"))) | toJson -}}
+{{- (dict "r" (and (get (fromJson (include "redpanda.metricsEnabled" (dict "a" (list $state)))) "r") (get (fromJson (include "_redpanda.MetricsFromDir" (dict "a" (list (get (fromJson (include "redpanda.poolTag" (dict "a" (list $state $pool)))) "r"))))) "r"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.poolTag" -}}
+{{- $state := (index .a 0) -}}
+{{- $pool := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $spec_1 := $pool.Statefulset.podTemplate.spec -}}
+{{- if (ne (toJson $spec_1) "null") -}}
+{{- range $_, $container := $spec_1.containers -}}
+{{- if (and (eq (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $container.name "")))) "r") "redpanda") (ne (toJson $container.image) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (regexReplaceAll "^.*:" $container.image "")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -73,9 +98,9 @@
 {{- $chartVersion = $state.OperatorVersion -}}
 {{- end -}}
 {{- $envvars := (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_VERSION" "value" $state.Dot.Capabilities.KubeVersion.Version)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE" "value" $deploymentType)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CHART_VERSION" "value" $chartVersion)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION" "value" (printf `%s:%s` $pool.Statefulset.sideCars.image.repository $pool.Statefulset.sideCars.image.tag)))) -}}
-{{- $_113_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
-{{- $namespace := (index $_113_namespace_ok 0) -}}
-{{- $ok := (index $_113_namespace_ok 1) -}}
+{{- $_129_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
+{{- $namespace := (index $_129_namespace_ok 0) -}}
+{{- $ok := (index $_129_namespace_ok 1) -}}
 {{- if $ok -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CLUSTER_ID" "value" (toString $namespace.metadata.uid))))) -}}
 {{- end -}}

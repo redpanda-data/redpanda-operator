@@ -4387,12 +4387,8 @@
             valueFrom:
               fieldRef:
                 fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: operator
-          - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v99.9.9
-          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          - name: REDPANDA_METRICS_K8S_DIR
+            value: /etc/redpanda-k8s-metrics
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           lifecycle:
             postStart:
@@ -4483,6 +4479,9 @@
             name: datadir
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
+            readOnly: true
+          - mountPath: /etc/redpanda-k8s-metrics
+            name: k8s-metrics
             readOnly: true
         - args:
           - supervisor
@@ -4686,6 +4685,10 @@
                     apiVersion: v1
                     fieldPath: metadata.namespace
                   path: namespace
+        - configMap:
+            name: external-loadbalancer-pool-pool-a-k8s-metrics
+            optional: true
+          name: k8s-metrics
     updateStrategy:
       type: OnDelete
     volumeClaimTemplates:

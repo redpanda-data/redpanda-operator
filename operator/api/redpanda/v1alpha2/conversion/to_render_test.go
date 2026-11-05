@@ -275,22 +275,31 @@ func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
 
 // TestMetricsConfigMap pins where the REDPANDA_METRICS_K8S_* values go: a
 // per-pool ConfigMap mounted into the redpanda container for Redpanda versions
-// that read them from REDPANDA_METRICS_K8S_DIR, env vars otherwise.
+// that read them from REDPANDA_METRICS_K8S_DIR, env vars otherwise. The
+// version is the pool's own: a NodePool's spec.image overrides the cluster's.
 func TestMetricsConfigMap(t *testing.T) {
 	cases := []struct {
 		redpandaTag string
+		poolTag     string // the NodePool's spec.image.tag; "" inherits redpandaTag
 		disabled    bool
-		fromDir     bool
+		fromDir     bool // the default pool
+		poolFromDir bool // the NodePool
 	}{
 		{redpandaTag: "v26.2.6"},
-		{redpandaTag: "v26.3.0-rc1", fromDir: true},
-		{redpandaTag: "v26.3.1", fromDir: true},
+		{redpandaTag: "v26.3.0-rc1", fromDir: true, poolFromDir: true},
+		{redpandaTag: "v26.3.1", fromDir: true, poolFromDir: true},
 		{redpandaTag: "v26.3.1", disabled: true},
+		{redpandaTag: "v26.3.1", poolTag: "v26.2.6", fromDir: true},
+		{redpandaTag: "v26.2.6", poolTag: "v26.3.1", poolFromDir: true},
 	}
 
 	for _, tc := range cases {
-		t.Run(fmt.Sprintf("%s disabled=%t", tc.redpandaTag, tc.disabled), func(t *testing.T) {
-			state := operatorRenderState(t, tc.redpandaTag, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{})
+		t.Run(fmt.Sprintf("%s pool=%s disabled=%t", tc.redpandaTag, tc.poolTag, tc.disabled), func(t *testing.T) {
+			var poolSpec redpandav1alpha2.EmbeddedNodePoolSpec
+			if tc.poolTag != "" {
+				poolSpec.Image = &redpandav1alpha2.RedpandaImage{Tag: ptr.To(tc.poolTag)}
+			}
+			state := operatorRenderState(t, tc.redpandaTag, "v26.1.1", poolSpec)
 			state.OperatorVersion = "v26.2.1"
 			state.Values.Logging.UsageStats.Enabled = !tc.disabled
 
@@ -321,12 +330,16 @@ func TestMetricsConfigMap(t *testing.T) {
 					}
 				}
 				cmName := redpanda.MetricsConfigMapName(set.Name)
+				fromDir := tc.fromDir
+				if set.Labels[redpandachart.NodePoolLabelName] != "" {
+					fromDir = tc.poolFromDir
+				}
 
 				switch {
 				case tc.disabled:
 					require.Empty(t, env, set.Name)
 					require.NotContains(t, configMaps, cmName)
-				case tc.fromDir:
+				case fromDir:
 					require.Equal(t, map[string]string{redpanda.MetricsDirEnvVar: redpanda.MetricsMountPath}, env, set.Name)
 					require.Contains(t, configMaps, cmName)
 					require.Equal(t, "operator", configMaps[cmName].Data["REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE"])

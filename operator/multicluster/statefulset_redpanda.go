@@ -13,7 +13,6 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -252,11 +251,7 @@ func metricsEnvironmentVariables(state *RenderState, pool *redpandav1alpha2.Redp
 }
 
 func metricsFromDir(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) bool {
-	tag := redpandav1alpha2.DefaultRedpandaImageTag
-	if pool.Spec.Image != nil {
-		tag = ptr.Deref(pool.Spec.Image.Tag, tag)
-	}
-	return state.Spec().IsMetricsReporterEnabled() && redpanda.MetricsFromDir(tag)
+	return state.Spec().IsMetricsReporterEnabled() && redpanda.MetricsFromDir(pool.Spec.Image.GetTag())
 }
 
 func metricsValues(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.EnvVar {

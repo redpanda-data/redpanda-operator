@@ -209,7 +209,7 @@ func StatefulSetVolumes(state *RenderState, pki *redpanda.PKI, listeners *redpan
 		volumes = append(volumes, redpanda.HostTunerVolumes()...)
 	}
 
-	if metricsFromDir(state) {
+	if metricsFromDir(state, pool) {
 		volumes = append(volumes, redpanda.MetricsVolume(poolFullname))
 	}
 
@@ -526,7 +526,7 @@ func statefulSetContainerRedpanda(state *RenderState, pki *redpanda.PKI, listene
 
 	container.Ports = append(container.Ports, listeners.ContainerPorts()...)
 
-	if metricsFromDir(state) {
+	if metricsFromDir(state, pool) {
 		container.VolumeMounts = append(container.VolumeMounts, redpanda.MetricsVolumeMount())
 	}
 

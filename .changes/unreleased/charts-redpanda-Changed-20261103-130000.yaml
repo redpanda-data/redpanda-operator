@@ -1,5 +1,5 @@
 project: charts/redpanda
 kind: Changed
 body: |-
-    With Redpanda v26.3.0 or later, the `REDPANDA_METRICS_K8S_*` telemetry values are mounted into the redpanda container from a per-pool `<fullname>[-<pool>]-k8s-metrics` ConfigMap instead of set as env vars, so chart and Kubernetes upgrades no longer change the StatefulSet pod template. Applies while `config.cluster.enable_metrics_reporter` and `logging.usageStats.enabled` are on (the defaults). The first upgrade onto it rolls brokers once.
+    With Redpanda v26.3.0 or later, the `REDPANDA_METRICS_K8S_*` telemetry values are mounted into the redpanda container from a per-pool `<fullname>[-<pool>]-k8s-metrics` ConfigMap instead of set as env vars, so chart and Kubernetes upgrades with `image.tag` and the sidecar image pinned no longer change the StatefulSet pod template. Applies while `config.cluster.enable_metrics_reporter` and `logging.usageStats.enabled` are on (the defaults). The first upgrade onto it rolls brokers once.
 time: 2026-11-03T13:00:00.000000-08:00
