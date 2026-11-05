@@ -42,6 +42,8 @@ Feature: Replacing an outdated V1 pod whose image can't be pulled
                 tolerationSeconds: 300
             storage:
               capacity: 2Gi
+            cloudCacheStorage:
+              capacity: 1Gi
             resources:
               requests:
                 cpu: "100m"
@@ -87,6 +89,8 @@ Feature: Replacing an outdated V1 pod whose image can't be pulled
                 tolerationSeconds: 300
             storage:
               capacity: 2Gi
+            cloudCacheStorage:
+              capacity: 1Gi
             resources:
               requests:
                 cpu: "100m"
@@ -133,6 +137,8 @@ Feature: Replacing an outdated V1 pod whose image can't be pulled
                 tolerationSeconds: 300
             storage:
               capacity: 2Gi
+            cloudCacheStorage:
+              capacity: 1Gi
             resources:
               requests:
                 cpu: "100m"

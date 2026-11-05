@@ -12,6 +12,7 @@ package steps
 import (
 	"context"
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -122,20 +123,22 @@ func onlyTheStuckPodShouldHaveBeenReplaced(ctx context.Context, t framework.Test
 	}
 }
 
-// cannotStart returns why pod's redpanda container can't start, or "".
+// cannotStart returns why pod's redpanda container can't start, or "": an
+// init container that can't run holds it back too, as the chart's share its
+// image.
 func cannotStart(pod *corev1.Pod) string {
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionFalse && c.Reason == corev1.PodReasonUnschedulable {
 			return "unschedulable"
 		}
 	}
-	for _, cs := range pod.Status.ContainerStatuses {
-		if cs.Name != "redpanda" || cs.State.Waiting == nil {
+	for _, cs := range slices.Concat(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses) {
+		if cs.State.Waiting == nil {
 			continue
 		}
 		switch reason := cs.State.Waiting.Reason; reason {
 		case "CrashLoopBackOff", "ErrImagePull", "ImagePullBackOff", "CreateContainerConfigError":
-			return reason
+			return cs.Name + ": " + reason
 		}
 	}
 	return ""
