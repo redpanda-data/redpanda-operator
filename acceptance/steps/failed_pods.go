@@ -72,8 +72,8 @@ func noPodShouldBeReplacedFor(ctx context.Context, t framework.TestingT, cluster
 
 // theStuckPodShouldBeReplacedFirst waits for the pod that couldn't start to
 // come back Ready on a new incarnation, failing if any other pod since the UID
-// snapshot is recreated first: a healthy broker must never be rolled while
-// another is down.
+// snapshot is recreated before that: a healthy broker must never be rolled
+// while another is down.
 func theStuckPodShouldBeReplacedFirst(ctx context.Context, t framework.TestingT, clusterName string) {
 	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
 	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
@@ -88,18 +88,22 @@ func theStuckPodShouldBeReplacedFirst(ctx context.Context, t framework.TestingT,
 			t.Logf("failed to list pods: %v", err)
 			return false
 		}
-		replaced := false
+		// The gated roll that follows the replacement may land in the same
+		// poll: only a pod recreated before it turned Ready rolled out of turn.
+		var ready *corev1.PodCondition
 		for _, pod := range pods {
-			if pod.Name == stuck.name {
-				replaced = pod.UID != stuck.uid && utils.IsPodReady(&pod)
-				continue
+			if pod.Name == stuck.name && pod.UID != stuck.uid && utils.IsPodReady(&pod) {
+				ready = utils.FindStatusPodCondition(pod.Status.Conditions, corev1.PodReady)
 			}
-			if old, ok := snap[pod.Name]; ok && old != string(pod.UID) {
+		}
+		for _, pod := range pods {
+			if old, ok := snap[pod.Name]; ok && pod.Name != stuck.name && old != string(pod.UID) &&
+				(ready == nil || pod.CreationTimestamp.Before(&ready.LastTransitionTime)) {
 				rolled = pod.Name
 				return true
 			}
 		}
-		return replaced
+		return ready != nil
 	}, 10*time.Minute, 5*time.Second, "pod %q of cluster %q was never replaced", stuck.name, clusterName)
 	require.Empty(t, rolled, "pod %q was rolled while %q, which couldn't start, wasn't yet replaced", rolled, stuck.name)
 }
