@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -411,28 +412,23 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	return r.syncStatus(ctx, cluster, state, pollResult, nil)
 }
 
-// clusterRemediationReconcilers returns the ordered remediation steps
-// (maintenance mode, stale-disk wipe, decommission). Order matters: any step
-// returning a non-zero RequeueAfter or an error stops the rest of this group
-// for the pass, so a step whose completion is a precondition for another must
-// come first. initAdminClient runs before this group in Reconcile.
+// clusterRemediationReconcilers returns the ordered remediation steps; any
+// error or non-zero RequeueAfter stops the rest of the group for the pass.
+// initAdminClient runs before this group in Reconcile.
 //
-// reconcileMaintenanceMode must precede reconcileDecommission specifically:
-// reconcileDecommission requeues for as long as a decommission it started is
-// not yet Finished, which is exactly the state a broker stuck in maintenance
-// mode sits in forever (the partition balancer refuses to move data off a
-// maintenance-mode node), so the clear would never run if ordered after it.
+// reconcileFailedPods comes first: the later steps can fail while the brokers
+// it replaces are down, and it holds rather than fails.
 //
-// reconcileStaleDiskWipe must precede reconcileDecommission: reconcileDecommission
-// runs the rolling-restart pre-check and requeues (aborting the rest of the
-// group) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
-// replaced pod is still not-Ready. A decommissioned-broker bad_rejoin (K8S-843)
-// is exactly that state (its pod is stuck not-Ready), so if the wipe step were
-// ordered after reconcileDecommission it would never run to recover the very
-// bad_rejoin it exists for. Running it first lets it destroy the stale disk and
-// unblock the pod before the roll-loop deferral aborts the pass.
+// reconcileMaintenanceMode must precede reconcileDecommission, which requeues
+// until a decommission it started finishes — never, for a broker stuck in
+// maintenance mode (the balancer won't move data off it).
+//
+// reconcileStaleDiskWipe must precede reconcileDecommission, whose roll
+// pre-check requeues while HasRecentlyReplacedPods() — exactly the state of a
+// decommissioned-broker bad_rejoin (K8S-843) the wipe exists to recover.
 func (r *MulticlusterReconciler) clusterRemediationReconcilers() []stretchClusterReconciliationFn {
 	return []stretchClusterReconciliationFn{
+		r.reconcileFailedPods,
 		r.reconcileMaintenanceMode,
 		r.reconcileStaleDiskWipe,
 		r.reconcileDecommission,
@@ -807,6 +803,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
+	}
+	// The fetch skips a configured cluster not yet registered, whose brokers
+	// may still run.
+	for _, clusterName := range r.expectedBrokerPoolClusters(sccluster.GetClusters()) {
+		if !slices.Contains(sccluster.GetClusters(), clusterName) {
+			pools.MarkClusterUnseen(lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName))
+		}
 	}
 
 	status := lifecycle.NewStretchClusterStatus()
@@ -1419,6 +1422,18 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
 	})
 	return ctrl.Result{}, nil
+}
+
+// reconcileFailedPods mirrors RedpandaReconciler.reconcileFailedPods.
+func (r *MulticlusterReconciler) reconcileFailedPods(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	if state.pools.AllZero() {
+		return ctrl.Result{}, nil
+	}
+	pod := nextFailedPod(ctx, state.admin, state.podEndpoints, state.pools)
+	if pod == nil || !deleteFailedPod(ctx, r.LifecycleClient, pod) {
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 }
 
 func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {

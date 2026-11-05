@@ -14,10 +14,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -40,12 +44,16 @@ import (
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
+
+// noScaleDown keeps every Broker in the pool.
+const noScaleDown = math.MaxInt32
 
 const (
 	testCurrentChecksum = "current-checksum"
@@ -104,14 +112,31 @@ type testBroker struct {
 	// podUnschedulable marks the pod PodScheduled=False/Unschedulable (the
 	// disk-loss shape). Mutually exclusive with podReady.
 	podUnschedulable bool
-	grant            testGrant
-	decommission     bool
-	phase            redpandav1alpha2.BrokerPhase
-	brokerID         *int32
+	// podFailing crash-loops the redpanda container; podDiskLost adds the
+	// detect-disk-lost guard's refusal. Mutually exclusive with podReady.
+	podFailing  bool
+	podDiskLost bool
+	// podUnowned leaves a failing pod without the Broker as its controller.
+	podUnowned bool
+	// podRunning runs redpanda without the pod turning Ready.
+	podRunning bool
+	// podTerminating has the pod's deletion in flight.
+	podTerminating bool
+	// unregistered leaves a Broker with a brokerID unverified, as when its
+	// node ID was removed.
+	unregistered bool
+	grant        testGrant
+	// noDrainGrant issues grant as a no-drain grant.
+	noDrainGrant bool
+	decommission bool
+	phase        redpandav1alpha2.BrokerPhase
+	brokerID     *int32
 	// diskLost marks the Broker as a dead incarnation (tombstone);
 	// diskLostReleased additionally sets the index-release checkpoint.
 	diskLost         bool
 	diskLostReleased bool
+	// pool puts the Broker in another pool than the BrokerSet's "default".
+	pool string
 }
 
 // buildBrokerSet constructs a BrokerSetResource backed by a fake client
@@ -130,11 +155,16 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 		if name == "" {
 			name = fmt.Sprintf("rp-broker-%d", tb.index)
 		}
+		brokerLabels := poolLabels
+		if tb.pool != "" {
+			brokerLabels = clusterLabels.WithNodePool(tb.pool)
+		}
 		broker := &redpandav1alpha2.Broker{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
+				UID:       types.UID(name),
 				Namespace: cluster.Namespace,
-				Labels:    poolLabels,
+				Labels:    brokerLabels,
 			},
 			Spec: redpandav1alpha2.BrokerSpec{
 				ClusterRef: redpandav1alpha2.ClusterRef{
@@ -157,7 +187,7 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				BrokerID: tb.brokerID,
 			},
 		}
-		if tb.brokerID != nil {
+		if tb.brokerID != nil && !tb.unregistered {
 			// A registered fixture broker also carries the verified
 			// BrokerRegistered condition the Broker controller would set.
 			apimeta.SetStatusCondition(&broker.Status.Conditions, metav1.Condition{
@@ -174,7 +204,9 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				broker.Status.Phase = redpandav1alpha2.BrokerPhaseDiskLost
 			}
 		}
-		if tb.grant.checksum != "" || !tb.grant.deadline.IsZero() {
+		if tb.noDrainGrant {
+			broker.SetNoDrainRollGrant(tb.grant.checksum, tb.grant.deadline)
+		} else if tb.grant.checksum != "" || !tb.grant.deadline.IsZero() {
 			broker.SetRollGrant(tb.grant.checksum, tb.grant.deadline)
 		}
 		require.NoError(t, controllerutil.SetControllerReference(cluster, broker, scheme))
@@ -200,7 +232,37 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 					{Type: corev1.PodReady, Status: corev1.ConditionTrue},
 					{Type: corev1.ContainersReady, Status: corev1.ConditionTrue},
 				}
-				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "redpanda", Ready: true}}
+				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "redpanda", Ready: true, State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}, Started: ptr.To(true)}}
+			}
+			if tb.podFailing {
+				now := metav1.Now()
+				pod.Status.Phase = corev1.PodRunning
+				pod.Status.Conditions = []corev1.PodCondition{{Type: corev1.PodInitialized, Status: corev1.ConditionTrue}}
+				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{
+					Name:                 "redpanda",
+					State:                corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
+					LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: 1, StartedAt: now, FinishedAt: now}},
+				}}
+				pod.Spec.Volumes = []corev1.Volume{{Name: "datadir", VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir-" + pod.Name},
+				}}}
+				if !tb.podUnowned {
+					require.NoError(t, controllerutil.SetControllerReference(broker, pod, scheme))
+				}
+			}
+			if tb.podRunning {
+				pod.Status.Phase = corev1.PodRunning
+				pod.Status.Conditions = []corev1.PodCondition{{Type: corev1.PodInitialized, Status: corev1.ConditionTrue}}
+				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "redpanda", State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}, Started: ptr.To(true)}}
+			}
+			if tb.podTerminating {
+				pod.DeletionTimestamp, pod.Finalizers = ptr.To(metav1.Now()), []string{"test/hold"}
+			}
+			if tb.podDiskLost {
+				pod.Status.InitContainerStatuses = []corev1.ContainerStatus{{
+					Name:                 brokerset.DetectDiskLostContainerName,
+					LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: detectdisklost.ExitCodeEmptyDataDir}},
+				}}
 			}
 			if tb.podUnschedulable {
 				pod.Status.Phase = corev1.PodPending
@@ -260,7 +322,7 @@ func TestEnsureRollGrantsGrantsExactlyOne(t *testing.T) {
 		{index: 2, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -286,7 +348,7 @@ func TestEnsureRollGrantsNoSecondGrantWhileActive(t *testing.T) {
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -307,7 +369,7 @@ func TestEnsureRollGrantsRevokesOnCompletion(t *testing.T) {
 		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -322,7 +384,7 @@ func TestEnsureRollGrantsRevokesStaleChecksum(t *testing.T) {
 		}, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -339,7 +401,7 @@ func TestEnsureRollGrantsRekeysStaleMidRoll(t *testing.T) {
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -365,7 +427,7 @@ func TestEnsureRollGrantsRegrantsExpired(t *testing.T) {
 		}, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -398,7 +460,7 @@ func TestEnsureRollGrantsRestartMarker(t *testing.T) {
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
 	assert.Equal(t, baselineClusterConfigVersion, pod.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation])
 
-	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 	assert.Equal(t, []string{"rp-broker-0"}, listGrantedBrokers(t, c))
@@ -444,7 +506,7 @@ func TestEnsureRollGrantsClearsRestarting(t *testing.T) {
 	r.pandaCluster.Status.SetRestarting(true)
 	require.NoError(t, c.Status().Update(context.Background(), r.pandaCluster))
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown))
 
 	assert.False(t, r.pandaCluster.Status.IsRestarting())
 	var persisted vectorizedv1alpha1.Cluster
@@ -458,7 +520,7 @@ func TestEnsureRollGrantsUnhealthyCluster(t *testing.T) {
 		{index: 0, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 	assert.Empty(t, listGrantedBrokers(t, c))
@@ -471,8 +533,454 @@ func TestEnsureRollGrantsHoldsDuringDecommission(t *testing.T) {
 		{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown))
 	assert.Empty(t, listGrantedBrokers(t, c))
+}
+
+func TestEnsureRollGrantsFailedPods(t *testing.T) {
+	live := testGrant{checksum: testTemplateHash(testCurrentChecksum), deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}
+	expired := func(checksum string) testGrant {
+		return testGrant{checksum: testTemplateHash(checksum), deadline: time.Now().Add(-time.Minute)}
+	}
+	for name, tc := range map[string]struct {
+		// A down broker usually keeps the cluster unhealthy; a broker that
+		// never joined doesn't.
+		healthy bool
+		// decommissionMarked records a decommission an earlier pool's
+		// invocation marked this pass.
+		decommissionMarked bool
+		// staleRevoke has the Broker change between every read and patch.
+		staleRevoke bool
+		// keep is how many Brokers the pool's desired spec keeps, if fewer
+		// than all.
+		keep *int32
+		// adminDown fails every admin API call, as when no broker runs.
+		adminDown bool
+		brokers   []testBroker
+		// granted maps each Broker holding a grant to whether it's a
+		// no-drain grant.
+		granted map[string]bool
+		// keyedTo maps a Broker to the template hash its grant must carry.
+		keyedTo map[string]string
+		// quiet expects the pass to return no requeue.
+		quiet bool
+		// reportedDown maps a pod to the brokers its broker reports down; by
+		// default each reports the Brokers whose pods are failing.
+		reportedDown map[string][]int
+		// passes runs that many passes, one if zero.
+		passes int
+	}{
+		"replaces a pod that cannot start without the health check": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"replaces a pod that cannot start while another broker is decommissioned": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum, brokerID: ptr.To(int32(2))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"holds while the current template's only broker is down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"holds while a pod on the current template can't be scheduled": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podUnschedulable: true, brokerID: ptr.To(int32(2))},
+			},
+			reportedDown: map[string][]int{"rp-1": {0, 2}},
+		},
+		"an expired grant from a stale template is released, not re-keyed": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: expired(testOldChecksum)},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": false, "rp-broker-1": true},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testOldChecksum)},
+		},
+		"an expired grant on another Broker doesn't hold a no-drain grant": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: expired(testCurrentChecksum)},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": false, "rp-broker-1": true},
+		},
+		"a pod whose peers see its broker alive isn't replaced": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-1": {}},
+		},
+		"an expired grant on a pod already on its template stays, so the roll halts there": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, brokerID: ptr.To(int32(0)), grant: expired(testCurrentChecksum)},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": false},
+		},
+		"the holder of an expired stale grant that cannot start is replaced": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: expired(testOldChecksum)},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testCurrentChecksum)},
+		},
+		"a mid-roll grant on a holder that cannot start is re-keyed as a no-drain grant": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: testGrant{checksum: testTemplateHash(testOldChecksum), deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testCurrentChecksum)},
+		},
+		"another pool's mid-roll grant is left for its own pool to re-key": {
+			brokers: []testBroker{
+				{index: 0, pool: "other", podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: testGrant{checksum: testTemplateHash(testOldChecksum), deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": false},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testOldChecksum)},
+		},
+		"a registered broker on its template that isn't Ready holds the next roll": {
+			healthy: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+		},
+		"a Broker whose node ID was removed doesn't hold the next roll": {
+			healthy: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), unregistered: true},
+				{index: 1, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-1": false},
+		},
+		"a held no-drain grant waits quietly on an in-flight decommission": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum, brokerID: ptr.To(int32(2))},
+			},
+			quiet: true,
+		},
+		"no no-drain grant in a pass that just marked a decommission": {
+			decommissionMarked: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+		},
+		"a held no-drain grant leaves the health-gated roll in its usual order": {
+			healthy: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podFailing: true},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true},
+				{index: 2, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			granted: map[string]bool{"rp-broker-1": false},
+		},
+		"a mid-roll grant is re-keyed as a normal one while the no-drain rule holds": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: testGrant{checksum: testTemplateHash(testOldChecksum), deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}},
+				{index: 1, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			granted: map[string]bool{"rp-broker-0": false},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testCurrentChecksum)},
+		},
+		"replaces a lone broker when no broker can answer": {
+			adminDown: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"holds while running brokers can't answer, as when the operator can't reach them": {
+			adminDown: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"a grant held into a decommission is revoked, so it can't sit beside a new one": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2)), grant: live},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a lost disk's decommission doesn't hide its replacement's answer": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, name: "rp-broker-1-lost", diskLost: true, diskLostReleased: true, decommission: true, brokerID: ptr.To(int32(7))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-1": {}},
+		},
+		"a decommissioning broker vouches for its peers": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			reportedDown: map[string][]int{"rp-0": {1}, "rp-2": {0, 1}},
+			quiet:        true,
+		},
+		"replaces the holder of an expired grant when no broker can answer": {
+			adminDown: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: expired(testOldChecksum)},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testCurrentChecksum)},
+		},
+		"a revocation off a stale read leaves the grant issued since": {
+			staleRevoke: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"no no-drain grant for a Broker a scale-down will remove": {
+			keep: ptr.To(int32(2)),
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"a candidate its peers see alive doesn't stop the next": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			reportedDown: map[string][]int{"rp-2": {1}},
+			granted:      map[string]bool{"rp-broker-1": true},
+		},
+		"skips a detect-disk-lost refusal": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, podDiskLost: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+		},
+		"skips a pod the Broker doesn't control": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, podUnowned: true, brokerID: ptr.To(int32(0))},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+		},
+		"a no-drain grant completes once the broker is back": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+			},
+		},
+		"a no-drain grant waits for Ready while every other broker is up": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant completes once back while another broker is down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"a no-drain grant completes once back while a decommissioning broker is down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"a no-drain grant completes once back while a broker a scale-down removes is down": {
+			keep: ptr.To(int32(2)),
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(2))},
+			},
+		},
+		"a no-drain grant completes once back while a lost disk's old broker ID is down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-1": {7}},
+		},
+		"a broker that never joined doesn't excuse a no-drain grant from Ready": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podFailing: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a holder's own report doesn't excuse its no-drain grant from Ready": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-0": {1}, "rp-1": {}},
+			granted:      map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant waits for a broker that never joined to register": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: live, noDrainGrant: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant waits for its broker's registration to be verified": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), unregistered: true, grant: live, noDrainGrant: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a lone holder beside only a broker that never joined waits for Ready": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podFailing: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant holds while its pod is deleted, though its broker is back": {
+			healthy: true,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podReady: true, podTerminating: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a lone holder back on its template finishes while every other broker is down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(1))},
+			},
+		},
+		"a no-drain grant whose template moved on before its pod was deleted is decided again": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: testGrant{checksum: "moved-on", deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-1": {}},
+		},
+		"and granted again on the new template the next pass, once the rule allows": {
+			passes: 2,
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: testGrant{checksum: "moved-on", deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL)}, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+			keyedTo: map[string]string{"rp-broker-0": testTemplateHash(testCurrentChecksum)},
+		},
+		"a no-drain grant waits while a running peer reports the broker down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podRunning: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			},
+			reportedDown: map[string][]int{"rp-1": {0}},
+			granted:      map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant holds while the broker is still down": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podFailing: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+			},
+			granted: map[string]bool{"rp-broker-0": true},
+		},
+		"a no-drain grant is revoked if the broker recovers first": {
+			brokers: []testBroker{
+				{index: 0, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: live, noDrainGrant: true},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var funcs interceptor.Funcs
+			if tc.staleRevoke {
+				// The server rejects a patch that names the version it read.
+				funcs.Patch = func(ctx context.Context, c k8sclient.WithWatch, obj k8sclient.Object, patch k8sclient.Patch, opts ...k8sclient.PatchOption) error {
+					if data, err := patch.Data(obj); err == nil && strings.Contains(string(data), `"resourceVersion"`) {
+						return apierrors.NewConflict(schema.GroupResource{Group: redpandav1alpha2.GroupVersion.Group, Resource: "brokers"}, obj.GetName(), errors.New("changed"))
+					}
+					return c.Patch(ctx, obj, patch, opts...)
+				}
+			}
+			r, c := buildBrokerSet(t, tc.healthy, tc.brokers, funcs)
+			var all, failing []int
+			for _, tb := range tc.brokers {
+				if tb.brokerID == nil || tb.unregistered {
+					continue
+				}
+				all = append(all, int(*tb.brokerID))
+				if tb.podFailing {
+					failing = append(failing, int(*tb.brokerID))
+				}
+			}
+			r.stsResource.adminAPIClientFactory = func(_ context.Context, _ k8sclient.Reader, _ *vectorizedv1alpha1.Cluster, _ string, _ resourcetypes.AdminTLSConfigProvider, _ redpandaclient.DialContextFunc, _ time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+				if tc.adminDown {
+					return nil, errors.New("no broker answers")
+				}
+				mock := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
+				mock.SetClusterHealth(tc.healthy)
+				if len(pods) != 1 {
+					return mock, nil
+				}
+				down, ok := tc.reportedDown[pods[0]]
+				if !ok {
+					down = failing
+				}
+				return &clusterViewAdminAPI{MockAdminAPI: mock, all: all, down: down}, nil
+			}
+			var err error
+			for range max(tc.passes, 1) {
+				r.arbitration = &brokerset.Arbitration{}
+				if tc.decommissionMarked {
+					r.arbitration.MarkDecommission()
+				}
+				err = r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, ptr.Deref(tc.keep, noScaleDown))
+			}
+			if tc.quiet {
+				require.NoError(t, err)
+			} else if err != nil {
+				var requeue *RequeueAfterError
+				require.ErrorAs(t, err, &requeue)
+			}
+
+			granted := map[string]bool{}
+			for _, name := range listGrantedBrokers(t, c) {
+				var b redpandav1alpha2.Broker
+				require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: name, Namespace: "test"}, &b))
+				granted[name] = b.HasNoDrainRollGrant()
+				if want, ok := tc.keyedTo[name]; ok {
+					checksum, _, _ := b.ParseRollGrant()
+					require.Equal(t, want, checksum, name)
+				}
+			}
+			if tc.granted == nil {
+				tc.granted = map[string]bool{}
+			}
+			require.Equal(t, tc.granted, granted)
+		})
+	}
 }
 
 func TestEnsureRollGrantsQuiescentClusterNoWrites(t *testing.T) {
@@ -493,7 +1001,7 @@ func TestEnsureRollGrantsQuiescentClusterNoWrites(t *testing.T) {
 		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
 	}, failWrites)
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log, noScaleDown))
 }
 
 func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
@@ -1582,7 +2090,7 @@ func TestEnsureRollGrantsSkipsDiskLostTombstones(t *testing.T) {
 		}},
 	}, interceptor.Funcs{})
 
-	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log, noScaleDown)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -1602,7 +2110,7 @@ func TestEnsureRollGrantsStuckIsNotACandidate(t *testing.T) {
 		{index: 1, podChecksum: testCurrentChecksum, podUnschedulable: true, phase: redpandav1alpha2.BrokerPhaseStuck, brokerID: ptr.To(int32(1))},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log, noScaleDown))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -1990,7 +2498,7 @@ func TestEnsureLoadsNodePortService(t *testing.T) {
 			sts := NewStatefulSet(c, cluster, scheme, "cluster.local", cluster.Name, nodePortName,
 				noTLSVolumes{}, nil, "",
 				ConfiguratorSettings{ConfiguratorBaseImage: "redpandadata/redpanda-operator", ConfiguratorTag: "latest"},
-				cfg, adminAPIFactory, nil, nil, time.Second, ctrl.Log.WithName("test"), time.Hour, nodePool, true, 0)
+				cfg, adminAPIFactory, nil, nil, time.Second, ctrl.Log.WithName("test"), time.Hour, nodePool, true, 0, nil)
 			r := newTestBrokerSetResource(c, scheme, cluster, nodePool)
 			r.stsResource = sts
 

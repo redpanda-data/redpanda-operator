@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 )
 
 // TestEnsureMigrationHandsOverWithDeleteRetentionPolicy runs the state
@@ -135,6 +136,9 @@ func TestEnsureMigrationHandsOverWithDeleteRetentionPolicy(t *testing.T) {
 // quiescentHooks is a healthy, idle owner.
 type quiescentHooks struct{}
 
-func (quiescentHooks) IsClusterHealthy(context.Context) error        { return nil }
+func (quiescentHooks) IsClusterHealthy(context.Context) error { return nil }
+func (quiescentHooks) Ask(context.Context, *corev1.Pod) (failedpods.Answer, error) {
+	return failedpods.Answer{}, nil
+}
 func (quiescentHooks) OnQuiesced(context.Context) error              { return nil }
 func (quiescentHooks) MigrationBlockedReason(context.Context) string { return "" }

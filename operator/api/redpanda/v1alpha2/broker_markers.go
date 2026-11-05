@@ -33,6 +33,12 @@ const (
 	// rejected.
 	RollGrantAnnotation = "operator.redpanda.com/roll-grant"
 
+	// RollGrantNoDrainAnnotation marks a roll-grant issued to a Broker whose
+	// pod cannot start, without the cluster-health gate a down broker fails.
+	// It lets the Broker's controller only delete that pod, without draining
+	// it, so the same broker restarts on its new template.
+	RollGrantNoDrainAnnotation = "operator.redpanda.com/roll-grant-no-drain"
+
 	// BrokerDeletionPolicyAnnotation is an escape hatch that lets you
 	// keep the PVCs after Redpanda cluster teardown;
 	// "orphan"  releases them,
@@ -84,6 +90,18 @@ func (b *Broker) SetRollGrant(checksum string, deadline time.Time) {
 		b.Annotations = make(map[string]string)
 	}
 	b.Annotations[RollGrantAnnotation] = grant
+	delete(b.Annotations, RollGrantNoDrainAnnotation)
+}
+
+// SetNoDrainRollGrant is SetRollGrant for a no-drain grant (see
+// RollGrantNoDrainAnnotation).
+func (b *Broker) SetNoDrainRollGrant(checksum string, deadline time.Time) {
+	b.SetRollGrant(checksum, deadline)
+	b.Annotations[RollGrantNoDrainAnnotation] = "true"
+}
+
+func (b *Broker) HasNoDrainRollGrant() bool {
+	return b.HasRollGrant() && b.Annotations[RollGrantNoDrainAnnotation] == "true"
 }
 
 func (b *Broker) RemoveRollGrant() (removed bool) {
@@ -92,6 +110,10 @@ func (b *Broker) RemoveRollGrant() (removed bool) {
 	}
 	if _, ok := b.Annotations[RollGrantAnnotation]; ok {
 		delete(b.Annotations, RollGrantAnnotation)
+		removed = true
+	}
+	if _, ok := b.Annotations[RollGrantNoDrainAnnotation]; ok {
+		delete(b.Annotations, RollGrantNoDrainAnnotation)
 		removed = true
 	}
 	return

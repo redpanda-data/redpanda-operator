@@ -198,7 +198,7 @@ func (r *ResourceClient[T, U]) GetLivePod(ctx context.Context, pod *Multicluster
 // DeletePod deletes a Pod, routing to the correct cluster.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will clean up when it reconnects.
-func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
+func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod, opts ...client.DeleteOption) error {
 	logger := log.FromContext(ctx)
 	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
 		logger.Info("remote cluster unreachable (probe) in DeletePod, skipping", "cluster", pod.GetCanonicalClusterName())
@@ -212,7 +212,15 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 		}
 		return err
 	}
-	return ctl.Delete(ctx, pod.Pod)
+	if len(opts) == 0 {
+		return ctl.Delete(ctx, pod.Pod)
+	}
+	// kube.Ctl's Delete takes no options.
+	c, err := client.New(ctl.RestConfig(), client.Options{Scheme: ctl.Scheme(), Mapper: ctl.RESTMapper()})
+	if err != nil {
+		return err
+	}
+	return client.IgnoreNotFound(c.Delete(ctx, pod.Pod, opts...))
 }
 
 // DeletePVCsForPod deletes the PersistentVolumeClaims referenced by the pod's
@@ -605,12 +613,16 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 		// always considered reachable.
 		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
 			logger.Info("remote cluster unreachable (probe), skipping pool fetch+render", "cluster", canonical)
+			pools.MarkClusterUnseen(canonical)
 			continue
 		}
 
-		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName, r.brokerCREnabled)
+		existingPools, listed, err := r.fetchExistingPools(ctx, cluster, clusterName, r.brokerCREnabled)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
+		}
+		if !listed {
+			pools.MarkClusterUnseen(canonical)
 		}
 		totalPods := 0
 		for _, ep := range existingPools {
@@ -627,6 +639,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
 				logger.Info("remote cluster unreachable during pool render, skipping", "cluster", canonical, "error", err)
+				pools.MarkClusterUnseen(canonical)
 				continue
 			}
 			return nil, fmt.Errorf("constructing desired pools: %w", err)
@@ -870,7 +883,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 		// StatefulSet to delete here. Their Broker CRs are owner-referenced
 		// and cascade via GC once the owner's finalizer is removed; pod/PVC
 		// fate is the Broker controller's deletion-policy handling.
-		pools, err := r.fetchExistingPools(ctx, owner, clusterName, false)
+		pools, _, err := r.fetchExistingPools(ctx, owner, clusterName, false)
 		if err != nil {
 			return false, err
 		}
@@ -893,25 +906,24 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 	return allDeleted, deleteErr
 }
 
-// fetchExistingPools fetches the existing pools (StatefulSets) for a given cluster.
-// For remote peer clusters (stretch setup), if the cluster is unreachable, returns
-// (nil, nil) so callers skip it — consistent with the documented behavior that
-// reconciliation is not blocked by an unreachable peer.
-// Errors on the local cluster are always propagated.
-func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string, brokerCRs bool) ([]*poolWithOrdinals, error) {
+// fetchExistingPools fetches the existing pools (StatefulSets) for a given
+// cluster. A remote peer cluster that can't be listed returns no pools and
+// listed false, so callers skip it rather than block on the peer. Errors on the
+// local cluster are always propagated.
+func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string, brokerCRs bool) (_ []*poolWithOrdinals, listed bool, _ error) {
 	logger := log.FromContext(ctx).WithName("fetchExistingPools")
 	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 	if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
 		logger.Info("remote cluster unreachable (probe) in fetchExistingPools, treating as empty", "cluster", canonical)
-		return nil, nil
+		return nil, false, nil
 	}
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
 			logger.Info("remote cluster unreachable in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
 
 	ownerLabels := r.ownershipResolver.GetOwnerLabels(cluster)
@@ -921,9 +933,9 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
 			logger.Info("could not list StatefulSets on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, errors.Wrapf(err, "listing StatefulSets")
+		return nil, false, errors.Wrapf(err, "listing StatefulSets")
 	}
 	logger.V(log.TraceLevel).Info(
 		"listed StatefulSets",
@@ -939,13 +951,13 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		// initial rollout), there can't be any owned StatefulSets either.
 		if apierrors.IsNotFound(err) {
 			logger.V(log.TraceLevel).Info("owner reference not found, returning empty pool list", "cluster", canonical)
-			return nil, nil
+			return nil, true, nil
 		}
 		if clusterName != mcmanager.LocalCluster {
 			logger.Info("could not resolve owner reference on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, errors.Wrapf(err, "resolving owner reference")
+		return nil, false, errors.Wrapf(err, "resolving owner reference")
 	}
 	// swap cluster to correct one
 	cluster = expectedOwner
@@ -978,7 +990,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 
 		selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 		if err != nil {
-			return nil, fmt.Errorf("constructing label selector: %w", err)
+			return nil, false, fmt.Errorf("constructing label selector: %w", err)
 		}
 
 		// based on https://github.com/kubernetes/kubernetes/blob/c90a4b16b6aa849ed362ee40997327db09e3a62d/pkg/controller/history/controller_history.go#L222
@@ -986,7 +998,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			Selector: selector,
 		})
 		if err != nil {
-			return nil, errors.Wrapf(err, "listing ControllerRevisions")
+			return nil, false, errors.Wrapf(err, "listing ControllerRevisions")
 		}
 
 		ownedRevisions := []*appsv1.ControllerRevision{}
@@ -1001,7 +1013,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			Selector: selector,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("listing Pods: %w", err)
+			return nil, false, fmt.Errorf("listing Pods: %w", err)
 		}
 
 		ownedPods := make([]*corev1.Pod, len(pods.Items))
@@ -1011,7 +1023,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 
 		withOrdinals, err := sortPodsByOrdinal(ownedPods...)
 		if err != nil {
-			return nil, fmt.Errorf("sorting Pods by ordinal: %w", err)
+			return nil, false, fmt.Errorf("sorting Pods by ordinal: %w", err)
 		}
 
 		existing = append(existing, &poolWithOrdinals{
@@ -1032,12 +1044,12 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 		brokerPools, err := r.fetchBrokerBackedPools(ctx, ctl, cluster, clusterName, canonical, stsBacked)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		existing = append(existing, brokerPools...)
 	}
 
-	return existing, nil
+	return existing, true, nil
 }
 
 // FetchExistingBrokerPoolsFromAllClusters returns the union of BrokerPools

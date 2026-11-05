@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -90,6 +91,27 @@ func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambi
 		}
 	}
 	return endpoint, false
+}
+
+// peerEndpoint returns the named pod's admin endpoint. The render lists only
+// the desired pods, so one a scale-down is removing is addressed like the
+// rest, when they all share one domain and port.
+func peerEndpoint(endpoints []string, pod string) string {
+	if endpoint, ambiguous := podAdminEndpoint(endpoints, pod); endpoint != "" || ambiguous {
+		return endpoint
+	}
+	var suffix string
+	for _, ep := range endpoints {
+		_, rest, ok := strings.Cut(ep, ".")
+		if !ok || suffix != "" && rest != suffix {
+			return ""
+		}
+		suffix = rest
+	}
+	if suffix == "" {
+		return ""
+	}
+	return pod + "." + suffix
 }
 
 // staleDiskWipeConfirmationInterval is the minimum age of a retired-identity
@@ -269,7 +291,7 @@ func unwipeableDataDir(pod *lifecycle.MulticlusterPod) string {
 // broker's stale state; both ResourceClient instantiations satisfy it.
 type podDeleter interface {
 	DeletePVCsForPod(ctx context.Context, pod *lifecycle.MulticlusterPod) error
-	DeletePod(ctx context.Context, pod *lifecycle.MulticlusterPod) error
+	DeletePod(ctx context.Context, pod *lifecycle.MulticlusterPod, opts ...client.DeleteOption) error
 	// GetLivePod returns the live pod (nil if gone), so the wipe can confirm it
 	// is still the same instance (UID) it evaluated before destroying storage.
 	GetLivePod(ctx context.Context, pod *lifecycle.MulticlusterPod) (*corev1.Pod, error)

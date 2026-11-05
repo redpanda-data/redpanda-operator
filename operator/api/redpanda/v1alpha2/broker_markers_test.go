@@ -11,6 +11,7 @@ package v1alpha2
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -29,4 +30,23 @@ func TestBrokerDeletionPolicyParse(t *testing.T) {
 		b.SetBrokerDeletionPolicy(invalid)
 		assert.Equalf(t, b.GetBrokerDeletionPolicy(), BrokerDeletionPolicyCascade, "value %q is rejected in set, get should fallback to cascade, not %q", invalid)
 	}
+}
+
+func TestNoDrainRollGrant(t *testing.T) {
+	t.Parallel()
+	deadline := time.Now().Add(RollGrantTTL)
+
+	b := &Broker{}
+	b.SetNoDrainRollGrant("hash", deadline)
+	assert.True(t, b.HasNoDrainRollGrant())
+
+	// A normal grant over a leftover marker must not act as a no-drain grant.
+	b.SetRollGrant("hash", deadline)
+	assert.True(t, b.HasRollGrant())
+	assert.False(t, b.HasNoDrainRollGrant())
+
+	b.SetNoDrainRollGrant("hash", deadline)
+	assert.True(t, b.RemoveRollGrant())
+	assert.False(t, b.HasRollGrant())
+	assert.NotContains(t, b.Annotations, RollGrantNoDrainAnnotation)
 }

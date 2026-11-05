@@ -114,6 +114,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 		vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: cluster.Spec.NodePools[0]},
 		true,
 		0,
+		nil,
 	)
 
 	err = sts.Ensure(context.Background())

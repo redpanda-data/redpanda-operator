@@ -230,6 +230,12 @@ func init() {
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should have the same UIDs as the snapshot$`, podUIDsShouldBeUnchanged)
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should have no container restarts$`, podsShouldHaveNoContainerRestarts)
 
+	// Failed pod replacement steps
+	framework.RegisterStep(`^a pod of cluster "([^"]*)" should eventually be unable to start$`, aPodShouldBeUnableToStart)
+	framework.RegisterStep(`^no pod of cluster "([^"]*)" should be replaced for (\d+) seconds$`, noPodShouldBeReplacedFor)
+	framework.RegisterStep(`^the pod of cluster "([^"]*)" that can't start should be replaced before any other$`, theStuckPodShouldBeReplacedFirst)
+	framework.RegisterStep(`^only the pod of cluster "([^"]*)" that couldn't start should have been replaced since the snapshot$`, onlyTheStuckPodShouldHaveBeenReplaced)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 	// Pipeline scenario steps

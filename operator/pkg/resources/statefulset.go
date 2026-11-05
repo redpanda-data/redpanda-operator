@@ -36,6 +36,7 @@ import (
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -136,6 +137,11 @@ type StatefulSetResource struct {
 	brokerPodNodeUnavailableToleration time.Duration
 	timeout                            time.Duration
 	dialer                             redpandaclient.DialContextFunc
+	// arbitration is the pass's disruptive-write state, shared by its pools;
+	// nil records nothing.
+	arbitration *brokerset.Arbitration
+	// brokerMode marks the live StatefulSet of a pool in Broker CR mode.
+	brokerMode bool
 }
 
 func (r *StatefulSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {
@@ -164,6 +170,7 @@ func NewStatefulSet(
 	nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted, //nolint:gocritic // we want to pass by value
 	autoDeletePVCs bool,
 	brokerPodNodeUnavailableToleration time.Duration,
+	arbitration *brokerset.Arbitration,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
 		Client:                             client,
@@ -187,6 +194,7 @@ func NewStatefulSet(
 		nodePool:                           nodePool,
 		autoDeletePVCs:                     autoDeletePVCs,
 		brokerPodNodeUnavailableToleration: brokerPodNodeUnavailableToleration,
+		arbitration:                        arbitration,
 	}
 
 	if metricsTimeout != 0 {
@@ -1062,14 +1070,14 @@ func (r *StatefulSetResource) getServiceAccountName() string {
 // Key returns namespace/name object that is used to identify object.
 // For reference please visit types.NamespacedName docs in k8s.io/apimachinery
 func (r *StatefulSetResource) Key() types.NamespacedName {
-	var name string
-	if strings.EqualFold(r.nodePool.Name, vectorizedv1alpha1.DefaultNodePoolName) {
-		name = r.pandaCluster.Name
-	} else {
-		name = fmt.Sprintf("%s-%s", r.pandaCluster.Name, r.nodePool.Name)
-	}
+	return types.NamespacedName{Name: nodePoolStatefulSetName(r.pandaCluster, r.nodePool.Name), Namespace: r.pandaCluster.Namespace}
+}
 
-	return types.NamespacedName{Name: name, Namespace: r.pandaCluster.Namespace}
+func nodePoolStatefulSetName(cluster *vectorizedv1alpha1.Cluster, pool string) string {
+	if strings.EqualFold(pool, vectorizedv1alpha1.DefaultNodePoolName) {
+		return cluster.Name
+	}
+	return fmt.Sprintf("%s-%s", cluster.Name, pool)
 }
 
 func (r *StatefulSetResource) portsConfiguration() string {

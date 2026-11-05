@@ -41,7 +41,7 @@ type attachedResources struct {
 	// flushes one aggregate BrokerMigration condition after Ensure().
 	brokerMigration *brokerset.MigrationAggregator
 	// brokerArbitration shares this reconcile pass's disruptive-write state
-	// across all pools' BrokerSets, so the one-disruptive-operation-at-a-time
+	// across all pools' BrokerSets or StatefulSets, so the one-disruptive-operation-at-a-time
 	// gates see writes the informer cache has not observed yet.
 	brokerArbitration *brokerset.Arbitration
 }
@@ -420,6 +420,9 @@ func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) e
 	if err != nil {
 		return fmt.Errorf("while getting node pools: %w", err)
 	}
+	if a.brokerArbitration == nil {
+		a.brokerArbitration = &brokerset.Arbitration{}
+	}
 	for _, np := range nps {
 		stsKey := fmt.Sprintf("%s-%s", statefulSet, np.Name)
 		if _, ok := a.items[stsKey]; ok {
@@ -446,7 +449,8 @@ func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) e
 			a.reconciler.MetricsTimeout,
 			*np,
 			a.autoDeletePVCs,
-			a.reconciler.BrokerPodNodeUnavailableToleration)
+			a.reconciler.BrokerPodNodeUnavailableToleration,
+			a.brokerArbitration)
 
 		a.order = append(a.order, stsKey)
 	}

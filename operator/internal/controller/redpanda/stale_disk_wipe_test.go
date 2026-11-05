@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
@@ -300,6 +301,38 @@ func TestPodAdminEndpoint(t *testing.T) {
 	})
 }
 
+func TestPeerEndpoint(t *testing.T) {
+	desired := []string{"rp-0.rp.ns.svc.cluster.local:9644", "rp-1.rp.ns.svc.cluster.local:9644"}
+	for name, tc := range map[string]struct {
+		endpoints []string
+		pod       string
+		want      string
+	}{
+		"a desired pod has its own": {
+			endpoints: desired,
+			pod:       "rp-1",
+			want:      "rp-1.rp.ns.svc.cluster.local:9644",
+		},
+		"one a scale-down is removing shares the rest's domain": {
+			endpoints: desired,
+			pod:       "rp-2",
+			want:      "rp-2.rp.ns.svc.cluster.local:9644",
+		},
+		"none when the rest differ in domain": {
+			endpoints: []string{"rp-a-0.a:9644", "rp-b-0.b:9645"},
+			pod:       "rp-a-1",
+		},
+		"none when ambiguous": {
+			endpoints: []string{"rp-0.a:9644", "rp-0.b:9644"},
+			pod:       "rp-0",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.want, peerEndpoint(tc.endpoints, tc.pod))
+		})
+	}
+}
+
 // TestStaleDiskWipeThresholdAndDisable: a zero or negative --wipe-stale-disk-after
 // disables the destructive wipe entirely (never falling back to an internal
 // default); a positive value tunes the not-ready threshold.
@@ -437,7 +470,7 @@ func (f *fakePodDeleter) DeletePVCsForPod(_ context.Context, pod *lifecycle.Mult
 	return nil
 }
 
-func (f *fakePodDeleter) DeletePod(_ context.Context, pod *lifecycle.MulticlusterPod) error {
+func (f *fakePodDeleter) DeletePod(_ context.Context, pod *lifecycle.MulticlusterPod, _ ...client.DeleteOption) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.calls = append(f.calls, "pod:"+pod.GetName())
