@@ -38,16 +38,18 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -594,7 +596,7 @@ func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, st
 // (operator/cmd/detectdisklost/detectdisklost.go).
 func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
 	broker := state.broker
-	refusal := detectDiskLostRefusal(state.pod)
+	refusal := brokerset.DiskLostRefusal(state.pod)
 	if refusal == nil || broker.Status.BrokerID == nil {
 		return ctrl.Result{}, nil
 	}
@@ -604,24 +606,6 @@ func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconc
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
 	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
-}
-
-func detectDiskLostRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
-	for i := range pod.Status.InitContainerStatuses {
-		cs := &pod.Status.InitContainerStatuses[i]
-		if cs.Name != brokerset.DetectDiskLostContainerName {
-			continue
-		}
-		term := cs.State.Terminated
-		if term == nil {
-			term = cs.LastTerminationState.Terminated
-		}
-		if term != nil && term.ExitCode == detectdisklost.ExitCodeEmptyDataDir {
-			return term
-		}
-		return nil
-	}
-	return nil
 }
 
 func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
@@ -694,8 +678,13 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 	}
 
 	l := log.FromContext(ctx)
-	if !state.granted {
-		l.Info("pod needs rotation but no roll-grant", "name", state.pod.Name)
+	// A no-drain grant skipped the health check, so it allows only
+	// replacing a pod that cannot start, or whose start hung as its peers
+	// confirmed: one that has recovered is parked as if it held no grant.
+	failing := utils.ContainerFailingToStart(state.pod, redpandachart.RedpandaContainerName) ||
+		utils.ContainerHung(state.pod, redpandachart.RedpandaContainerName)
+	if !state.granted || broker.HasNoDrainRollGrant() && !failing {
+		l.Info("pod needs rotation but no roll-grant it may act on", "name", state.pod.Name)
 		if broker.Status.BrokerID != nil {
 			if err := r.disableMaintenanceMode(ctx, state.clusterName, broker); err != nil {
 				l.V(1).Info("could not disable maintenance mode while parked without a grant", "error", err)
@@ -703,6 +692,33 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 		}
 		state.phase = redpandav1alpha2.BrokerPhaseRunning
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	}
+
+	// A no-drain grant is issued only once peers see the broker down: it
+	// has nothing to drain, and a down broker never finishes draining.
+	if broker.HasNoDrainRollGrant() {
+		if state.pod.DeletionTimestamp != nil {
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
+		if broker.Status.BrokerID != nil {
+			if err := r.disableMaintenanceMode(ctx, state.clusterName, broker); err != nil {
+				l.V(1).Info("could not disable maintenance mode before replacing a pod that cannot start", "error", err)
+			}
+		}
+		// The admin call above is slow: the grant may be revoked, and the
+		// container start, meanwhile.
+		var held redpandav1alpha2.Broker
+		if err := cluster.GetAPIReader().Get(ctx, client.ObjectKeyFromObject(broker), &held); err != nil {
+			return ctrl.Result{}, err
+		}
+		if !held.HasNoDrainRollGrant() || !held.HasValidRollGrant() {
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
+		l.Info("rotating pod whose broker cannot start, without draining", "name", state.pod.Name)
+		if err := cluster.GetClient().Delete(ctx, state.pod, failedpods.Unchanged(state.pod)); err != nil && !apierrors.IsConflict(err) && !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
 
 	if broker.Status.BrokerID == nil && isPodReady(state.pod) {

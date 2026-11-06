@@ -12,6 +12,7 @@ package redpanda
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -30,7 +31,12 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -576,6 +582,77 @@ func TestBrokerCaughtUpNon404FailClosed(t *testing.T) {
 //   - at most one pod rolls per reconcile (roll ⇒ !proceed), and
 //   - an unmapped (unidentifiable) pod is deleted only while the cluster is
 //     healthy; otherwise it's deferred.
+//
+// TestDeleteFailedPod: the pod is deleted as it was judged, or the
+// replacement holds.
+func TestDeleteFailedPod(t *testing.T) {
+	judged := &lifecycle.MulticlusterPod{Pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "rp-0", UID: "uid-0", ResourceVersion: "42"}}}
+	for name, tc := range map[string]struct {
+		err  error
+		want bool
+	}{
+		"deleted":                     {want: true},
+		"changed since it was judged": {err: apierrors.NewConflict(schema.GroupResource{Resource: "pods"}, "rp-0", errors.New("changed"))},
+		"already gone":                {err: apierrors.NewNotFound(schema.GroupResource{Resource: "pods"}, "rp-0"), want: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			d := &deleteRecorder{err: tc.err}
+			require.Equal(t, tc.want, deleteFailedPod(t.Context(), d, judged))
+			var opts client.DeleteOptions
+			opts.ApplyOptions(d.opts)
+			require.NotNil(t, opts.Preconditions)
+			require.Equal(t, ptr.To(types.UID("uid-0")), opts.Preconditions.UID)
+			require.Equal(t, ptr.To("42"), opts.Preconditions.ResourceVersion)
+		})
+	}
+}
+
+type deleteRecorder struct {
+	podDeleter
+	opts []client.DeleteOption
+	err  error
+}
+
+func (d *deleteRecorder) DeletePod(_ context.Context, _ *lifecycle.MulticlusterPod, opts ...client.DeleteOption) error {
+	d.opts = opts
+	return d.err
+}
+
+// TestBrokerAnswer: each pod's answer is its own broker's, not whichever one
+// the client reaches: a broker never reports itself down.
+func TestBrokerAnswer(t *testing.T) {
+	servers := map[string]*httptest.Server{}
+	for id, pod := range []string{"rp-0", "rp-1"} {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/v1/cluster/health_overview", func(w http.ResponseWriter, _ *http.Request) {
+			_ = json.NewEncoder(w).Encode(rpadmin.ClusterHealthOverview{AllNodes: []int{0, 1}, NodesDown: []int{1 - id}})
+		})
+		mux.HandleFunc("/v1/brokers", func(w http.ResponseWriter, _ *http.Request) {
+			_ = json.NewEncoder(w).Encode([]rpadmin.Broker{{NodeID: id, InternalRPCAddress: pod + ".rp.ns.svc:33145"}})
+		})
+		srv := httptest.NewServer(mux)
+		t.Cleanup(srv.Close)
+		servers[pod+".rp.ns.svc:9644"] = srv
+	}
+	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
+		srv, ok := servers[addr]
+		if !ok {
+			return nil, errors.Newf("no server at %s", addr)
+		}
+		return (&net.Dialer{}).DialContext(ctx, network, srv.Listener.Addr().String())
+	}
+	admin, err := rpadmin.NewAdminAPIWithDialer([]string{"http://rp-0.rp.ns.svc:9644", "http://rp-1.rp.ns.svc:9644"}, new(rpadmin.NopAuth), nil, dial)
+	require.NoError(t, err)
+	endpoints := func() []string { return []string{"rp-0.rp.ns.svc:9644", "rp-1.rp.ns.svc:9644"} }
+
+	for id, pod := range []string{"rp-0", "rp-1"} {
+		a, err := brokerAnswer(t.Context(), admin, endpoints, &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: pod}})
+		require.NoError(t, err, pod)
+		require.Equal(t, []int{1 - id}, a.Health.NodesDown, "%s answered for another broker", pod)
+		require.Equal(t, []rpadmin.Broker{{NodeID: id, InternalRPCAddress: pod + ".rp.ns.svc:33145"}}, a.Brokers, pod)
+	}
+}
+
 func TestDecideRollAction(t *testing.T) {
 	probeErr := errors.New("probe boom")
 

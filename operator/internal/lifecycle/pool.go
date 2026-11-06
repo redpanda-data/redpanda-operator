@@ -10,14 +10,19 @@
 package lifecycle
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"math"
+	"slices"
 	"strconv"
 
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 )
 
 type MulticlusterStatefulSet struct {
@@ -158,7 +163,10 @@ type PoolTracker struct {
 	// probe-state flip mid-reconcile) on a partitioned peer would be
 	// indistinguishable from a real NodePool deletion and would trigger
 	// an unintended decommission.
-	observedClusters       map[string]bool
+	observedClusters map[string]bool
+	// unseenClusters are clusters whose pods this reconcile couldn't list:
+	// their brokers may run though no pod here shows it.
+	unseenClusters         []string
 	poolGenerationLabelKey string
 }
 
@@ -183,6 +191,14 @@ func NewPoolTracker(generation int64, useBrokerPool bool) *PoolTracker {
 // this — see the comment on PoolTracker.observedClusters.
 func (p *PoolTracker) MarkClusterObserved(clusterName string) {
 	p.observedClusters[clusterName] = true
+}
+
+// MarkClusterUnseen records that the named cluster's pods couldn't be listed
+// during this reconcile.
+func (p *PoolTracker) MarkClusterUnseen(clusterName string) {
+	if !slices.Contains(p.unseenClusters, clusterName) {
+		p.unseenClusters = append(p.unseenClusters, clusterName)
+	}
 }
 
 // IsClusterObserved returns whether the cluster's pool state was fully fetched
@@ -497,7 +513,8 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 			existing, desired := p.existingPools[nn], p.desiredPools[nn]
 			existingReplicas, desiredReplicas := ptr.Deref(existing.set.Spec.Replicas, 0), ptr.Deref(desired.set.Spec.Replicas, 0)
 
-			if existingReplicas > desiredReplicas {
+			// With no pod there's none to decommission, as for a removed pool.
+			if existingReplicas > desiredReplicas && len(existing.pods) != 0 {
 				// we use the desired set spec here
 				mcset := existing.set
 				set := mcset.DeepCopy()
@@ -619,37 +636,129 @@ func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
 	return pods
 }
 
-// PodsToRoll returns a list of pods that need to be rolled
-// because their association ControllerRevision does not match
-// the latest applied to the StatefulSet.
+// PodsToRoll returns the pods on a revision older than their StatefulSet's
+// latest, in PoolPods' order, so passes racing a lagging cache roll the same
+// pod.
 func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
-	pods := []*MulticlusterPod{}
+	var pods []*MulticlusterPod
+	for _, pod := range p.PoolPods() {
+		if !pod.Current {
+			pods = append(pods, pod.MulticlusterPod)
+		}
+	}
+	return pods
+}
 
-	for _, existing := range p.existingPools {
-		if existing.brokerBacked {
+// NextFailedPod returns the outdated pod whose broker cannot start that may be
+// replaced now, the first in PoolPods' order that failedpods allows and that
+// doesn't wait, or nil and why not ("" with no such pod). Nothing is replaced while a pod is being
+// added or removed, or a StatefulSet change is still to be applied. Brokers in
+// pools Broker CRs manage, and in clusters whose pods couldn't be listed, still
+// count as peers.
+func (p *PoolTracker) NextFailedPod(ctx context.Context, ask failedpods.Ask) (*MulticlusterPod, string) {
+	poolPods := p.PoolPods()
+	view := make([]failedpods.Pod, len(poolPods))
+	for i, pod := range poolPods {
+		view[i] = failedpods.Pod{Pod: pod.Pod, Pool: pod.Pool, Current: pod.Current, Removing: pod.Removing}
+	}
+	if !slices.ContainsFunc(view, failedpods.MayBeCandidate) {
+		return nil, ""
+	}
+	if !p.CheckScale(ctx) {
+		return nil, "a pod is being added or removed"
+	}
+	// reconcilePools patches these this pass, after the snapshot was taken.
+	if len(p.ToCreate()) > 0 || len(p.ToScaleUp()) > 0 || len(p.RequiresUpdate()) > 0 {
+		return nil, "StatefulSets are being updated"
+	}
+
+	// Broker CRs roll their own pods: here they only vouch, and hold while one
+	// is replaced.
+	all := append(slices.Clone(view), p.brokerBackedPods()...)
+	peers := failedpods.AskPeers(ctx, all, len(p.unseenClusters) > 0, ask)
+	reason := "a peer sees each candidate's broker alive, or no broker that may answer did"
+	held := false
+	for i, pod := range view {
+		if !failedpods.Candidate(pod, peers) || failedpods.Waits(view, pod, func(failedpods.Pod) bool { return true }) {
+			continue
+		}
+		hold := failedpods.Hold(all, pod, peers)
+		if hold == "" {
+			return poolPods[i].MulticlusterPod, ""
+		}
+		if !held {
+			reason, held = fmt.Sprintf("%s: %s", pod.Name, hold), true
+		}
+	}
+	return nil, reason
+}
+
+// brokerBackedPods returns the pods of pools synthesized from Broker CRs, as
+// current, so never a candidate here.
+func (p *PoolTracker) brokerBackedPods() []failedpods.Pod {
+	var pods []failedpods.Pod
+	for nn, existing := range p.existingPools {
+		if !existing.brokerBacked {
 			continue
 		}
 		for _, withOrdinals := range existing.pods {
-			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
-			if len(existing.revisions) == 0 {
-				// No owned ControllerRevisions means we cannot KNOW whether a
-				// pod is outdated — skip.
-				continue
-			} else if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] == "" {
-				// No revision label: this pod was ADOPTED, not created, by
-				// the StatefulSet (under OnDelete, kube labels pods only at
-				// creation) — a Broker-CR rollback hands such pods over. Skip.
-				continue
-			} else {
-				lastRevision := existing.revisions[len(existing.revisions)-1]
-				if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name {
-					pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
-				}
-			}
+			pods = append(pods, failedpods.Pod{Pod: withOrdinals.pod, Pool: nn.String(), Current: true})
+		}
+	}
+	slices.SortFunc(pods, func(a, b failedpods.Pod) int { return cmp.Or(cmp.Compare(a.Pool, b.Pool), cmp.Compare(a.Name, b.Name)) })
+	return pods
+}
+
+// PoolPod is an existing pod with the pool it belongs to, whether it runs
+// that pool's latest revision, and whether a scale-down is removing it.
+type PoolPod struct {
+	*MulticlusterPod
+	Pool     string
+	Current  bool
+	Removing bool
+}
+
+// PoolPods returns the pods of every StatefulSet-managed pool. The
+// StatefulSet's CurrentRevision can't be used under OnDelete, so a pod is
+// outdated when it runs a cached ControllerRevision other than the latest. One
+// whose revision can't be shown outdated counts as current: with no revisions
+// cached, an adopted pod without a revision label (kube labels pods only at
+// creation, and a Broker-CR rollback hands them over), or one on a revision
+// newer than the cache.
+func (p *PoolTracker) PoolPods() []PoolPod {
+	var pods []PoolPod
+
+	for nn, existing := range p.existingPools {
+		if existing.brokerBacked {
+			continue
+		}
+		var latest string
+		known := map[string]bool{}
+		for _, revision := range existing.revisions {
+			known[revision.Name] = true
+			latest = revision.Name
+		}
+		// Ordinals from here up are removed by a scale-down, or all of them
+		// when the pool is gone from a cluster we observed (as ToScaleDown).
+		removeFrom := math.MaxInt
+		if desired, ok := p.desiredPools[nn]; ok {
+			removeFrom = int(ptr.Deref(desired.set.Spec.Replicas, 0))
+		} else if p.observedClusters[nn.Cluster] {
+			removeFrom = 0
+		}
+		for _, withOrdinals := range existing.pods {
+			revision := withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel]
+			pods = append(pods, PoolPod{
+				MulticlusterPod: newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName),
+				Pool:            nn.String(),
+				Current:         revision == latest || !known[revision],
+				Removing:        withOrdinals.ordinal >= removeFrom,
+			})
 		}
 	}
 
-	return pods
+	// Stable across passes, so passes racing a lagging cache pick the same pod.
+	return sortByNameAndCluster(pods)
 }
 
 // PodEndpoint holds the information needed to create an EndpointSlice

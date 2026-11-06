@@ -43,9 +43,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
@@ -506,6 +508,12 @@ func (r *ClusterReconciler) setPodNodeIDAnnotation(
 		nodeIDStrAnnotation, annotationExist := pod.Annotations[resources.PodAnnotationNodeIDKey]
 
 		nodeID, err := r.fetchAdminNodeID(ctx, rp, pod, ar)
+		if err != nil && !annotationExist && utils.ContainerFailingToStart(pod, redpandachart.RedpandaContainerName) {
+			// A replaced pod that can't start never answers, and scale-down
+			// finds its broker by this annotation; the broker's registration
+			// still advertises the pod's address.
+			nodeID, err = r.registeredNodeID(ctx, rp, pod, ar)
+		}
 		if err != nil {
 			combinedErrors = errors.Join(combinedErrors, fmt.Errorf(`cannot fetch node id for "%s" node-id annotation: %w`, pod.Name, err))
 			continue
@@ -579,6 +587,29 @@ func (r *ClusterReconciler) fetchAdminNodeID(ctx context.Context, rp *vectorized
 		return -1, fmt.Errorf("unable to fetch /v1/node_config from %s: %w", pod.Name, err)
 	}
 	return int32(cfg.NodeID), nil
+}
+
+// registeredNodeID returns the ID of the one broker registered at pod's
+// address.
+func (r *ClusterReconciler) registeredNodeID(ctx context.Context, rp *vectorizedv1alpha1.Cluster, pod *corev1.Pod, ar *attachedResources) (int32, error) {
+	pki, err := ar.getPKI()
+	if err != nil {
+		return -1, fmt.Errorf("getting pki: %w", err)
+	}
+
+	adminClient, err := r.AdminAPIClientFactory(ctx, r.Client, rp, ar.getHeadlessServiceFQDN(), pki.AdminAPIConfigProvider(), r.Dialer, r.Timeout)
+	if err != nil {
+		return -1, fmt.Errorf("unable to create admin client: %w", err)
+	}
+	brokers, err := adminClient.Brokers(ctx)
+	if err != nil {
+		return -1, fmt.Errorf("unable to list brokers: %w", err)
+	}
+	id := failedpods.BrokerID(brokers, pod)
+	if id == nil {
+		return -1, fmt.Errorf("no single broker is registered at %s", pod.Name)
+	}
+	return int32(*id), nil
 }
 
 func (r *ClusterReconciler) reportStatus(

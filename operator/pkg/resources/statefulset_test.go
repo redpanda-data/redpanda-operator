@@ -199,7 +199,7 @@ func TestEnsure(t *testing.T) {
 				time.Second,
 				ctrl.Log.WithName("test"),
 				0,
-				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: nps[npIndex].NodePoolSpec}, true, 0)
+				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: nps[npIndex].NodePoolSpec}, true, 0, nil)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 
@@ -691,7 +691,7 @@ func TestCurrentVersion(t *testing.T) {
 				ctrl.Log.WithName("test"),
 				0,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: cluster.Spec.NodePools[0]},
-				true, 0)
+				true, 0, nil)
 			sts.LastObservedState = &appsv1.StatefulSet{
 				Spec: appsv1.StatefulSetSpec{
 					Replicas: &tests[i].expectedReplicas,
@@ -1008,7 +1008,7 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
-				true, 0)
+				true, 0, nil)
 			containerPorts := r.GetPortsForListenersInAdditionalConfig()
 			assert.Equal(t, len(tt.expectedContainerPorts), len(containerPorts))
 
@@ -1397,7 +1397,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				logger,
 				time.Hour,
 				vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: tt.pandaCluster.Spec.NodePools[0]},
-				true, 0)
+				true, 0, nil)
 			envs := r.AdditionalListenersEnvVars()
 
 			if tt.expectedEnvValue == "" {

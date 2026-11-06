@@ -1172,6 +1172,64 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 	}
 }
 
+func TestPoolTrackerPoolPods(t *testing.T) {
+	set := &MulticlusterStatefulSet{
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "canonical",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool"}, Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(4))}},
+	}
+	revisions := []*appsv1.ControllerRevision{
+		{ObjectMeta: metav1.ObjectMeta{Name: "old"}},
+		{ObjectMeta: metav1.ObjectMeta{Name: "new"}},
+	}
+	podOn := func(name, rev string) *podsWithOrdinals {
+		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: name, Labels: map[string]string{}}}
+		if rev != "" {
+			pod.Labels[appsv1.StatefulSetRevisionLabel] = rev
+		}
+		ordinal, err := extractOrdinal(name)
+		require.NoError(t, err)
+		return &podsWithOrdinals{ordinal: ordinal, pod: pod}
+	}
+
+	tracker := NewPoolTracker(0, false)
+	tracker.addExisting(&poolWithOrdinals{
+		pods: []*podsWithOrdinals{
+			podOn("pod-1", "old"),
+			podOn("pod-0", "new"),
+			// adopted from a Broker CR rollback
+			podOn("pod-2", ""),
+			// newer than the cached ControllerRevisions
+			podOn("pod-3", "newer"),
+		},
+		set:       set,
+		revisions: revisions,
+	}, &poolWithOrdinals{
+		pods:         []*podsWithOrdinals{podOn("broker-0", "old")},
+		set:          &MulticlusterStatefulSet{clusterName: mcmanager.LocalCluster, StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "broker-backed"}}},
+		revisions:    revisions,
+		brokerBacked: true,
+	})
+	// The pool is scaling down to two: its last two pods are being removed.
+	tracker.addDesired(&MulticlusterStatefulSet{
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "canonical",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool"}, Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))}},
+	})
+
+	var names []string
+	current, removing := map[string]bool{}, map[string]bool{}
+	for _, p := range tracker.PoolPods() {
+		require.Equal(t, "canonical//pool", p.Pool)
+		names = append(names, p.GetName())
+		current[p.GetName()] = p.Current
+		removing[p.GetName()] = p.Removing
+	}
+	require.Equal(t, []string{"pod-0", "pod-1", "pod-2", "pod-3"}, names)
+	require.Equal(t, map[string]bool{"pod-0": true, "pod-1": false, "pod-2": true, "pod-3": true}, current)
+	require.Equal(t, map[string]bool{"pod-0": false, "pod-1": false, "pod-2": true, "pod-3": true}, removing)
+}
+
 // TestPoolTrackerExistingPods pins that ExistingPods returns every existing pod
 // across all pools regardless of revision — the maintenance-mode cleaner must
 // inspect pods that are NOT in the roll set (a persistently-down broker's pod).

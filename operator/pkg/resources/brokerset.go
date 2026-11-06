@@ -29,6 +29,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -107,8 +108,11 @@ func NewBrokerSet(
 		serviceAccountName, configuratorSettings, cfg,
 		adminAPIClientFactory, schemaRegistryClientFactory, dialer, decommissionWaitInterval,
 		logger, metricsTimeout, nodePool, autoDeletePVCs,
-		brokerPodNodeUnavailableToleration,
+		brokerPodNodeUnavailableToleration, nil,
 	)
+	// Roll grants own replacements here: the live StatefulSet, until the
+	// migration hands over, stands aside and takes no part in the arbitration.
+	sts.brokerMode = true
 	return &BrokerSetResource{
 		Client:       client,
 		scheme:       scheme,
@@ -176,6 +180,10 @@ var _ brokerset.OwnerHooks = (*BrokerSetResource)(nil)
 // IsClusterHealthy reports the admin API's health overview.
 func (r *BrokerSetResource) IsClusterHealthy(ctx context.Context) error {
 	return r.stsResource.isClusterHealthy(ctx)
+}
+
+func (r *BrokerSetResource) Ask(ctx context.Context, pod *corev1.Pod) (failedpods.Answer, error) {
+	return r.stsResource.brokerAnswer(ctx, pod)
 }
 
 // OnQuiesced clears the cluster-level Status.Restarting flag directly:

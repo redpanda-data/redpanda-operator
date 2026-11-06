@@ -418,3 +418,89 @@ func TestSetPodNodeIDAnnotationSkipsBrokerOwnedPods(t *testing.T) {
 	require.Equal(t, "7", got.Annotations[resources.PodAnnotationNodeIDKey],
 		"the Broker controller's record must survive the cluster controller's pass")
 }
+
+// TestSetPodNodeIDAnnotationFallsBackToRegistration: a pod that can't start
+// never answers for its own node ID, yet scale-down finds its broker by this
+// annotation, so it takes the one broker registered at its address.
+func TestSetPodNodeIDAnnotationFallsBackToRegistration(t *testing.T) {
+	now := metav1.Now()
+	crashLooping := corev1.ContainerStatus{
+		Name:                 "redpanda",
+		State:                corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
+		LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: 1, StartedAt: now, FinishedAt: now}},
+	}
+	running := corev1.ContainerStatus{Name: "redpanda", State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}}
+	at := func(id int, host string) rpadmin.Broker {
+		return rpadmin.Broker{NodeID: id, InternalRPCAddress: host + ":33145"}
+	}
+
+	for name, tc := range map[string]struct {
+		redpanda   corev1.ContainerStatus
+		annotation string
+		registered []rpadmin.Broker
+		want       string
+	}{
+		"a pod that can't start takes the broker registered at its address": {
+			redpanda:   crashLooping,
+			registered: []rpadmin.Broker{at(4, "rp-0.rp.test.svc"), at(5, "rp-1.rp.test.svc")},
+			want:       "4",
+		},
+		"two brokers at its address leave it unset": {
+			redpanda:   crashLooping,
+			registered: []rpadmin.Broker{at(4, "rp-0.rp.test.svc"), at(7, "rp-0.rp.test.svc")},
+		},
+		"one it already has is kept": {
+			redpanda:   crashLooping,
+			annotation: "3",
+			registered: []rpadmin.Broker{at(4, "rp-0.rp.test.svc")},
+			want:       "3",
+		},
+		"a pod that may yet answer isn't guessed": {
+			redpanda:   running,
+			registered: []rpadmin.Broker{at(4, "rp-0.rp.test.svc")},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			cluster := &vectorizedv1alpha1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "cluster-uid"}}
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-0", Namespace: "test", Labels: labels.ForCluster(cluster), Annotations: map[string]string{}},
+				Status:     corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{tc.redpanda}},
+			}
+			if tc.annotation != "" {
+				pod.Annotations[resources.PodAnnotationNodeIDKey] = tc.annotation
+			}
+
+			scheme := runtime.NewScheme()
+			require.NoError(t, clientgoscheme.AddToScheme(scheme))
+			require.NoError(t, vectorizedv1alpha1.Install(scheme))
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, pod).Build()
+			r := &ClusterReconciler{
+				Client: c,
+				Scheme: scheme,
+				AdminAPIClientFactory: func(_ context.Context, _ client.Reader, _ *vectorizedv1alpha1.Cluster, _ string, _ resourcetypes.AdminTLSConfigProvider, _ redpandaclient.DialContextFunc, _ time.Duration, pods ...string) (admin.AdminAPIClient, error) {
+					mock := &admin.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
+					if len(pods) > 0 {
+						return &silentNodeConfig{MockAdminAPI: mock}, nil
+					}
+					for _, b := range tc.registered {
+						mock.AddBroker(b)
+					}
+					return mock, nil
+				},
+			}
+
+			_ = r.setPodNodeIDAnnotation(context.Background(), cluster, ctrl.Log, newAttachedResources(context.Background(), r, ctrl.Log, cluster))
+
+			var got corev1.Pod
+			require.NoError(t, c.Get(context.Background(), client.ObjectKeyFromObject(pod), &got))
+			require.Equal(t, tc.want, got.Annotations[resources.PodAnnotationNodeIDKey])
+		})
+	}
+}
+
+// silentNodeConfig is a broker that doesn't answer for its own node ID.
+type silentNodeConfig struct{ *admin.MockAdminAPI }
+
+func (*silentNodeConfig) GetNodeConfig(context.Context) (rpadmin.NodeConfig, error) {
+	return rpadmin.NodeConfig{}, errors.New("unreachable")
+}

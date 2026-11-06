@@ -10,6 +10,7 @@
 package resources
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -32,6 +33,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +41,7 @@ import (
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -138,6 +141,15 @@ func (r *StatefulSetResource) runUpdate(
 		return err
 	}
 
+	// Not on the pass that changes the StatefulSet: a pod deleted before the
+	// StatefulSet controller sees the change is recreated from the old
+	// revision.
+	if !stsChanged {
+		if err = r.replaceFailedPod(ctx, &modified.Spec.Template); err != nil {
+			return err
+		}
+	}
+
 	// Cluster must be healthy before doing a rolling update.
 	log.V(logger.DebugLevel).Info("checking if cluster is healthy")
 	if err = r.isClusterHealthy(ctx); err != nil {
@@ -167,6 +179,167 @@ func (r *StatefulSetResource) runUpdate(
 	}
 
 	return nil
+}
+
+// replaceFailedPod replaces an outdated pod whose broker cannot start, so a
+// changed template reaches it. It serves nothing, so this runs ahead of the
+// health gate, which protects live brokers and fails closed on a down one.
+// A Cluster's pools are reconciled in one pass, from a cache that can't show
+// a delete made in it: one any pool made this pass, recorded in the pass's
+// arbitration, holds the rest until the next pass. The pools ask the brokers
+// once a pass.
+func (r *StatefulSetResource) replaceFailedPod(ctx context.Context, template *corev1.PodTemplateSpec) error {
+	log := r.logger.WithName("replaceFailedPod").WithValues("nodepool", r.nodePool.Name)
+
+	// Roll grants replace them in Broker CR mode, and this path sees neither
+	// the grants nor the Brokers' pods.
+	if r.brokerMode {
+		return nil
+	}
+	if r.arbitration.RollGranted() {
+		log.V(logger.DebugLevel).Info("holding failed pod replacement: a pod was deleted this pass")
+		return nil
+	}
+
+	// Errors hold rather than fail: a plain error skips this pool's scaling.
+	pods, complete, err := r.clusterPoolPods(ctx)
+	if err != nil {
+		log.Info("holding failed pod replacement: listing pods", "error", err)
+		return nil
+	}
+	// Only a pod its pool still marks for update: one the roll found no diff
+	// for, or whose pool isn't rolling, would block the rest.
+	marked := func(p failedpods.Pod) bool {
+		return p.Pool == r.Key().Name && utils.IsStatusPodConditionTrue(p.Status.Conditions, ClusterUpdatePodCondition)
+	}
+	// Only a pool with a candidate asks the brokers.
+	if !slices.ContainsFunc(pods, func(p failedpods.Pod) bool { return marked(p) && failedpods.MayBeCandidate(p) }) {
+		return nil
+	}
+	if !complete {
+		log.V(logger.DebugLevel).Info("holding failed pod replacement: a pod is missing or a StatefulSet is updating")
+		return nil
+	}
+	peers := r.arbitration.Peers(func() failedpods.Peers { return failedpods.AskPeers(ctx, pods, false, r.brokerAnswer) })
+	candidate := slices.IndexFunc(pods, func(p failedpods.Pod) bool {
+		return marked(p) && failedpods.Candidate(p, peers) && !failedpods.Waits(pods, p, marked) && failedpods.Hold(pods, p, peers) == ""
+	})
+	if candidate < 0 {
+		log.V(logger.DebugLevel).Info("holding failed pod replacement: the rule allows no candidate")
+		return nil
+	}
+	pod := pods[candidate].Pod
+
+	log.Info("replacing outdated pod whose broker cannot start", "pod", pod.Name)
+	artificialPod, volumes := evictionTarget(template)
+	evictErr := r.podEviction(ctx, pod, artificialPod, volumes, true)
+	var requeue *RequeueAfterError
+	if evictErr != nil && !errors.As(evictErr, &requeue) {
+		log.Info("holding failed pod replacement", "pod", pod.Name, "error", evictErr)
+		return nil
+	}
+	return evictErr
+}
+
+// scaleDownTarget reports whether pod is the broker being decommissioned, or
+// one a scale-down or deleted pool will decommission, found by the pod's
+// node-id annotation: replacing a broker about to be removed gains nothing.
+func (r *StatefulSetResource) scaleDownTarget(pod *corev1.Pod) bool {
+	if id := r.pandaCluster.GetDecommissionBrokerID(); id != nil && pod.Annotations[PodAnnotationNodeIDKey] == strconv.Itoa(int(*id)) {
+		return true
+	}
+	spec := r.pandaCluster.GetNodePoolsFromSpec()
+	for name, status := range r.pandaCluster.Status.NodePools {
+		// A deleted pool keeps none.
+		var keep int32
+		if i := slices.IndexFunc(spec, func(np vectorizedv1alpha1.NodePoolSpec) bool { return np.Name == name }); i >= 0 {
+			keep = ptr.Deref(spec[i].Replicas, 0)
+		}
+		if keep >= status.CurrentReplicas {
+			continue
+		}
+		suffix, ok := strings.CutPrefix(pod.Name, nodePoolStatefulSetName(r.pandaCluster, name)+"-")
+		if ordinal, err := strconv.ParseInt(suffix, 10, 32); ok && err == nil && int32(ordinal) >= keep {
+			return true
+		}
+	}
+	return false
+}
+
+// clusterPoolPods returns the StatefulSet-owned pods of every node pool,
+// sorted by pool and name, each marked current when it runs its
+// StatefulSet's update revision. complete is false while a broker pod isn't
+// owned by a listed StatefulSet, as while a StatefulSet is recreated around
+// its orphaned pods, or a StatefulSet has fewer or more pods than replicas, or
+// its status trails its spec.
+func (r *StatefulSetResource) clusterPoolPods(ctx context.Context) (_ []failedpods.Pod, complete bool, _ error) {
+	selector := labels.ForCluster(r.pandaCluster).AsClientSelector()
+
+	var sets appsv1.StatefulSetList
+	if err := r.List(ctx, &sets, &k8sclient.ListOptions{Namespace: r.pandaCluster.Namespace, LabelSelector: selector}); err != nil {
+		return nil, false, fmt.Errorf("unable to list statefulsets: %w", err)
+	}
+	var podList corev1.PodList
+	if err := r.List(ctx, &podList, &k8sclient.ListOptions{Namespace: r.pandaCluster.Namespace, LabelSelector: selector}); err != nil {
+		return nil, false, fmt.Errorf("unable to list pods: %w", err)
+	}
+
+	var pods []failedpods.Pod
+	counts := map[types.UID]int32{}
+	complete = true
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		owner := metav1.GetControllerOf(pod)
+		j := slices.IndexFunc(sets.Items, func(s appsv1.StatefulSet) bool { return owner != nil && s.UID == owner.UID })
+		if j < 0 {
+			complete = false
+			continue
+		}
+		sts := &sets.Items[j]
+		counts[sts.UID]++
+		revision := sts.Status.UpdateRevision
+		pods = append(pods, failedpods.Pod{
+			Pod:      pod,
+			Pool:     sts.Name,
+			Current:  revision == "" || pod.Labels[appsv1.StatefulSetRevisionLabel] == revision,
+			Removing: r.scaleDownTarget(pod),
+		})
+	}
+	slices.SortFunc(pods, func(a, b failedpods.Pod) int {
+		return cmp.Or(cmp.Compare(a.Pool, b.Pool), cmp.Compare(a.Name, b.Name))
+	})
+
+	for i := range sets.Items {
+		sts := &sets.Items[i]
+		if counts[sts.UID] != ptr.Deref(sts.Spec.Replicas, 1) || sts.Status.ObservedGeneration < sts.Generation {
+			complete = false
+		}
+	}
+	// A pool not yet created, or recreated with every pod gone, lists nothing.
+	for _, np := range r.pandaCluster.GetNodePoolsFromSpec() {
+		name := nodePoolStatefulSetName(r.pandaCluster, np.Name)
+		if !slices.ContainsFunc(sets.Items, func(s appsv1.StatefulSet) bool { return s.Name == name }) {
+			complete = false
+		}
+	}
+	return pods, complete, nil
+}
+
+// brokerAnswer asks pod's broker for its view of the cluster.
+func (r *StatefulSetResource) brokerAnswer(ctx context.Context, pod *corev1.Pod) (failedpods.Answer, error) {
+	adminAPIClient, err := r.getAdminAPIClient(ctx, pod.Name)
+	if err != nil {
+		return failedpods.Answer{}, fmt.Errorf("creating admin API client: %w", err)
+	}
+	health, err := adminAPIClient.GetHealthOverview(ctx)
+	if err != nil {
+		return failedpods.Answer{}, fmt.Errorf("fetching cluster health: %w", err)
+	}
+	brokers, err := adminAPIClient.Brokers(ctx)
+	if err != nil {
+		return failedpods.Answer{}, fmt.Errorf("listing brokers: %w", err)
+	}
+	return failedpods.Answer{Health: health, Brokers: brokers}, nil
 }
 
 func (r *StatefulSetResource) isClusterHealthy(ctx context.Context) error {
@@ -387,20 +560,11 @@ func (r *StatefulSetResource) inFlightPodFirst(ctx context.Context, log logr.Log
 func (r *StatefulSetResource) updatePods(ctx context.Context, l logr.Logger, updateItems []*corev1.Pod, template *corev1.PodTemplateSpec) error {
 	log := l.WithName("updatePods")
 
-	var artificialPod corev1.Pod
-	artificialPod.Annotations = template.Annotations
-	artificialPod.Spec = template.Spec
-
-	volumes := make(map[string]interface{})
-
-	for i := range template.Spec.Volumes {
-		vol := template.Spec.Volumes[i]
-		volumes[vol.Name] = new(interface{})
-	}
+	artificialPod, volumes := evictionTarget(template)
 	for i := range updateItems {
 		pod := updateItems[i]
 
-		if err := r.podEviction(ctx, pod, &artificialPod, volumes); err != nil {
+		if err := r.podEviction(ctx, pod, artificialPod, volumes, false); err != nil {
 			log.V(logger.DebugLevel).Error(err, "podEviction", "pod name", pod.Name)
 			return err
 		}
@@ -464,6 +628,21 @@ func (r *StatefulSetResource) updatePods(ctx context.Context, l logr.Logger, upd
 
 	log.V(logger.DebugLevel).Info("rollingUpdate completed")
 	return nil
+}
+
+// evictionTarget returns what podEviction diffs a pod against: the template as
+// a pod, and the names of its volumes.
+func evictionTarget(template *corev1.PodTemplateSpec) (*corev1.Pod, map[string]interface{}) {
+	var artificialPod corev1.Pod
+	artificialPod.Annotations = template.Annotations
+	artificialPod.Spec = template.Spec
+
+	volumes := make(map[string]interface{})
+	for i := range template.Spec.Volumes {
+		vol := template.Spec.Volumes[i]
+		volumes[vol.Name] = new(interface{})
+	}
+	return &artificialPod, volumes
 }
 
 func (r *StatefulSetResource) listPodsForUpdateOrMaintenance(l logr.Logger, podList *corev1.PodList) (updateItems, maintenanceItems []*corev1.Pod) {
@@ -554,7 +733,7 @@ func (r *StatefulSetResource) waitOnSchemaRegistrySync(ctx context.Context) erro
 	return nil
 }
 
-func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPod *corev1.Pod, newVolumes map[string]interface{}) error {
+func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPod *corev1.Pod, newVolumes map[string]interface{}, replace bool) error {
 	log := r.logger.WithName("podEviction").WithValues("pod", pod.GetName(), "namespace", pod.GetNamespace())
 	opts := []patch.CalculateOption{
 		patch.IgnoreStatusFields(),
@@ -580,7 +759,9 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		updateForConfigRestart = true
 	}
 
-	if patchResult.IsEmpty() && !updateForConfigRestart {
+	// One that can't start is replaced whatever the diff shows: it costs
+	// nothing, and the diff misses a removed field.
+	if patchResult.IsEmpty() && !updateForConfigRestart && !replace {
 		log.Info("Pod marked as requiring an update for statefulset change, but no diff. Skipping pod",
 			"pod-name", pod.Name)
 		podPatch := k8sclient.MergeFrom(pod.DeepCopy())
@@ -591,13 +772,25 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 		return nil
 	}
 
+	// The caller found its broker down and unable to start: there is nothing
+	// to drain, and maintenance mode resolves the node ID through the pod's own
+	// admin API.
+	if replace {
+		log.Info("Broker cannot start. Deleting pod without maintenance mode",
+			"pod-name", pod.Name, "patch", patchResult.Patch)
+		if err = r.deletePod(ctx, pod, failedpods.Unchanged(pod)); err != nil {
+			return err
+		}
+		return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "wait for pod restart"}
+	}
+
 	if *r.nodePool.Replicas == 1 {
 		log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
 			"pod-name", pod.Name,
 			"patch", patchResult.Patch)
 
-		if err = r.Delete(ctx, pod); err != nil {
-			return fmt.Errorf("unable to remove Redpanda pod: %w", err)
+		if err = r.deletePod(ctx, pod); err != nil {
+			return err
 		}
 		return nil
 	}
@@ -625,11 +818,22 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 	log.Info("Changes in Pod definition other than activeDeadlineSeconds, configurator and Redpanda container name. Deleting pod",
 		"pod-name", pod.Name, "patch", patchResult.Patch)
 
-	if err = r.Delete(ctx, pod); err != nil {
-		return fmt.Errorf("unable to remove Redpanda pod: %w", err)
+	if err = r.deletePod(ctx, pod); err != nil {
+		return err
 	}
 
 	return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "wait for pod restart"}
+}
+
+// deletePod deletes pod as the pass's one disruption: the pools reconciled
+// after it read a cache that can't show the delete yet, which may have
+// happened even if it reports an error.
+func (r *StatefulSetResource) deletePod(ctx context.Context, pod *corev1.Pod, opts ...k8sclient.DeleteOption) error {
+	r.arbitration.MarkRollGrant()
+	if err := r.Delete(ctx, pod, opts...); err != nil {
+		return fmt.Errorf("unable to remove Redpanda pod: %w", err)
+	}
+	return nil
 }
 
 var (

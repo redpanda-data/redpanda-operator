@@ -37,9 +37,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -318,6 +320,481 @@ func (m *enableRefusingAdminAPI) EnableMaintenanceMode(ctx context.Context, node
 	return m.MockAdminAPI.EnableMaintenanceMode(ctx, nodeID)
 }
 
+// TestReplaceFailedPod pins that an outdated pod whose broker cannot start is
+// replaced without the health gate or maintenance mode, both of which a down
+// broker fails, and only while failedpods.Hold and the in-flight checks allow.
+func TestReplaceFailedPod(t *testing.T) {
+	const (
+		oldImage, newImage = "redpanda:v26.3.1", "redpanda:v26.2.6"
+		oldRev, newRev     = "rev-old", "rev-new"
+	)
+	type testPod struct {
+		rev     string
+		image   string
+		failing bool
+	}
+
+	tcs := []struct {
+		name         string
+		pods         []testPod
+		down         []int
+		decommission *int32
+		// scaleTo scales the pool down from three.
+		scaleTo   *int32
+		stsBehind bool
+		// unmarked leaves outdated pods without the ClusterUpdate mark.
+		unmarked bool
+		// adminDown fails every admin API call, as when no broker runs.
+		adminDown bool
+		// deleteFails makes pod deletes report the pod already gone.
+		deleteFails bool
+		// reports maps a pod to the brokers its broker reports down, in
+		// place of down.
+		reports map[string][]int
+		// rollStarted has an earlier pool start a roll this pass.
+		rollStarted bool
+		brokerMode  bool
+		// deletedPool removes the pool from the spec, so it keeps no pods.
+		deletedPool bool
+		// otherPool adds a second pool, with its pod terminating, its pod
+		// missing, its StatefulSet trailing its spec, or deleted around its
+		// orphaned pod to be recreated.
+		otherPool string
+		// configRestart marks every pod for a configuration restart.
+		configRestart bool
+		// throughUpdate runs the pool's update, on a pass that changes its
+		// StatefulSet if stsChanged.
+		throughUpdate, stsChanged bool
+		// defaultPool has spec.replicas drive the pool, as on a legacy
+		// Cluster: its StatefulSet takes the Cluster's name, and its pods
+		// carry no pool label.
+		defaultPool bool
+		replaced    string
+	}{
+		{
+			name:     "replaces a failed outdated pod",
+			pods:     []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:     []int{0},
+			replaced: "cluster-first-0",
+		},
+		{
+			name:          "an update replaces a failed pod ahead of the health gate",
+			pods:          []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:          []int{0},
+			throughUpdate: true,
+			replaced:      "cluster-first-0",
+		},
+		{
+			name:          "an update that changes the StatefulSet leaves it to the next pass",
+			pods:          []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:          []int{0},
+			throughUpdate: true,
+			stsChanged:    true,
+		},
+		{
+			name:      "holds while another pool's pod is terminating",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			otherPool: "terminating",
+		},
+		{
+			name:      "holds while another pool's pod is missing",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			otherPool: "missing",
+		},
+		{
+			name:      "holds while another pool's StatefulSet trails its spec",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			otherPool: "behind",
+		},
+		{
+			name:      "holds while another pool's StatefulSet is recreated around its pods",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			otherPool: "orphaned",
+		},
+		{
+			name:      "replaces a failed pod beside another pool that's settled",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			otherPool: "settled",
+			replaced:  "cluster-first-0",
+		},
+		{
+			name:          "a current pod marked for a config restart that can't start is kubelet's to restart",
+			pods:          []testPod{{newRev, newImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:          []int{0},
+			configRestart: true,
+		},
+		{
+			name:        "leaves a deleted pool's pods to its decommission",
+			pods:        []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:        []int{0},
+			deletedPool: true,
+		},
+		{
+			name:        "holds once another pool started a roll this pass",
+			pods:        []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:        []int{0},
+			rollStarted: true,
+		},
+		{
+			name:       "leaves a pool in Broker CR mode to its roll grants",
+			pods:       []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:       []int{0},
+			brokerMode: true,
+		},
+		{
+			name: "holds while the current template's only broker is down",
+			pods: []testPod{{newRev, newImage, true}, {oldRev, oldImage, true}, {oldRev, oldImage, false}},
+			down: []int{0, 1},
+		},
+		{
+			name: "holds while the first replacement hasn't rejoined",
+			pods: []testPod{{newRev, newImage, false}, {oldRev, oldImage, true}, {oldRev, oldImage, false}},
+			down: []int{0, 1},
+		},
+		{
+			name: "holds while the first replacement's peers report it down",
+			pods: []testPod{{newRev, newImage, false}, {oldRev, oldImage, true}, {oldRev, oldImage, false}},
+			reports: map[string][]int{
+				"cluster-first-0": {1},
+				"cluster-first-2": {0, 1},
+			},
+		},
+		{
+			name: "leaves a pod whose peers see its broker alive",
+			pods: []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			reports: map[string][]int{
+				"cluster-first-1": {},
+				"cluster-first-2": {},
+			},
+		},
+		{
+			name: "a candidate its peers see alive doesn't stop the next",
+			pods: []testPod{{oldRev, oldImage, true}, {oldRev, oldImage, true}, {newRev, newImage, false}},
+			reports: map[string][]int{
+				"cluster-first-2": {1},
+			},
+			replaced: "cluster-first-1",
+		},
+		{
+			name: "holds while a pod is missing",
+			pods: []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}},
+			down: []int{0},
+		},
+		{
+			name:         "replaces a failed pod while another broker is decommissioned",
+			pods:         []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:         []int{0},
+			decommission: ptr.To(int32(2)),
+			replaced:     "cluster-first-0",
+		},
+		{
+			name:         "leaves the broker being decommissioned",
+			pods:         []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:         []int{0},
+			decommission: ptr.To(int32(0)),
+		},
+		{
+			name:     "replaces a failed pod while the pool scales another one away",
+			pods:     []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:     []int{0},
+			scaleTo:  ptr.To(int32(2)),
+			replaced: "cluster-first-0",
+		},
+		{
+			name:    "leaves the pod a scale-down removes next",
+			pods:    []testPod{{newRev, newImage, false}, {newRev, newImage, false}, {oldRev, oldImage, true}},
+			down:    []int{2},
+			scaleTo: ptr.To(int32(2)),
+		},
+		{
+			name:    "leaves every pod a scale-down removes, not just the next",
+			pods:    []testPod{{newRev, newImage, false}, {oldRev, oldImage, true}, {newRev, newImage, false}},
+			down:    []int{1},
+			scaleTo: ptr.To(int32(1)),
+		},
+		{
+			name:     "a down broker the scale-down removes doesn't hold a replacement",
+			pods:     []testPod{{oldRev, oldImage, true}, {oldRev, oldImage, false}, {newRev, newImage, true}},
+			down:     []int{0, 2},
+			scaleTo:  ptr.To(int32(2)),
+			replaced: "cluster-first-0",
+		},
+		{
+			name:      "replaces a failed pod when every broker is down and none can answer",
+			pods:      []testPod{{oldRev, oldImage, true}, {oldRev, oldImage, true}, {oldRev, oldImage, true}},
+			adminDown: true,
+			replaced:  "cluster-first-0",
+		},
+		{
+			name:      "holds while running brokers can't answer, as when the operator can't reach them",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			adminDown: true,
+		},
+		{
+			name:        "a failed delete holds rather than fails",
+			pods:        []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:        []int{0},
+			deleteFails: true,
+		},
+		{
+			name:      "holds while the StatefulSet status trails its spec",
+			pods:      []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:      []int{0},
+			stsBehind: true,
+		},
+		{
+			name:     "leaves a pod its pool no longer marks for update",
+			pods:     []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:     []int{0},
+			unmarked: true,
+		},
+		{
+			name: "leaves live outdated pods to the gated roll",
+			pods: []testPod{{oldRev, oldImage, false}, {oldRev, oldImage, false}, {oldRev, oldImage, false}},
+		},
+		{
+			name:        "replaces a failed pod in the pool spec.replicas drives",
+			pods:        []testPod{{oldRev, oldImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:        []int{0},
+			defaultPool: true,
+			replaced:    "cluster-0",
+		},
+		{
+			name:     "replaces a failed pod whose diff shows nothing, as when a field was removed",
+			pods:     []testPod{{oldRev, newImage, true}, {newRev, newImage, false}, {newRev, newImage, false}},
+			down:     []int{0},
+			replaced: "cluster-first-0",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := pandaCluster()
+			cluster.Spec.NodePools[0].Replicas = ptr.To(int32(3))
+			cluster.SetDecommissionBrokerID(tc.decommission)
+			if tc.scaleTo != nil {
+				cluster.Spec.NodePools[0].Replicas = tc.scaleTo
+				cluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{cluster.Spec.NodePools[0].Name: {CurrentReplicas: 3}}
+			}
+			if tc.throughUpdate {
+				cluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{cluster.Spec.NodePools[0].Name: {CurrentReplicas: 3, Restarting: true}}
+			}
+			template := corev1.PodTemplateSpec{Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{Name: "redpanda", Image: newImage}},
+			}}
+			pool := cluster.Spec.NodePools[0]
+			if tc.defaultPool {
+				cluster.Spec.Replicas, cluster.Spec.NodePools = pool.Replicas, nil
+				pool = cluster.GetNodePoolsFromSpec()[0]
+			}
+			if tc.deletedPool {
+				cluster.Spec.NodePools = nil
+				cluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{pool.Name: {CurrentReplicas: 3}}
+			}
+			arbitration := &brokerset.Arbitration{}
+			if tc.rollStarted {
+				arbitration.MarkRollGrant()
+			}
+			ssres := StatefulSetResource{
+				pandaCluster: cluster,
+				nodePool:     vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: pool, Deleted: tc.deletedPool},
+				logger:       ctrl.Log.WithName("TestReplaceFailedPod"),
+				arbitration:  arbitration,
+				brokerMode:   tc.brokerMode,
+			}
+
+			sts := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ssres.Key().Name,
+					Namespace: cluster.Namespace,
+					UID:       "sts-uid",
+					Labels:    labels.ForCluster(cluster).WithNodePool(pool.Name),
+				},
+				Spec:   appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3)), Template: template},
+				Status: appsv1.StatefulSetStatus{UpdateRevision: newRev},
+			}
+			if tc.stsBehind {
+				sts.Generation, sts.Status.ObservedGeneration = 2, 1
+			}
+			objs := []client.Object{sts}
+			var brokers []rpadmin.Broker
+			for ordinal, tp := range tc.pods {
+				name := fmt.Sprintf("%s-%d", sts.Name, ordinal)
+				redpanda := corev1.ContainerStatus{Name: "redpanda", State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}, Started: ptr.To(true)}
+				if tp.failing {
+					now := metav1.Now()
+					redpanda.State = corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}}
+					redpanda.LastTerminationState.Terminated = &corev1.ContainerStateTerminated{ExitCode: 1, StartedAt: now, FinishedAt: now}
+				}
+				podLabels := labels.ForCluster(cluster).WithNodePool(pool.Name)
+				if tc.defaultPool {
+					delete(podLabels, labels.NodePoolKey)
+				}
+				podLabels[appsv1.StatefulSetRevisionLabel] = tp.rev
+				conditions := []corev1.PodCondition{{Type: corev1.PodInitialized, Status: corev1.ConditionTrue}}
+				switch {
+				case tc.configRestart:
+					conditions = append(conditions, corev1.PodCondition{Type: ClusterUpdatePodCondition, Status: corev1.ConditionTrue, Reason: ClusterUpdateReasonConfig})
+				case tp.rev == oldRev && !tc.unmarked:
+					conditions = append(conditions, corev1.PodCondition{Type: ClusterUpdatePodCondition, Status: corev1.ConditionTrue, Reason: ClusterUpdateReasonVersion})
+				}
+				objs = append(objs, &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        name,
+						Namespace:   cluster.Namespace,
+						Labels:      podLabels,
+						Annotations: map[string]string{PodAnnotationNodeIDKey: strconv.Itoa(ordinal)},
+						OwnerReferences: []metav1.OwnerReference{{
+							APIVersion: "apps/v1", Kind: "StatefulSet", Name: sts.Name, UID: sts.UID, Controller: ptr.To(true),
+						}},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "redpanda", Image: tp.image}},
+						Volumes: []corev1.Volume{{Name: "datadir", VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir-" + name},
+						}}},
+					},
+					Status: corev1.PodStatus{
+						Conditions:        conditions,
+						ContainerStatuses: []corev1.ContainerStatus{redpanda},
+					},
+				})
+				brokers = append(brokers, rpadmin.Broker{NodeID: ordinal, InternalRPCAddress: name + ".cluster.default.svc"})
+			}
+			if tc.otherPool != "" {
+				other := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "cluster-second", Namespace: cluster.Namespace, UID: "sts-second", Labels: labels.ForCluster(cluster).WithNodePool("second")},
+					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+					Status:     appsv1.StatefulSetStatus{UpdateRevision: newRev},
+				}
+				switch tc.otherPool {
+				case "missing":
+					other.Spec.Replicas = ptr.To(int32(2))
+				case "behind":
+					other.Generation, other.Status.ObservedGeneration = 2, 1
+				}
+				podLabels := labels.ForCluster(cluster).WithNodePool("second")
+				podLabels[appsv1.StatefulSetRevisionLabel] = newRev
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "cluster-second-0", Namespace: cluster.Namespace, Labels: podLabels,
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "StatefulSet", Name: other.Name, UID: other.UID, Controller: ptr.To(true)}},
+					},
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "redpanda", Image: newImage}}},
+					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{{
+						Name: "redpanda", State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}, Started: ptr.To(true),
+					}}},
+				}
+				switch tc.otherPool {
+				case "terminating":
+					pod.DeletionTimestamp, pod.Finalizers = ptr.To(metav1.Now()), []string{"test/hold"}
+				case "orphaned":
+					pod.OwnerReferences = nil
+				}
+				objs = append(objs, pod)
+				if tc.otherPool != "orphaned" {
+					objs = append(objs, other)
+				}
+				brokers = append(brokers, rpadmin.Broker{NodeID: 9, InternalRPCAddress: "cluster-second-0.cluster.default.svc"})
+			}
+			var funcs interceptor.Funcs
+			if tc.deleteFails {
+				funcs.Delete = func(_ context.Context, _ client.WithWatch, obj client.Object, _ ...client.DeleteOption) error {
+					return apierrors.NewNotFound(corev1.Resource("pods"), obj.GetName())
+				}
+			}
+			c := fake.NewClientBuilder().WithObjects(objs...).WithStatusSubresource(&corev1.Pod{}).WithInterceptorFuncs(funcs).Build()
+			ssres.Client = c
+			var healthChecked bool
+			ssres.adminAPIClientFactory = func(
+				_ context.Context,
+				_ client.Reader,
+				_ *vectorizedv1alpha1.Cluster,
+				_ string,
+				_ types.AdminTLSConfigProvider,
+				_ redpandaclient.DialContextFunc,
+				_ time.Duration,
+				pods ...string,
+			) (adminutils.AdminAPIClient, error) {
+				if len(pods) == 0 {
+					healthChecked = true
+				}
+				if tc.adminDown {
+					return nil, fmt.Errorf("no broker answers")
+				}
+				down := tc.down
+				if len(pods) == 1 && tc.reports != nil {
+					down = tc.reports[pods[0]]
+				}
+				var all []int
+				for _, b := range brokers {
+					all = append(all, b.NodeID)
+				}
+				return &clusterViewAdminAPI{
+					MockAdminAPI: &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")},
+					all:          all,
+					down:         down,
+					brokers:      brokers,
+				}, nil
+			}
+
+			var err error
+			if tc.throughUpdate {
+				var current appsv1.StatefulSet
+				require.NoError(t, c.Get(context.Background(), client.ObjectKeyFromObject(sts), &current))
+				modified := current.DeepCopy()
+				if tc.stsChanged {
+					modified.Spec.Template.Spec.Containers[0].Image = "redpanda:v26.2.7"
+				}
+				err = ssres.runUpdate(context.Background(), &current, modified)
+				// A replacement requeues ahead of the health gate.
+				require.Equal(t, tc.replaced == "", healthChecked, "health checked")
+			} else {
+				err = ssres.replaceFailedPod(context.Background(), &template)
+			}
+			if tc.replaced != "" || tc.throughUpdate {
+				var requeue *RequeueAfterError
+				require.ErrorAs(t, err, &requeue)
+			} else {
+				require.NoError(t, err)
+			}
+
+			for _, obj := range objs[1:] {
+				if _, ok := obj.(*corev1.Pod); !ok {
+					continue
+				}
+				getErr := c.Get(context.Background(), client.ObjectKeyFromObject(obj), &corev1.Pod{})
+				if obj.GetName() == tc.replaced {
+					require.True(t, apierrors.IsNotFound(getErr), "%s should have been replaced, got: %v", obj.GetName(), getErr)
+					continue
+				}
+				require.NoError(t, getErr, "%s should not have been replaced", obj.GetName())
+			}
+			require.Equal(t, tc.rollStarted || tc.replaced != "" || tc.deleteFails, arbitration.RollGranted(), "a delete holds the pass's later pools")
+		})
+	}
+}
+
+// clusterViewAdminAPI reports a fixed set of down brokers and broker addresses.
+type clusterViewAdminAPI struct {
+	*adminutils.MockAdminAPI
+	all, down []int
+	brokers   []rpadmin.Broker
+}
+
+func (m *clusterViewAdminAPI) GetHealthOverview(context.Context) (rpadmin.ClusterHealthOverview, error) {
+	return rpadmin.ClusterHealthOverview{AllNodes: m.all, NodesDown: m.down}, nil
+}
+
+func (m *clusterViewAdminAPI) Brokers(context.Context) ([]rpadmin.Broker, error) {
+	return m.brokers, nil
+}
+
 func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 	httpErr := func(code int) *rpadmin.HTTPResponseError {
 		return &rpadmin.HTTPResponseError{
@@ -330,17 +807,21 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 		name       string
 		enableErr  error
 		podDeleted bool
+		// replace evicts as a replacement of a broker that cannot start.
+		replace bool
 	}{
 		// Redpanda refusing the maintenance transition must delay the
 		// eviction, not be overridden: the refusal is redpanda's own
 		// one-disruption-at-a-time interlock (another broker may still hold
 		// the maintenance flag), and deleting the pod anyway takes a second
 		// broker down, undrained.
-		{"400 refusal requeues without deleting", httpErr(http.StatusBadRequest), false},
-		{"503 refusal requeues without deleting", httpErr(http.StatusServiceUnavailable), false},
+		{"400 refusal requeues without deleting", httpErr(http.StatusBadRequest), false, false},
+		{"503 refusal requeues without deleting", httpErr(http.StatusServiceUnavailable), false, false},
 		// 404 means the broker is gone (decommissioned): there is nothing to
 		// drain, so the eviction proceeds.
-		{"404 proceeds with the eviction", httpErr(http.StatusNotFound), true},
+		{"404 proceeds with the eviction", httpErr(http.StatusNotFound), true, false},
+		// A broker that can't start has nothing to drain and can't be asked to.
+		{"a replacement deletes without maintenance mode", httpErr(http.StatusBadRequest), true, true},
 	}
 
 	for _, tc := range tcs {
@@ -363,8 +844,10 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 			}
 			c := fake.NewClientBuilder().WithObjects(pod).Build()
 
+			arbitration := &brokerset.Arbitration{}
 			ssres := StatefulSetResource{
 				Client:       c,
+				arbitration:  arbitration,
 				pandaCluster: cluster,
 				nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
 					NodePoolSpec: cluster.Spec.NodePools[0],
@@ -390,7 +873,7 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 			var artificialPod corev1.Pod
 			artificialPod.Spec = pod.Spec
 
-			err := ssres.podEviction(context.Background(), pod, &artificialPod, nil)
+			err := ssres.podEviction(context.Background(), pod, &artificialPod, nil, tc.replace)
 
 			var requeue *RequeueAfterError
 			require.ErrorAs(t, err, &requeue)
@@ -402,6 +885,7 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 			} else {
 				require.NoError(t, getErr, "pod must NOT be deleted while redpanda refuses maintenance mode")
 			}
+			require.Equal(t, tc.podDeleted, arbitration.RollGranted(), "a delete holds the pass's later pools")
 		})
 	}
 }

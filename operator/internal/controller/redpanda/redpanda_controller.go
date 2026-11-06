@@ -20,6 +20,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -53,6 +54,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
@@ -470,6 +472,9 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		r.reconcilePools,
 		// now we memoize the admin client onto the state
 		r.initAdminClient,
+		// replace outdated pods whose broker cannot start, ahead of the steps
+		// that can fail while those brokers are down
+		r.reconcileFailedPods,
 		// clear maintenance mode on brokers that have been down long enough
 		// that their stuck maintenance flag is blocking auto-decommission
 		r.reconcileMaintenanceMode,
@@ -868,10 +873,12 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		ConfigChecksumKey:    redpandav1alpha2.BrokerConfigChecksumAnnotation,
 		ClusterConfigVersion: configVersion,
 		DetectDiskLostImage:  guardImage,
-		Hooks:                &v2OwnerHooks{clientFactory: r.ClientFactory, state: state},
-		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
-		Arbitration:          state.arbitration,
-		Logger:               log.FromContext(ctx),
+		Hooks: &v2OwnerHooks{clientFactory: r.ClientFactory, state: state, endpoints: memoizeEndpoints(func() []string {
+			return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
+		})},
+		Reporter:    state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
+		Arbitration: state.arbitration,
+		Logger:      log.FromContext(ctx),
 	}, nil
 }
 
@@ -903,6 +910,11 @@ func clusterNameFromPoolSet(setName, poolName string) string {
 type v2OwnerHooks struct {
 	clientFactory internalclient.ClientFactory
 	state         *clusterReconciliationState
+	// endpoints is its own: grants run before initAdminClient sets the state's.
+	endpoints lazyEndpoints
+	// adminMu guards the state's lazily built admin client: Ask is called
+	// concurrently.
+	adminMu sync.Mutex
 }
 
 var _ brokerset.OwnerHooks = (*v2OwnerHooks)(nil)
@@ -922,6 +934,17 @@ func (h *v2OwnerHooks) IsClusterHealthy(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (h *v2OwnerHooks) Ask(ctx context.Context, pod *corev1.Pod) (failedpods.Answer, error) {
+	h.adminMu.Lock()
+	err := ensureAdminClient(ctx, h.clientFactory, h.state)
+	admin := h.state.admin
+	h.adminMu.Unlock()
+	if err != nil {
+		return failedpods.Answer{}, errors.Wrap(err, "fetching redpanda admin client")
+	}
+	return brokerAnswer(ctx, admin, h.endpoints, pod)
 }
 
 // OnQuiesced is a no-op: unlike V1, V2 keeps no Restarting status
@@ -1032,6 +1055,71 @@ func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *cluster
 		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
 	})
 	return ctrl.Result{}, nil
+}
+
+// reconcileFailedPods replaces an outdated pod whose broker cannot start, so a
+// changed template reaches it. It serves nothing, so it bypasses the roll
+// gates in reconcileDecommission: those protect live brokers and fail closed
+// on a down one.
+func (r *RedpandaReconciler) reconcileFailedPods(ctx context.Context, state *clusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	if state.brokerMode || state.pools.AllZero() {
+		return ctrl.Result{}, nil
+	}
+	pod := nextFailedPod(ctx, state.admin, state.podEndpoints, state.pools)
+	if pod == nil || !deleteFailedPod(ctx, r.LifecycleClient, pod) {
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+}
+
+// nextFailedPod returns the outdated pod whose broker cannot start that may be
+// replaced now, or nil. Holding returns nil rather than a requeue, so the
+// steps after the caller still run.
+func nextFailedPod(ctx context.Context, admin *rpadmin.AdminAPI, endpoints lazyEndpoints, pools *lifecycle.PoolTracker) *lifecycle.MulticlusterPod {
+	logger := log.FromContext(ctx)
+	pod, reason := pools.NextFailedPod(ctx, func(ctx context.Context, pod *corev1.Pod) (failedpods.Answer, error) {
+		return brokerAnswer(ctx, admin, endpoints, pod)
+	})
+	if pod == nil {
+		if reason != "" {
+			logger.V(log.DebugLevel).Info("holding failed pod replacement", "reason", reason)
+		}
+		return nil
+	}
+	logger.Info("replacing outdated pod whose broker cannot start", "pod", client.ObjectKeyFromObject(pod).String(), "cluster", pod.GetCluster())
+	return pod
+}
+
+// deleteFailedPod deletes pod as nextFailedPod judged it, and reports whether
+// it did: a write since, as kubelet's once its container starts, holds it.
+func deleteFailedPod(ctx context.Context, deleter podDeleter, pod *lifecycle.MulticlusterPod) bool {
+	if err := deleter.DeletePod(ctx, pod, failedpods.Unchanged(pod.Pod)); err != nil && !apierrors.IsNotFound(err) {
+		log.FromContext(ctx).Info("holding failed pod replacement: deleting pod", "pod", pod.GetName(), "cluster", pod.GetCluster(), "error", err)
+		return false
+	}
+	return true
+}
+
+// brokerAnswer asks pod's broker for its view of the cluster.
+func brokerAnswer(ctx context.Context, admin *rpadmin.AdminAPI, endpoints lazyEndpoints, pod *corev1.Pod) (failedpods.Answer, error) {
+	endpoint := peerEndpoint(endpoints(), pod.Name)
+	if endpoint == "" {
+		return failedpods.Answer{}, errors.Newf("no single admin endpoint for pod %s", pod.Name)
+	}
+	scoped, err := admin.ForHost(endpoint)
+	if err != nil {
+		return failedpods.Answer{}, errors.Wrapf(err, "scoping admin client to %s", endpoint)
+	}
+	defer scoped.Close()
+	health, err := scoped.GetHealthOverview(ctx)
+	if err != nil {
+		return failedpods.Answer{}, errors.Wrapf(err, "fetching cluster health from %s", endpoint)
+	}
+	brokers, err := scoped.Brokers(ctx)
+	if err != nil {
+		return failedpods.Answer{}, errors.Wrapf(err, "listing brokers from %s", endpoint)
+	}
+	return failedpods.Answer{Health: health, Brokers: brokers}, nil
 }
 
 func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {

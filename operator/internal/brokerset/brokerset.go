@@ -46,6 +46,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 )
 
 const (
@@ -72,7 +74,8 @@ const (
 )
 
 // Arbitration carries the cluster-wide one-disruptive-operation-at-a-time
-// state across every pool's BrokerSet within a SINGLE reconcile pass. The
+// state across every pool's BrokerSet, or V1 StatefulSet, within a SINGLE
+// reconcile pass. The
 // gates (decommission in flight, roll-grant held) are otherwise derived from
 // the informer cache, and the split client cannot see its own writes until
 // the watch event round-trips — so a pass that marks a decommission in pool
@@ -84,6 +87,21 @@ const (
 type Arbitration struct {
 	decommissionMarked bool
 	rollGranted        bool
+	// peers is what the brokers reported this pass, asked once for every
+	// pool's invocation.
+	peers *failedpods.Peers
+}
+
+// Peers returns this pass's peer reports, asking once.
+func (a *Arbitration) Peers(ask func() failedpods.Peers) failedpods.Peers {
+	if a == nil {
+		return ask()
+	}
+	if a.peers == nil {
+		peers := ask()
+		a.peers = &peers
+	}
+	return *a.peers
 }
 
 // MarkDecommission records that this pass set decommission intent on a
@@ -94,7 +112,8 @@ func (a *Arbitration) MarkDecommission() {
 	}
 }
 
-// MarkRollGrant records that this pass issued or re-keyed a roll-grant.
+// MarkRollGrant records that this pass issued or re-keyed a roll-grant,
+// revoked one whose pod may be being deleted, or replaced a failed pod.
 func (a *Arbitration) MarkRollGrant() {
 	if a != nil {
 		a.rollGranted = true
@@ -106,7 +125,8 @@ func (a *Arbitration) DecommissionMarked() bool {
 	return a != nil && a.decommissionMarked
 }
 
-// RollGranted reports whether this pass issued or re-keyed a roll-grant.
+// RollGranted reports whether this pass issued or re-keyed a roll-grant, or
+// replaced a failed pod.
 func (a *Arbitration) RollGranted() bool {
 	return a != nil && a.rollGranted
 }
@@ -201,6 +221,9 @@ type OwnerHooks interface {
 	// IsClusterHealthy reports the cluster's admin-API health, returning a
 	// *RequeueAfterError when it is not healthy.
 	IsClusterHealthy(ctx context.Context) error
+	// Ask returns pod's broker's view of the cluster. It is called
+	// concurrently.
+	Ask(ctx context.Context, pod *corev1.Pod) (failedpods.Answer, error)
 	// OnQuiesced clears any owner-side restart bookkeeping (V1:
 	// Status.Restarting). For Owners with none it's a no-op.
 	OnQuiesced(ctx context.Context) error
@@ -344,7 +367,7 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		return err
 	}
 
-	return s.EnsureRollGrants(ctx, l)
+	return s.EnsureRollGrants(ctx, l, desiredReplicas)
 }
 
 // PartitionDiskLostBrokers splits Broker CRs into live brokers and DiskLost
@@ -648,6 +671,26 @@ const (
 	detectDiskLostMountPath  = "/etc/broker-id"
 	detectDiskLostIDFile     = "broker-id"
 )
+
+// DiskLostRefusal returns the detect-disk-lost guard's refusal on pod, or nil
+// if it didn't refuse.
+func DiskLostRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
+	for i := range pod.Status.InitContainerStatuses {
+		cs := &pod.Status.InitContainerStatuses[i]
+		if cs.Name != DetectDiskLostContainerName {
+			continue
+		}
+		term := cs.State.Terminated
+		if term == nil {
+			term = cs.LastTerminationState.Terminated
+		}
+		if term != nil && term.ExitCode == detectdisklost.ExitCodeEmptyDataDir {
+			return term
+		}
+		return nil
+	}
+	return nil
+}
 
 // addDetectDiskLost puts the guard first among the init containers, so nothing
 // else (ownership chown, tuning) touches the data directory before the

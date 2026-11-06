@@ -112,6 +112,38 @@ A healthy controller **quiesces**: once a resource matches its desired state, `R
 
 **When reviewing** a PR that changes watch triggers, predicates, `RequeueAfter`, or `rateLimit`: require an explicit statement of the per-loop write that was identified and fixed. A trigger/interval change with no named root cause is a red flag — request the root-cause analysis before approving.
 
+## Property Tests for Lifecycle State Machines
+
+The lifecycle state machines are:
+- the StatefulSet planners in `operator/internal/lifecycle/pool.go` (`PoolTracker`);
+- the Broker CR roll-grant and decommission logic in `operator/internal/brokerset/`;
+- the failed-pod replacement rule in `operator/internal/failedpods/`.
+
+Hand-picked table cases miss the interleavings that break these, so they also carry [rapid](https://pkg.go.dev/pgregory.net/rapid) property tests over random cluster states:
+- `operator/internal/lifecycle/pool_property_test.go`
+- `operator/internal/brokerset/brokerset_property_test.go`
+- `operator/internal/failedpods/failedpods_property_test.go`
+- `operator/pkg/resources/statefulset_update_property_test.go` (V1 failed-pod replacement, a pass over every node pool)
+
+These `<file>_property_test.go` files are the one exception to keeping tests in `<file>_test.go`.
+
+When a change touches one of these state machines, add or adjust a property for the rule it changes:
+- **State the rule, not the code.** Write what must always hold, such as "at most one unexpired grant" or "never replaces a running container". Don't restate the implementation's own branches.
+- **Prove it bites.** Undo the rule it guards and confirm the property fails. Check the generator reaches the case at all, and bias it or raise `-rapid.checks` if the case is rare.
+- **A failing property is a bug or a design question, never noise.** If it encodes a policy the code doesn't have, decide that explicitly. Don't loosen the property to make it pass.
+- **Reach each rule's case on purpose.** A fully random world rarely hits the state a rule decides on, because it needs several unlikely draws at once. Have the generator draw a "decision" half the time: a settled base, then exactly one change taken from a list with one entry per rule. A property about a rule that only one change triggers should draw from that change half the time (see `genWorldFor` in `brokerset_property_test.go`).
+- **Spell the oracle from the world, not the status.** Draw each pod's state (running, still starting, on a node that's gone) and derive the expected verdict from that. An oracle that reads status fields the way the code does shares its blind spots.
+- **Show the change caused the hold.** A property that asserts nothing happens after a change should first assert that the unchanged world acts (see `requireReplaces` in `pool_property_test.go`). Otherwise it passes on worlds that would never have acted.
+- **Let observed state disagree with ground truth.** Peer reports, for example, should be drawn separately from pod status, or no rule about trusting one over the other can fail.
+- **Keep draws deterministic.** Never draw while ranging over a map; sort the keys first. Otherwise rapid can't replay or shrink a failure ("flaky test, can not reproduce").
+
+```bash
+go test ./operator/internal/brokerset -run 'TestBrokerSet(PassProperties|ConvergedIsQuiescent)' -args -rapid.nofailfile
+go test ./operator/internal/lifecycle -run 'TestPoolTracker(Properties|ConvergedIsQuiescent)' -args -rapid.checks=1000
+```
+
+Without `-rapid.nofailfile`, rapid writes a replayable failure to the package's `testdata/rapid/`; don't commit those. `-rapid.checks` sets how many cases each property draws (default 100); the rare Broker CR cases want 1000. `-rapid.*` flags are only defined in packages that import rapid, so passing them to any other package fails before its tests run.
+
 ## Build System
 
 - **Task runner**: [go-task](https://taskfile.dev/) via `Taskfile.yml` with includes from `taskfiles/`
