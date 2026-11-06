@@ -31,7 +31,7 @@ var (
 
 const (
 	CertManagerVersion = "v1.17.1"
-	VClusterVersion    = "v0.35.1"
+	VClusterVersion    = "v0.37.6"
 )
 
 func GetVClusterImageTag() string {

@@ -105,7 +105,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"quay.io/jetstack/cert-manager-cainjector:" + testutil.CertManagerVersion,
 			"quay.io/jetstack/cert-manager-startupapicheck:" + testutil.CertManagerVersion,
 			"quay.io/jetstack/cert-manager-webhook:" + testutil.CertManagerVersion,
-			"ghcr.io/loft-sh/kubernetes:v1.36.1",
+			"ghcr.io/loft-sh/kubernetes:v1.36.6",
 			"ghcr.io/loft-sh/vcluster-pro:" + testutil.GetVClusterImageTag(),
 			// Connect image used by pipeline-crds feature.
 			redpandav1alpha2.PipelineDefaultImage,

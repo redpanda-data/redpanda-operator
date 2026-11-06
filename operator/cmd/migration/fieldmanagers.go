@@ -191,7 +191,14 @@ func maybeUpdate(ctx context.Context, undesiredManagers []string, ctl *kube.Ctl,
 
 	// now we do a fetch + server-side apply to make sure that our field manager owns any
 	// fields that it should in-case anything was orphaned by the removal above
-	return ctl.Apply(ctx, obj, client.ForceOwnership)
+	if err := ctl.Apply(ctx, obj, client.ForceOwnership); err != nil {
+		return err
+	}
+
+	// Applying to an object whose managers were all cleared records its existing
+	// fields under before-first-apply. Drop it too, or it keeps owning fields our
+	// manager's next apply needs to prune.
+	return maybeUpdate(ctx, []string{"before-first-apply"}, ctl, k8sClient, obj)
 }
 
 func removeFieldManagers(undesiredManagers []string, obj client.Object) bool {
@@ -206,6 +213,12 @@ func removeFieldManagers(undesiredManagers []string, obj client.Object) bool {
 		updated = append(updated, manager)
 	}
 	if changed {
+		if len(updated) == 0 {
+			// The API server ignores an empty managedFields list on update, so
+			// stripping a sole undesired manager needs the single empty entry
+			// that clears the field.
+			updated = []metav1.ManagedFieldsEntry{{}}
+		}
 		obj.SetManagedFields(updated)
 	}
 	return changed

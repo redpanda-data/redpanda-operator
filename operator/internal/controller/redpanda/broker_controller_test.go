@@ -100,9 +100,9 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 
 	importImages := []string{
 		"localhost/redpanda-operator:dev",
-		"ghcr.io/loft-sh/vcluster-pro:0.35.1",
-		"registry.k8s.io/kube-controller-manager:v1.33.12",
-		"registry.k8s.io/kube-apiserver:v1.33.12",
+		"ghcr.io/loft-sh/vcluster-pro:0.37.6",
+		"registry.k8s.io/kube-controller-manager:v1.34.13",
+		"registry.k8s.io/kube-apiserver:v1.34.13",
 		"quay.io/jetstack/cert-manager-controller:v1.17.2",
 		"quay.io/jetstack/cert-manager-cainjector:v1.17.2",
 		"quay.io/jetstack/cert-manager-webhook:v1.17.2",
