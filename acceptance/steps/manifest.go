@@ -10,15 +10,20 @@
 package steps
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -45,23 +50,41 @@ func iInstallLocalCRDs(ctx context.Context, t framework.TestingT, directory stri
 	t.ApplyManifest(ctx, directory)
 }
 
+// normalizeContent rewrites each YAML document of content for the feature's
+// variant. Unmarshalling the whole manifest at once would keep only its
+// first document.
 func normalizeContent(t framework.TestingT, content string) []byte {
-	manifest := map[string]any{}
-	require.NoError(t, yaml.Unmarshal([]byte(content), &manifest))
+	var documents [][]byte
+	reader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(content)))
+	for {
+		document, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
 
-	if getVersion(t, "") == "vectorized" {
-		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.cluster.clusterRef.group")
-		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.shadowCluster.clusterRef.group")
-		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.sourceCluster.clusterRef.group")
-		addStringValueAtPath(manifest, "Cluster", "spec.cluster.clusterRef.kind")
-		addStringValueAtPath(manifest, "Cluster", "spec.shadowCluster.clusterRef.kind")
-		addStringValueAtPath(manifest, "Cluster", "spec.sourceCluster.clusterRef.kind")
+		manifest := map[string]any{}
+		require.NoError(t, yaml.Unmarshal(document, &manifest))
+		if len(manifest) == 0 {
+			// A leading separator, or a document of comments only.
+			continue
+		}
+
+		if getVersion(t, "") == "vectorized" {
+			addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.cluster.clusterRef.group")
+			addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.shadowCluster.clusterRef.group")
+			addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.sourceCluster.clusterRef.group")
+			addStringValueAtPath(manifest, "Cluster", "spec.cluster.clusterRef.kind")
+			addStringValueAtPath(manifest, "Cluster", "spec.shadowCluster.clusterRef.kind")
+			addStringValueAtPath(manifest, "Cluster", "spec.sourceCluster.clusterRef.kind")
+		}
+
+		documentBytes, err := yaml.Marshal(manifest)
+		require.NoError(t, err)
+		documents = append(documents, documentBytes)
 	}
 
-	contentBytes, err := yaml.Marshal(manifest)
-	require.NoError(t, err)
-
-	return contentBytes
+	return bytes.Join(documents, []byte("---\n"))
 }
 
 func addStringValueAtPath(manifest map[string]any, value string, path string) {
