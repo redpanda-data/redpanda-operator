@@ -13,10 +13,11 @@ jobs:
       - name: Generate Pending PRs list
         id: generate-prs
         run: |
-          ./.github/workflows/scripts/pending-prs slack redpanda-data/redpanda-operator > payload.json
+          ./.github/workflows/scripts/pending-prs slack "$REPO" > payload.json
           echo "has-prs=$(wc -l < payload.json | xargs)" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
       - name: Post message to Slack channel
         uses: slackapi/slack-github-action@v2.0.0
         if: steps.generate-prs.outputs.has-prs != '0'
