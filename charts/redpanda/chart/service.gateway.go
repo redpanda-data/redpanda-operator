@@ -15,16 +15,15 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
 // GatewayServices returns ClusterIP Services for Gateway API TLSRoute-based
 // external access: one bootstrap service (targeting all pods) and one
 // per-broker service (targeting a specific pod via pod-name selector).
 // TLSRoute resources reference these services as backends.
-func GatewayServices(state *RenderState) []*corev1.Service {
+func GatewayServices(state *RenderState, listeners *redpanda.Listeners) []*corev1.Service {
 	if !state.Values.External.IsGatewayEnabled() {
 		return nil
 	}
@@ -32,8 +31,7 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 	labels := FullLabels(state)
 	selector := ClusterPodLabelsSelector(state)
 
-	// Collect external listener ports across all listener types.
-	ports := gatewayServicePorts(state)
+	ports := listeners.GatewayServicePorts()
 	if len(ports) == 0 {
 		return nil
 	}
@@ -95,56 +93,4 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 	}
 
 	return services
-}
-
-// gatewayServicePorts collects external listener ports for Gateway ClusterIP
-// services. These match the container ports that TLSRoutes will route to.
-func gatewayServicePorts(state *RenderState) []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("admin-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("kafka-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("http-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("schema-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-		})
-	}
-
-	return ports
 }

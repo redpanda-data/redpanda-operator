@@ -19,8 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
 // NOTE: this file contains helper methods for the StretchClusterSpec and related types.
@@ -259,17 +257,6 @@ func (i *IssuerRef) GetGroup() string {
 
 // --- TrustStore ---
 
-const (
-	// TrustStoreMountPath is the absolute path at which truststore files
-	// are mounted to the redpanda container.
-	TrustStoreMountPath = "/etc/truststores"
-)
-
-// TrustStoreFilePath returns the absolute path to the trust store file.
-func (t *TrustStore) TrustStoreFilePath() string {
-	return fmt.Sprintf("%s/%s", TrustStoreMountPath, t.RelativePath())
-}
-
 // RelativePath returns the relative path within the truststores mount.
 func (t *TrustStore) RelativePath() string {
 	if t.ConfigMapKeyRef != nil {
@@ -365,6 +352,11 @@ func (d *ExternalDNS) IsEnabled() bool {
 // IsEnabled returns whether a listener is enabled (defaults to true). Safe to call on nil receiver.
 func (l *StretchListener) IsEnabled() bool {
 	return l != nil && ptr.Deref(l.Enabled, true)
+}
+
+// IsEnabled returns whether an API listener is enabled (defaults to true). Safe to call on nil receiver.
+func (l *StretchAPIListener) IsEnabled() bool {
+	return l != nil && l.StretchListener.IsEnabled()
 }
 
 // GetPort returns the listener port, falling back to the given default. Safe to call on nil receiver.
@@ -561,17 +553,6 @@ func (l *StretchListeners) allListenerEntries() []listenerEntry {
 	return entries
 }
 
-// CertRequiresClientAuth returns whether any listener using the given cert name requires mTLS.
-// Safe to call on nil receiver.
-func (l *StretchListeners) CertRequiresClientAuth(certName string) bool {
-	for _, entry := range l.allListenerEntries() {
-		if entry.tls.GetCert() == certName && entry.tls.RequiresClientAuth() {
-			return true
-		}
-	}
-	return false
-}
-
 // CollectCerts returns cert names from all listeners matching pred, deduplicated and ordered.
 // Safe to call on nil receiver.
 func (l *StretchListeners) CollectCerts(pred func(*StretchListenerTLS) bool) []string {
@@ -612,93 +593,6 @@ func (l *StretchListeners) KafkaCertName() string {
 	return ""
 }
 
-// --- Listeners TrustStore helpers ---
-
-// TrustStores collects all TrustStore references from all listeners (internal + external).
-// Safe to call on nil receiver.
-func (l *StretchListeners) TrustStores(globalTLS *TLS) []*TrustStore {
-	var tss []*TrustStore
-	for _, entry := range l.allListenerEntries() {
-		if entry.tls != nil && entry.tls.IsTLSEnabled(globalTLS) && entry.tls.TrustStore != nil {
-			tss = append(tss, entry.tls.TrustStore)
-		}
-		for _, key := range sortedKeys(entry.externals) {
-			ext := entry.externals[key]
-			if ext != nil && ext.IsEnabled() && ext.TLS != nil && ext.TLS.IsTLSEnabled(globalTLS) && ext.TLS.TrustStore != nil {
-				tss = append(tss, ext.TLS.TrustStore)
-			}
-		}
-	}
-	return tss
-}
-
-// TrustStoreVolume returns a projected Volume containing all configured truststores,
-// or nil if no truststores are configured. Safe to call on nil receiver.
-func (l *StretchListeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
-	trustStores := l.TrustStores(tls)
-	if len(trustStores) == 0 {
-		return nil
-	}
-
-	cmSources := map[string][]corev1.KeyToPath{}
-	secretSources := map[string][]corev1.KeyToPath{}
-
-	for _, ts := range trustStores {
-		projection := ts.VolumeProjection()
-		if projection.Secret != nil {
-			secretSources[projection.Secret.Name] = append(secretSources[projection.Secret.Name], projection.Secret.Items...)
-		} else if projection.ConfigMap != nil {
-			cmSources[projection.ConfigMap.Name] = append(cmSources[projection.ConfigMap.Name], projection.ConfigMap.Items...)
-		}
-	}
-
-	var sources []corev1.VolumeProjection
-
-	for _, name := range sortedKeys(cmSources) {
-		sources = append(sources, corev1.VolumeProjection{
-			ConfigMap: &corev1.ConfigMapProjection{
-				LocalObjectReference: corev1.LocalObjectReference{Name: name},
-				Items:                dedupKeyToPaths(cmSources[name]),
-			},
-		})
-	}
-	for _, name := range sortedKeys(secretSources) {
-		sources = append(sources, corev1.VolumeProjection{
-			Secret: &corev1.SecretProjection{
-				LocalObjectReference: corev1.LocalObjectReference{Name: name},
-				Items:                dedupKeyToPaths(secretSources[name]),
-			},
-		})
-	}
-
-	if len(sources) == 0 {
-		return nil
-	}
-
-	return &corev1.Volume{
-		Name: "truststores",
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				Sources: sources,
-			},
-		},
-	}
-}
-
-// dedupKeyToPaths deduplicates KeyToPath entries by key.
-func dedupKeyToPaths(items []corev1.KeyToPath) []corev1.KeyToPath {
-	seen := map[string]bool{}
-	var deduped []corev1.KeyToPath
-	for _, item := range items {
-		if seen[item.Key] {
-			continue
-		}
-		deduped = append(deduped, item)
-		seen[item.Key] = true
-	}
-	return deduped
-}
-
 // sortedKeys returns sorted keys of a map.
 func sortedKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -707,26 +601,6 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-// --- ListenerTLS truststore helpers ---
-
-// ServerCAPath returns the path to the CA/truststore file for this listener.
-// If a TrustStore is configured, its path takes precedence.
-// Otherwise falls back to the certificate's CA, else its serving certificate.
-// Safe to call on nil receiver.
-func (l *StretchListenerTLS) ServerCAPath(pki *redpanda.PKI) string {
-	if l != nil && l.TrustStore != nil {
-		return l.TrustStore.TrustStoreFilePath()
-	}
-
-	certName := l.GetCert()
-	if certName == "" {
-		return ""
-	}
-
-	kp := pki.ServerKeypair(certName)
-	return kp.CAOrCertFile()
 }
 
 // --- TLS (parameterized helpers) ---
@@ -1248,24 +1122,46 @@ func (n *BrokerPoolSpec) GetServiceAccountName(fullname string) string {
 	return n.ServiceAccount.GetServiceAccountName(fullname)
 }
 
-// InUseServerCerts returns the cert names for all listeners with TLS enabled on this pool.
-// Safe to call on nil receiver.
+// InUseServerCerts returns the cert names of this pool's listeners. If the
+// pool disables TLS, only listeners that enable TLS contribute. Safe to call
+// on nil receiver.
 func (n *BrokerPoolSpec) InUseServerCerts() []string {
-	if n == nil || !n.TLS.IsEnabled() {
+	if n == nil {
 		return nil
 	}
-	return n.Listeners.CollectCerts(func(*StretchListenerTLS) bool { return true })
+	return n.Listeners.CollectCerts(n.certInUse)
 }
 
 // InUseClientCerts returns the cert names for this pool's listeners requiring client auth (mTLS).
 // Safe to call on nil receiver.
 func (n *BrokerPoolSpec) InUseClientCerts() []string {
-	if n == nil || !n.TLS.IsEnabled() {
+	if n == nil {
 		return nil
 	}
 	return n.Listeners.CollectCerts(func(tls *StretchListenerTLS) bool {
-		return tls.RequiresClientAuth()
+		return n.certInUse(tls) && tls.RequiresClientAuth()
 	})
+}
+
+// CertRequiresClientAuth returns whether a listener that uses certName
+// requires mTLS. Listeners whose certificate is not in use do not count. Safe
+// to call on nil receiver.
+func (n *BrokerPoolSpec) CertRequiresClientAuth(certName string) bool {
+	if n == nil {
+		return false
+	}
+	for _, entry := range n.Listeners.allListenerEntries() {
+		if entry.tls.GetCert() == certName && n.certInUse(entry.tls) && entry.tls.RequiresClientAuth() {
+			return true
+		}
+	}
+	return false
+}
+
+func (n *BrokerPoolSpec) certInUse(tls *StretchListenerTLS) bool {
+	// NB: If the pool enables TLS, a listener that disables TLS still has its
+	// certificate mounted. Changing that would restart existing brokers.
+	return n.TLS.IsEnabled() || tls.IsTLSEnabled(n.TLS)
 }
 
 // AdminPort returns this pool's admin API port. Safe to call on nil receiver.

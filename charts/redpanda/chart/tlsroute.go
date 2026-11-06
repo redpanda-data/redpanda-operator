@@ -18,11 +18,12 @@ import (
 	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 // TLSRoutes returns Gateway API TLSRoute resources for external access.
-func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
+func TLSRoutes(state *RenderState, listeners *redpanda.Listeners) []*gatewayv1.TLSRoute {
 	if !state.Values.External.IsGatewayEnabled() {
 		return nil
 	}
@@ -36,42 +37,21 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 
 	var routes []*gatewayv1.TLSRoute
 
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
+	for _, api := range listeners.Gateways() {
+		for _, listener := range api.Additional {
+			if !listener.Exposed || listener.Gateway == nil {
+				continue
+			}
+			routes = append(routes, tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, api.Kind, listener)...)
 		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "kafka", listener.Port)
-		routes = append(routes, rs...)
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "http", listener.Port)
-		routes = append(routes, rs...)
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "admin", listener.Port)
-		routes = append(routes, rs...)
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
-			continue
-		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "schema", listener.Port)
-		routes = append(routes, rs...)
 	}
 
 	return routes
 }
 
-func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, annotations map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, host string, hostTemplate string, name string, listenerTag string, port int32) []*gatewayv1.TLSRoute {
+func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, annotations map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, kind redpanda.APIKind, listener redpanda.Listener) []*gatewayv1.TLSRoute {
+	gateway := listener.Gateway
+
 	// Invariants (host present; kafka multi-broker requires hostTemplate) are
 	// enforced upfront by validateGatewayListeners so misconfigurations surface
 	// as a single clear error before any rendering. By the time we get here the
@@ -87,7 +67,7 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			Kind:       "TLSRoute",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-%s-%s-bootstrap", fullname, listenerTag, name),
+			Name:        fmt.Sprintf("%s-%s-%s-bootstrap", fullname, kind, listener.Name),
 			Namespace:   namespace,
 			Labels:      labels,
 			Annotations: annotations,
@@ -96,14 +76,14 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			CommonRouteSpec: gatewayv1.CommonRouteSpec{
 				ParentRefs: parentRefs,
 			},
-			Hostnames: []gatewayv1.Hostname{gatewayv1.Hostname(host)},
+			Hostnames: []gatewayv1.Hostname{gatewayv1.Hostname(gateway.Host)},
 			Rules: []gatewayv1.TLSRouteRule{
 				{
 					BackendRefs: []gatewayv1.BackendRef{
 						{
 							BackendObjectReference: gatewayv1.BackendObjectReference{
 								Name: gatewayv1.ObjectName(bootstrapSvcName),
-								Port: ptr.To(gatewayv1.PortNumber(port)),
+								Port: ptr.To(gatewayv1.PortNumber(listener.Port)),
 							},
 						},
 					},
@@ -113,12 +93,12 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 	}
 	routes = append(routes, bootstrap)
 
-	if hostTemplate == "" {
+	if len(gateway.BrokerHosts) == 0 {
 		return routes
 	}
 
 	for i, podname := range pods {
-		brokerHost := renderBrokerHost(hostTemplate, i, podname)
+		brokerHost := gateway.BrokerHosts[i]
 		brokerSvcName := gatewayBrokerServiceName(podname)
 
 		route := &gatewayv1.TLSRoute{
@@ -127,7 +107,7 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 				Kind:       "TLSRoute",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("%s-%s-%s-%d", fullname, listenerTag, name, i),
+				Name:        fmt.Sprintf("%s-%s-%s-%d", fullname, kind, listener.Name, i),
 				Namespace:   namespace,
 				Labels:      labels,
 				Annotations: annotations,
@@ -143,7 +123,7 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 							{
 								BackendObjectReference: gatewayv1.BackendObjectReference{
 									Name: gatewayv1.ObjectName(brokerSvcName),
-									Port: ptr.To(gatewayv1.PortNumber(port)),
+									Port: ptr.To(gatewayv1.PortNumber(listener.Port)),
 								},
 							},
 						},
@@ -212,33 +192,38 @@ func gatewayBrokerServiceName(podName string) string {
 //
 // host (the bootstrap SNI name) is required for every gateway listener.
 func validateGatewayListeners(state *RenderState) {
-	// NB: this does NOT early-return on a disabled global gateway. A listener
-	// can set `type: tlsroute` while the global external.gateway block is
-	// off/absent; that listener is already excluded from the conventional
-	// NodePort/LoadBalancer Service (the per-listener type is authoritative
-	// there), so without this validation it would render no TLSRoute and no
-	// Service — silently unreachable, or worse if the skip were ever relaxed.
-	// We therefore fail render whenever an enabled gateway listener is present
-	// but the global gateway config can't actually back it.
+	// NB: Do not return early if the global gateway is disabled. A listener
+	// can set `type: tlsroute` while external.gateway is disabled or absent.
+	// The NodePort and LoadBalancer Services do not include that listener.
+	// Without this validation, the listener has no TLSRoute and no Service,
+	// and clients cannot connect to it. Thus, the render fails if an enabled
+	// gateway listener exists and the global gateway cannot support it.
+	//
+	// NB: Read the values, not [resolveListeners]. The resolver removes a
+	// listener with `port: 0`, but the schema accepts that value. Validation of
+	// the resolved listeners does not find this error.
 	replicas := len(gatewayPodNames(state))
 	gatewayConfigured := state.Values.External.IsGatewayEnabled()
 
-	for name, l := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		validateGatewayListener("kafka", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, true)
-	}
-	for name, l := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		validateGatewayListener("http", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
-	}
-	for name, l := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		validateGatewayListener("admin", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
-	}
-	for name, l := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		validateGatewayListener("schema", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+	for kind, listener := range helmette.SortedMap(map[redpanda.APIKind]ListenerConfig[string]{
+		redpanda.AdminAPI:          state.Values.Listeners.Admin.AsString(),
+		redpanda.KafkaAPI:          state.Values.Listeners.Kafka.AsString(),
+		redpanda.HTTPAPI:           state.Values.Listeners.HTTP.AsString(),
+		redpanda.SchemaRegistryAPI: state.Values.Listeners.SchemaRegistry.AsString(),
+	}) {
+		// NB: Only kafka needs a hostname for each broker, because kafka clients
+		// connect to each broker by SNI.
+		requirePerBroker := kind == redpanda.KafkaAPI
+
+		for name, external := range helmette.SortedMap(listener.External) {
+			exposed := ptr.Deref(external.Enabled, state.Values.External.Enabled)
+			validateGatewayListener(kind, name, resolveGateway(state, external), exposed, gatewayConfigured, replicas, requirePerBroker)
+		}
 	}
 }
 
-func validateGatewayListener(tag string, name string, isGateway bool, enabled bool, gatewayConfigured bool, host string, hostTemplate string, replicas int, requirePerBroker bool) {
-	if !enabled || !isGateway {
+func validateGatewayListener(tag redpanda.APIKind, name string, gateway *redpanda.GatewayRoute, exposed bool, gatewayConfigured bool, replicas int, requirePerBroker bool) {
+	if !exposed || gateway == nil {
 		return
 	}
 	// A listener opted into gateway mode but the global gateway can't back it
@@ -247,10 +232,10 @@ func validateGatewayListener(tag string, name string, isGateway bool, enabled bo
 	if !gatewayConfigured {
 		panic(fmt.Sprintf("external listener %s/%s sets type: tlsroute but external.gateway is not enabled with at least one parentRef; refusing to fall back to a NodePort/LoadBalancer Service. Set external.gateway.enabled: true and external.gateway.parentRefs", tag, name))
 	}
-	if host == "" {
+	if gateway.Host == "" {
 		panic(fmt.Sprintf("external gateway listener %s/%s requires `host` (the bootstrap SNI hostname) when type: tlsroute", tag, name))
 	}
-	if requirePerBroker && replicas > 1 && hostTemplate == "" {
+	if requirePerBroker && replicas > 1 && len(gateway.BrokerHosts) == 0 {
 		panic(fmt.Sprintf("external gateway listener %s/%s requires `hostTemplate` when replicas > 1: Kafka clients reconnect to individual brokers by SNI, so each broker needs its own per-broker hostname", tag, name))
 	}
 }
