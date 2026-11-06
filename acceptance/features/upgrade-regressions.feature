@@ -4,10 +4,7 @@
 Feature: Operator upgrade regressions
   @skip:gke @skip:aks @skip:eks
   Scenario: Regression - field managers
-    # Install from the GitHub release tarballs rather than the repo:
-    # charts.redpanda.com only serves charts for supported (non-EOL) release
-    # lines, so pre-25.3 versions are no longer in its index.
-    Given I helm install "redpanda-operator" "https://github.com/redpanda-data/redpanda-operator/releases/download/operator/v25.1.3/operator-25.1.3.tgz" with values:
+    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
     """
     image:
       repository: redpandadata/redpanda-operator
@@ -66,7 +63,7 @@ Feature: Operator upgrade regressions
     """
     *kube.Ctl
     """
-    Then I helm upgrade "redpanda-operator" "https://github.com/redpanda-data/redpanda-operator/releases/download/operator/v25.3.1/operator-25.3.1.tgz" with values:
+    Then I helm upgrade "redpanda-operator" "redpanda/operator" --version v25.3.1 with values:
     """
     image:
       repository: redpandadata/redpanda-operator
