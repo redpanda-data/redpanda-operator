@@ -380,5 +380,8 @@ tasks:
   pending-prs:
     desc: "Get all pending PRs for watched branches"
     silent: true
+    vars:
+      REPO:
+        sh: gh repo view --json nameWithOwner -q .nameWithOwner
     cmds:
-      - ./.github/workflows/scripts/pending-prs terminal redpanda-data/redpanda-operator
+      - ./.github/workflows/scripts/pending-prs terminal {{.REPO}}
