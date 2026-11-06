@@ -726,9 +726,9 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 
 	namespace := ref.GetNamespace(obj.GetNamespace())
 
-	if ref.IsNodePool() {
+	if ref.IsPool() {
 		var err error
-		ref, namespace, err = c.derefNodePool(ctx, obj, clusterName, ref, namespace)
+		ref, namespace, err = c.derefPool(ctx, obj, clusterName, ref, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -754,23 +754,27 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 	return &cluster, nil
 }
 
-// derefNodePool resolves a NodePool clusterRef one hop to the NodePool's own
-// cluster ref. If the NodePool is gone (removed from the spec while its
-// Brokers still drain), it falls back to a ref synthesized from obj's
-// controller-owning Redpanda.
-func (c *Factory) derefNodePool(ctx context.Context, obj client.Object, clusterName string, ref *redpandav1alpha2.ClusterRef, namespace string) (*redpandav1alpha2.ClusterRef, string, error) {
+// derefPool resolves a NodePool or RedpandaBrokerPool clusterRef one hop to
+// the pool's own cluster ref. If the pool is gone (removed from the spec
+// while its Brokers still drain), it falls back to a ref synthesized from
+// obj's controller-owning Redpanda.
+func (c *Factory) derefPool(ctx context.Context, obj client.Object, clusterName string, ref *redpandav1alpha2.ClusterRef, namespace string) (*redpandav1alpha2.ClusterRef, string, error) {
 	k8sClient, err := c.GetClient(ctx, clusterName)
 	if err != nil {
 		return nil, "", err
 	}
 
-	var pool redpandav1alpha2.NodePool
-	err = k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &pool)
+	var pool redpandav1alpha2.ClusterReferencingObject = &redpandav1alpha2.NodePool{}
+	if ref.IsBrokerPool() {
+		pool = &redpandav1alpha2.RedpandaBrokerPool{}
+	}
+	err = k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, pool)
 	if err == nil {
-		if !pool.Spec.ClusterRef.IsV2() {
+		poolRef := pool.GetClusterSource().GetClusterRef()
+		if !poolRef.IsV2() {
 			return nil, "", ErrInvalidClusterRef
 		}
-		return &pool.Spec.ClusterRef, pool.Spec.ClusterRef.GetNamespace(pool.Namespace), nil
+		return poolRef, poolRef.GetNamespace(pool.GetNamespace()), nil
 	}
 	if !apierrors.IsNotFound(err) {
 		return nil, "", err

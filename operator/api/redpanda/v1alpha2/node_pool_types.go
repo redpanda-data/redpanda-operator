@@ -21,6 +21,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
+// MigrateToBrokerPoolAnnotation hands a NodePool's pool, when set to "true"
+// on it, to the RedpandaBrokerPool of the same name that references the same
+// cluster. Deleting the NodePool hands it over too. Until that
+// RedpandaBrokerPool exists, the NodePool keeps the pool, so neither ever
+// removes it.
+const MigrateToBrokerPoolAnnotation = "operator.redpanda.com/migrate-to-broker-pool"
+
+// NodePool defines a pool of brokers for a Redpanda cluster. RedpandaBrokerPool
+// replaces it: create a RedpandaBrokerPool with the same name and spec, then
+// annotate the NodePool with `operator.redpanda.com/migrate-to-broker-pool:
+// "true"` or delete it. NodePool will be removed in a future release.
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -41,6 +52,12 @@ func (n *NodePool) GetClusterSource() *ClusterSource {
 	return &ClusterSource{
 		ClusterRef: &n.Spec.ClusterRef,
 	}
+}
+
+// ReleasesToBrokerPool reports whether a RedpandaBrokerPool of the same name
+// on the same cluster takes the pool from this NodePool.
+func (n *NodePool) ReleasesToBrokerPool() bool {
+	return n.Annotations[MigrateToBrokerPoolAnnotation] == "true" || !n.DeletionTimestamp.IsZero()
 }
 
 // NodePoolStatus defines the observed state of any node pools tied to this cluster

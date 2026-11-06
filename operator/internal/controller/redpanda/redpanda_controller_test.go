@@ -998,6 +998,9 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		require.NoError(t, (&redpanda.NodePoolReconciler{
 			Manager: mgr,
 		}).SetupWithManager(ctx, mgr, ""))
+		require.NoError(t, (&redpanda.BrokerPoolReconciler{
+			Manager: mgr,
+		}).SetupWithManager(ctx, mgr, ""))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{

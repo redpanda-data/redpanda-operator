@@ -340,9 +340,9 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 		return nil, errors.Wrapf(err, "failed to resolve clusterRef %q", ref.Name)
 	}
 
-	pools, err := c.nodePoolsFor(ctx, &rp)
+	pools, err := c.poolsFor(ctx, &rp)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list the NodePools of clusterRef %q", ref.Name)
+		return nil, errors.Wrapf(err, "failed to list the pools of clusterRef %q", ref.Name)
 	}
 
 	// Cache hit: the chart render for this cluster spec is already resolved.
@@ -397,19 +397,20 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 	return conn, nil
 }
 
-// nodePoolsFor returns the NodePools whose brokers belong in rp's broker list.
-// A finished NodePool migration leaves rp's own StatefulSet at zero replicas,
+// poolsFor returns the pools whose brokers belong in rp's broker list. A
+// finished NodePool migration leaves rp's own StatefulSet at zero replicas,
 // so without them that list is empty.
-func (c *Controller) nodePoolsFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
+func (c *Controller) poolsFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.RedpandaBrokerPool, error) {
 	if !c.UseNodePools {
 		return nil, nil
 	}
-	return controller.NodePoolsFor(ctx, c.Ctl, rp)
+	return controller.PoolsFor(ctx, c.Ctl, rp)
 }
 
 // poolsRevision identifies pools by incarnation and spec generation, sorted
-// because List order isn't stable.
-func poolsRevision(pools []*redpandav1alpha2.NodePool) string {
+// because List order isn't stable. A NodePool's pool carries the NodePool's
+// UID, so a handoff to a RedpandaBrokerPool changes the revision.
+func poolsRevision(pools []*redpandav1alpha2.RedpandaBrokerPool) string {
 	revs := make([]string, len(pools))
 	for i, pool := range pools {
 		revs[i] = fmt.Sprintf("%s/%s/%s/%d", pool.Namespace, pool.Name, pool.UID, pool.Generation)

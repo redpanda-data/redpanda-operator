@@ -34,6 +34,7 @@ var (
 		crds.Console(),
 		crds.Pipeline(),
 		crds.Redpanda(),
+		crds.RedpandaBrokerPool(),
 		crds.Group(),
 		crds.Role(),
 		crds.Schema(),
@@ -51,7 +52,6 @@ var (
 	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.StretchCluster(),
-		crds.RedpandaBrokerPool(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,

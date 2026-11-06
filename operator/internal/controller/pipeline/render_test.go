@@ -452,32 +452,33 @@ func TestClusterConnCache(t *testing.T) {
 }
 
 func TestPoolsRevision(t *testing.T) {
-	pool := func(name, uid string, generation int64) *redpandav1alpha2.NodePool {
-		return &redpandav1alpha2.NodePool{ObjectMeta: metav1.ObjectMeta{
+	pool := func(name, uid string, generation int64) *redpandav1alpha2.RedpandaBrokerPool {
+		return &redpandav1alpha2.RedpandaBrokerPool{ObjectMeta: metav1.ObjectMeta{
 			Namespace:  "ns",
 			Name:       name,
 			UID:        types.UID(uid),
 			Generation: generation,
 		}}
 	}
-	base := poolsRevision([]*redpandav1alpha2.NodePool{pool("a", "uid-a", 1), pool("b", "uid-b", 1)})
+	base := poolsRevision([]*redpandav1alpha2.RedpandaBrokerPool{pool("a", "uid-a", 1), pool("b", "uid-b", 1)})
 
 	for name, tc := range map[string]struct {
-		pools []*redpandav1alpha2.NodePool
+		pools []*redpandav1alpha2.RedpandaBrokerPool
 		same  bool
 	}{
 		"list order is ignored": {
-			pools: []*redpandav1alpha2.NodePool{pool("b", "uid-b", 1), pool("a", "uid-a", 1)},
+			pools: []*redpandav1alpha2.RedpandaBrokerPool{pool("b", "uid-b", 1), pool("a", "uid-a", 1)},
 			same:  true,
 		},
 		"a resized pool differs": {
-			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a", 2), pool("b", "uid-b", 1)},
+			pools: []*redpandav1alpha2.RedpandaBrokerPool{pool("a", "uid-a", 2), pool("b", "uid-b", 1)},
 		},
-		"a recreated pool differs": {
-			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a-recreated", 1), pool("b", "uid-b", 1)},
+		// A handoff swaps the NodePool's UID for the RedpandaBrokerPool's.
+		"a recreated or handed-off pool differs": {
+			pools: []*redpandav1alpha2.RedpandaBrokerPool{pool("a", "uid-a-recreated", 1), pool("b", "uid-b", 1)},
 		},
 		"a removed pool differs": {
-			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a", 1)},
+			pools: []*redpandav1alpha2.RedpandaBrokerPool{pool("a", "uid-a", 1)},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

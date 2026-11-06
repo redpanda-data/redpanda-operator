@@ -33,6 +33,16 @@ func ClusterSourceWatchOptions(clusterName string) []mcbuilder.WatchesOption {
 	return append(WatchOptions(clusterName), mcbuilder.WithPredicates(ClusterSourcePredicate))
 }
 
+// PoolSourcePredicate is ClusterSourcePredicate for NodePool and
+// RedpandaBrokerPool watches: a NodePool's migrate-to-broker-pool
+// annotation changes which pool spec renders without bumping generation.
+var PoolSourcePredicate predicate.Predicate = predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})
+
+// PoolSourceWatchOptions is ClusterSourceWatchOptions for pool watches.
+func PoolSourceWatchOptions(clusterName string) []mcbuilder.WatchesOption {
+	return append(WatchOptions(clusterName), mcbuilder.WithPredicates(PoolSourcePredicate))
+}
+
 func WatchOptions(clusterName string) []mcbuilder.WatchesOption {
 	if clusterName == mcmanager.LocalCluster {
 		return []mcbuilder.WatchesOption{mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)}

@@ -33,7 +33,7 @@ var _ OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools] = (*S
 func NewStretchClusterOwnershipResolver() *StretchClusterOwnershipResolver {
 	return &StretchClusterOwnershipResolver{
 		operatorLabel:  defaultOperatorLabel,
-		ownerLabel:     defaultOwnerLabel,
+		ownerLabel:     DefaultOwnerLabel,
 		namespaceLabel: DefaultNamespaceLabel,
 	}
 }

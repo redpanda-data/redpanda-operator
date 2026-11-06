@@ -11,6 +11,7 @@ package redpanda
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -37,6 +38,7 @@ import (
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -77,43 +79,17 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		mcbuilder.WithEngageWithLocalCluster(true),
 		mcbuilder.WithEngageWithProviderClusters(true),
 	).
-		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			labels := o.GetLabels()
-			if labels == nil {
-				return nil
-			}
-
-			namespace := labels[lifecycle.DefaultNamespaceLabel]
-			name := labels[redpandachart.NodePoolLabelName]
-
-			if namespace == "" || name == "" {
-				return nil
-			}
-
-			return []reconcile.Request{{
-				NamespacedName: types.NamespacedName{
-					Namespace: namespace,
-					Name:      name,
-				},
-			}}
-		}))
+		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(poolRequestsForStatefulSet))
 	if r.BrokerCREnabled {
-		builder = builder.Watches(&redpandav1alpha2.Broker{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			name := o.GetLabels()[redpandav1alpha2.NodePoolLabel]
-			if name == "" || strings.EqualFold(name, redpandav1alpha2.DefaultNodePoolName) {
-				return nil
-			}
-
-			return []reconcile.Request{{
-				NamespacedName: types.NamespacedName{
-					Namespace: o.GetNamespace(),
-					Name:      name,
-				},
-			}}
-		}))
+		builder = builder.Watches(&redpandav1alpha2.Broker{}, mchandler.EnqueueRequestsFromMapFunc(poolRequestsForBroker))
 	}
+	// A RedpandaBrokerPool taking or returning the pool changes this
+	// NodePool's status.
+	builder = builder.Watches(&redpandav1alpha2.RedpandaBrokerPool{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(o)}}
+	}))
 	for _, clusterName := range mgr.GetClusterNames() {
-		enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", clusterName, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
+		enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, controller.PoolIndex, clusterName, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 		if err != nil {
 			return err
 		}
@@ -122,6 +98,39 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 	}
 
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "NodePool", periodicRequeue)))
+}
+
+// poolRequestsForStatefulSet maps a pool's StatefulSet to the same-named
+// NodePool or RedpandaBrokerPool; each pool controller enqueues its own kind.
+func poolRequestsForStatefulSet(_ context.Context, o client.Object) []reconcile.Request {
+	labels := o.GetLabels()
+	namespace := labels[lifecycle.DefaultNamespaceLabel]
+	name := labels[redpandachart.NodePoolLabelName]
+	if namespace == "" || name == "" {
+		return nil
+	}
+
+	return []reconcile.Request{{
+		NamespacedName: types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}}
+}
+
+// poolRequestsForBroker is poolRequestsForStatefulSet for a Broker CR.
+func poolRequestsForBroker(_ context.Context, o client.Object) []reconcile.Request {
+	name := o.GetLabels()[redpandav1alpha2.NodePoolLabel]
+	if name == "" || strings.EqualFold(name, redpandav1alpha2.DefaultNodePoolName) {
+		return nil
+	}
+
+	return []reconcile.Request{{
+		NamespacedName: types.NamespacedName{
+			Namespace: o.GetNamespace(),
+			Name:      name,
+		},
+	}}
 }
 
 // Reconcile reconciles NodePool objects
@@ -208,91 +217,52 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	}
 
 	var status statuses.NodePoolStatus
-	var statefulSets appsv1.StatefulSetList
-	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
-		lifecycle.DefaultNamespaceLabel: pool.Namespace,
-		redpandachart.NodePoolLabelName: pool.Name,
-	}); err != nil {
-		return ctrl.Result{}, err
-	}
 
-	var sts *appsv1.StatefulSet
-	if len(statefulSets.Items) > 0 {
-		sts = &statefulSets.Items[0]
-	}
-
-	var brokers []redpandav1alpha2.Broker
-	if sts == nil && r.BrokerCREnabled {
-		var brokerList redpandav1alpha2.BrokerList
-		if err := k8sClient.List(ctx, &brokerList, client.InNamespace(pool.Namespace), client.MatchingLabels{
-			redpandav1alpha2.NodePoolLabel: pool.Name,
-		}); err != nil {
+	clusterKey := types.NamespacedName{Namespace: req.Namespace, Name: pool.Spec.ClusterRef.Name}
+	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		brokers = brokersForNodePool(brokerList.Items, pool.Name)
+		status.SetBound(statuses.NodePoolBoundReasonNotBound)
+	} else {
+		status.SetBound(statuses.NodePoolBoundReasonBound)
 	}
 
-	if sts == nil && len(brokers) == 0 {
-		status.SetDeployed(statuses.NodePoolDeployedReasonNotDeployed)
+	pools, err := controller.PoolsForCluster(ctx, k8sClient, clusterKey)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	originalPoolGeneration := pool.Status.DeployedGeneration
 	originalPoolStatus := pool.Status.EmbeddedNodePoolStatus
-	pool.Status.EmbeddedNodePoolStatus = redpandav1alpha2.EmbeddedNodePoolStatus{}
 
-	if sts != nil {
-		stsLabels := sts.GetLabels()
-		if stsLabels != nil {
-			generationString := stsLabels[redpandachart.NodePoolLabelGeneration]
-			if generationString != "" {
-				// if we have a parsing error, just skip the generation propagation
-				if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil {
-					pool.Status.DeployedGeneration = generation
-				}
-			}
-		}
-
-		desiredReplicas := ptr.Deref(pool.Spec.Replicas, 3)
-		condemnedReplicas := sts.Status.Replicas - desiredReplicas
-		if condemnedReplicas < 0 {
-			condemnedReplicas = 0
-		}
-
-		if desiredReplicas == sts.Status.Replicas {
-			status.SetDeployed(statuses.NodePoolDeployedReasonDeployed)
-		} else {
-			status.SetDeployed(statuses.NodePoolDeployedReasonScaling)
-		}
-
-		pool.Status.EmbeddedNodePoolStatus = redpandav1alpha2.EmbeddedNodePoolStatus{
-			Name:              pool.Name,
-			Replicas:          sts.Status.Replicas,
-			DesiredReplicas:   desiredReplicas,
-			ReadyReplicas:     sts.Status.ReadyReplicas,
-			RunningReplicas:   sts.Status.AvailableReplicas,
-			UpToDateReplicas:  sts.Status.UpdatedReplicas,
-			OutOfDateReplicas: sts.Status.Replicas - sts.Status.UpdatedReplicas,
-			CondemnedReplicas: condemnedReplicas,
-		}
-	}
-
-	if sts == nil && len(brokers) > 0 {
-		embedded, deployedGeneration, reason := brokerBackedPoolStatus(pool, brokers)
-		if deployedGeneration >= 0 {
-			pool.Status.DeployedGeneration = deployedGeneration
-		}
-		status.SetDeployed(reason)
-		pool.Status.EmbeddedNodePoolStatus = embedded
-	}
-
-	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
-		if apierrors.IsNotFound(err) {
-			status.SetBound(statuses.NodePoolBoundReasonNotBound)
-		} else {
+	if owner, ok := conversion.FindPool(pools, pool.Name); ok && owner.NodePool == nil {
+		// Stable stays True through the handoff, so automation waiting on it
+		// doesn't stall; the counts freeze until the NodePool is deleted.
+		status.SetDeployed(statuses.NodePoolDeployedReasonDeployed, fmt.Sprintf("Pool is owned by RedpandaBrokerPool %s", client.ObjectKeyFromObject(owner.BrokerPool)))
+	} else {
+		obs, err := observePool(ctx, k8sClient, r.BrokerCREnabled, poolSource{
+			name:            pool.Name,
+			desiredReplicas: ptr.Deref(pool.Spec.Replicas, 3),
+			statefulSetLabels: client.MatchingLabels{
+				lifecycle.DefaultNamespaceLabel: pool.Namespace,
+				redpandachart.NodePoolLabelName: pool.Name,
+			},
+			brokerNamespace: pool.Namespace,
+			brokerRef:       (*redpandav1alpha2.ClusterRef).IsNodePool,
+		})
+		if err != nil {
 			return ctrl.Result{}, err
 		}
-	} else {
-		status.SetBound(statuses.NodePoolBoundReasonBound)
+		status.SetDeployed(map[poolDeployState]statuses.NodePoolDeployedCondition{
+			poolNotDeployed: statuses.NodePoolDeployedReasonNotDeployed,
+			poolScaling:     statuses.NodePoolDeployedReasonScaling,
+			poolDeployed:    statuses.NodePoolDeployedReasonDeployed,
+		}[obs.state])
+		pool.Status.EmbeddedNodePoolStatus = obs.status
+		if obs.deployedGeneration >= 0 {
+			pool.Status.DeployedGeneration = obs.deployedGeneration
+		}
 	}
 
 	if status.UpdateConditions(pool) ||
@@ -304,10 +274,91 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	return ctrl.Result{}, nil
 }
 
-func brokersForNodePool(brokers []redpandav1alpha2.Broker, poolName string) []redpandav1alpha2.Broker {
+// poolDeployState is how far a pool has deployed; each pool kind maps it to
+// its own Deployed reason.
+type poolDeployState int
+
+const (
+	poolNotDeployed poolDeployState = iota
+	poolScaling
+	poolDeployed
+)
+
+// poolSource locates a pool's StatefulSet or, in broker mode, its Broker CRs.
+type poolSource struct {
+	name              string
+	desiredReplicas   int32
+	statefulSetLabels client.MatchingLabels
+	brokerNamespace   string
+	// brokerRef matches the clusterRef kind of the pool's Broker CRs.
+	brokerRef func(*redpandav1alpha2.ClusterRef) bool
+}
+
+// poolObservation is a pool's status as its StatefulSet, or its Broker CRs
+// when it has none, report it.
+type poolObservation struct {
+	status redpandav1alpha2.EmbeddedNodePoolStatus
+	// deployedGeneration is -1 when nothing reports one.
+	deployedGeneration int64
+	state              poolDeployState
+}
+
+func observePool(ctx context.Context, c client.Client, brokerCREnabled bool, src poolSource) (poolObservation, error) {
+	obs := poolObservation{deployedGeneration: -1}
+
+	var statefulSets appsv1.StatefulSetList
+	if err := c.List(ctx, &statefulSets, src.statefulSetLabels); err != nil {
+		return obs, err
+	}
+	if len(statefulSets.Items) > 0 {
+		sts := &statefulSets.Items[0]
+		if generationString := sts.GetLabels()[redpandachart.NodePoolLabelGeneration]; generationString != "" {
+			// if we have a parsing error, just skip the generation propagation
+			if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil {
+				obs.deployedGeneration = generation
+			}
+		}
+
+		condemnedReplicas := max(sts.Status.Replicas-src.desiredReplicas, 0)
+
+		obs.state = poolScaling
+		if src.desiredReplicas == sts.Status.Replicas {
+			obs.state = poolDeployed
+		}
+
+		obs.status = redpandav1alpha2.EmbeddedNodePoolStatus{
+			Name:              src.name,
+			Replicas:          sts.Status.Replicas,
+			DesiredReplicas:   src.desiredReplicas,
+			ReadyReplicas:     sts.Status.ReadyReplicas,
+			RunningReplicas:   sts.Status.AvailableReplicas,
+			UpToDateReplicas:  sts.Status.UpdatedReplicas,
+			OutOfDateReplicas: sts.Status.Replicas - sts.Status.UpdatedReplicas,
+			CondemnedReplicas: condemnedReplicas,
+		}
+		return obs, nil
+	}
+
+	if !brokerCREnabled {
+		return obs, nil
+	}
+
+	var brokerList redpandav1alpha2.BrokerList
+	if err := c.List(ctx, &brokerList, client.InNamespace(src.brokerNamespace), client.MatchingLabels{
+		redpandav1alpha2.NodePoolLabel: src.name,
+	}); err != nil {
+		return obs, err
+	}
+	if brokers := brokersForPool(brokerList.Items, src.name, src.brokerRef); len(brokers) > 0 {
+		obs.status, obs.deployedGeneration, obs.state = brokerBackedPoolStatus(src.name, src.desiredReplicas, brokers)
+	}
+	return obs, nil
+}
+
+func brokersForPool(brokers []redpandav1alpha2.Broker, poolName string, isRef func(*redpandav1alpha2.ClusterRef) bool) []redpandav1alpha2.Broker {
 	var owned []redpandav1alpha2.Broker
 	for _, b := range brokers {
-		if b.Spec.ClusterRef.IsNodePool() && b.Spec.ClusterRef.Name == poolName {
+		if isRef(&b.Spec.ClusterRef) && b.Spec.ClusterRef.Name == poolName {
 			owned = append(owned, b)
 		}
 	}
@@ -330,9 +381,7 @@ func brokersForNodePool(brokers []redpandav1alpha2.Broker, poolName string) []re
 // deployedGeneration is the minimum NodePoolLabelGeneration across the
 // brokers (conservative during a metadata sync), or -1 when no broker
 // carries the label yet.
-func brokerBackedPoolStatus(pool *redpandav1alpha2.NodePool, brokers []redpandav1alpha2.Broker) (embedded redpandav1alpha2.EmbeddedNodePoolStatus, deployedGeneration int64, reason statuses.NodePoolDeployedCondition) {
-	desiredReplicas := ptr.Deref(pool.Spec.Replicas, 3)
-
+func brokerBackedPoolStatus(poolName string, desiredReplicas int32, brokers []redpandav1alpha2.Broker) (embedded redpandav1alpha2.EmbeddedNodePoolStatus, deployedGeneration int64, state poolDeployState) {
 	deployedGeneration = -1
 	var replicas, ready, upToDate, condemned int32
 	for i := range brokers {
@@ -362,13 +411,13 @@ func brokerBackedPoolStatus(pool *redpandav1alpha2.NodePool, brokers []redpandav
 		}
 	}
 
-	reason = statuses.NodePoolDeployedReasonScaling
+	state = poolScaling
 	if desiredReplicas == replicas {
-		reason = statuses.NodePoolDeployedReasonDeployed
+		state = poolDeployed
 	}
 
 	return redpandav1alpha2.EmbeddedNodePoolStatus{
-		Name:              pool.Name,
+		Name:              poolName,
 		Replicas:          replicas,
 		DesiredReplicas:   desiredReplicas,
 		ReadyReplicas:     ready,
@@ -376,7 +425,7 @@ func brokerBackedPoolStatus(pool *redpandav1alpha2.NodePool, brokers []redpandav
 		UpToDateReplicas:  upToDate,
 		OutOfDateReplicas: replicas - upToDate,
 		CondemnedReplicas: condemned,
-	}, deployedGeneration, reason
+	}, deployedGeneration, state
 }
 
 func (r *NodePoolReconciler) getRedpandaCluster(

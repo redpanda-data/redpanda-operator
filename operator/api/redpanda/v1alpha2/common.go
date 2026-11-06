@@ -367,15 +367,17 @@ type ClusterRef struct {
 const (
 	// Kind names of this group's cluster-shaped CRDs, for ownerReference and
 	// clusterRef comparisons.
-	RedpandaKind = "Redpanda"
-	NodePoolKind = "NodePool"
-	BrokerKind   = "Broker"
+	RedpandaKind   = "Redpanda"
+	NodePoolKind   = "NodePool"
+	BrokerPoolKind = "RedpandaBrokerPool"
+	BrokerKind     = "Broker"
 
 	v1ClusterRefGroup     = "redpanda.vectorized.io"
 	v1ClusterRefKind      = "Cluster"
 	v2ClusterRefGroup     = "cluster.redpanda.com"
 	v2ClusterRefKind      = RedpandaKind
 	NodePoolRefKind       = NodePoolKind
+	BrokerPoolRefKind     = BrokerPoolKind
 	StretchClusterRefKind = "StretchCluster"
 
 	// AnnotationUseBrokerCR selects Broker CR mode for a Cluster (V1) or
@@ -422,6 +424,17 @@ func (c *ClusterRef) IsV2() bool {
 
 func (c *ClusterRef) IsNodePool() bool {
 	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == NodePoolRefKind
+}
+
+func (c *ClusterRef) IsBrokerPool() bool {
+	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == BrokerPoolRefKind
+}
+
+// IsPool reports whether the ref names a pool of a Redpanda cluster rather
+// than the cluster itself. Both pool kinds name the pool's StatefulSet and
+// pods the same way, so a Broker's ref can move between them in place.
+func (c *ClusterRef) IsPool() bool {
+	return c.IsNodePool() || c.IsBrokerPool()
 }
 
 func (c *ClusterRef) IsStretchCluster() bool {

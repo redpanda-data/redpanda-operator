@@ -42,6 +42,7 @@ func TestCRDs(t *testing.T) {
 	require.NoError(t, err)
 
 	for name, fn := range map[string]func(*testing.T, client.Client, string){
+		"brokerpool/validation": testBrokerPoolValidation,
 		"role/defaults":         testRoleDefaults,
 		"role/immutable":        testRoleImmutableFields,
 		"role/validation":       testRoleValidation,

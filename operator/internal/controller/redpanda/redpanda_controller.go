@@ -51,6 +51,7 @@ import (
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -116,7 +117,13 @@ type RedpandaReconciler struct {
 	LifecycleClient      *lifecycle.ResourceClient[lifecycle.ClusterWithPools, *lifecycle.ClusterWithPools]
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
-	UseNodePools         bool
+	// UseNodePools enables NodePools and RedpandaBrokerPools
+	// (--enable-v2-nodepools).
+	UseNodePools bool
+	// LicenseFilePath is the operator-level enterprise license
+	// (--license-file-path) that a cluster with a pool owned by a
+	// RedpandaBrokerPool requires; see brokerPoolLicenseError.
+	LicenseFilePath string
 	// BrokerCREnabled is the operator-level gate (--enable-broker) for
 	// Broker CR management; the per-cluster use-broker-cr annotation
 	// selects broker mode on top of it.
@@ -222,6 +229,20 @@ func (r *RedpandaReconciler) SetupWithManager(_ context.Context, mgr multicluste
 				}}
 			})
 			builder.Watches(&redpandav1alpha2.NodePool{}, enqueueClusterFromNodePool, controller.WatchOptions(clusterName)...)
+
+			enqueueClusterFromBrokerPool := mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+				ref := o.(*redpandav1alpha2.RedpandaBrokerPool).Spec.ClusterRef
+				if !ref.IsV2() {
+					return nil
+				}
+				return []reconcile.Request{{
+					NamespacedName: types.NamespacedName{
+						Name:      ref.Name,
+						Namespace: ref.GetNamespace(o.GetNamespace()),
+					},
+				}}
+			})
+			builder.Watches(&redpandav1alpha2.RedpandaBrokerPool{}, enqueueClusterFromBrokerPool, controller.WatchOptions(clusterName)...)
 		}
 	}
 
@@ -266,6 +287,9 @@ type clusterReconciliationState struct {
 	// brokerMode is true when this cluster manages brokers via Broker CRs
 	// (--enable-broker plus the use-broker-cr annotation).
 	brokerMode bool
+	// poolsSuspended, when set, is why the steps wrapped by poolStep are
+	// skipped this pass; see brokerPoolSuspension.
+	poolsSuspended string
 	// brokerRequeue is the soonest requeue requested via requeueNoLaterThan.
 	brokerRequeue time.Duration
 	// brokerMigrationConditionChanged marks that the BrokerMigration
@@ -428,7 +452,8 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// reconcilePools, so outage-recovery steps still run while brokers are unready
 	// or churning. See PoolTracker.ScaledUpButNoneReady / CheckScale.
 	pollResult := ctrl.Result{}
-	if state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx) {
+	// A suspended cluster's scale stays in flight until it is resumed.
+	if state.poolsSuspended == "" && (state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx)) {
 		logger.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
 		pollResult.RequeueAfter = requeueTimeout
 	}
@@ -465,26 +490,27 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 	return []clusterReconciliationFn{
 		r.reconcileParameterValidation,
+		r.reconcilePoolSuspension,
 		// we sync all our non pool resources first so that they're in-place
 		// prior to us scaling up our node pools
-		r.reconcileResources,
+		poolStep(r.reconcileResources),
 		// next we sync up all of our pools themselves
-		r.reconcilePools,
+		poolStep(r.reconcilePools),
 		// now we memoize the admin client onto the state
 		r.initAdminClient,
 		// replace outdated pods whose broker cannot start, ahead of the steps
 		// that can fail while those brokers are down
-		r.reconcileFailedPods,
+		poolStep(r.reconcileFailedPods),
 		// clear maintenance mode on brokers that have been down long enough
 		// that their stuck maintenance flag is blocking auto-decommission
-		r.reconcileMaintenanceMode,
+		poolStep(r.reconcileMaintenanceMode),
 		// recover brokers crashlooping on a retired on-disk identity
 		// (decommissioned-broker bad_rejoin) by wiping their stale state
-		r.reconcileStaleDiskWipe,
+		poolStep(r.reconcileStaleDiskWipe),
 		// now we ensure that we reconcile all of our decommissioning nodes
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
-		r.reconcileDecommission,
+		poolStep(r.reconcileDecommission),
 		// finally reconcile all of our license information
 		r.reconcileLicense,
 		// now reconcile cluster configuration
@@ -492,21 +518,40 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 	}
 }
 
+// poolStep wraps a step that writes resources, pods, or brokers so that it is
+// skipped while the cluster's pools are suspended (see brokerPoolSuspension).
+// License and configuration sync still run.
+func poolStep(step clusterReconciliationFn) clusterReconciliationFn {
+	return func(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+		if state.poolsSuspended != "" {
+			return ctrl.Result{}, nil
+		}
+		return step(ctx, state, cluster)
+	}
+}
+
+func (r *RedpandaReconciler) reconcilePoolSuspension(ctx context.Context, state *clusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	if state.poolsSuspended != "" {
+		log.FromContext(ctx).Info("suspending pool management", "reason", state.poolsSuspended)
+		state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, state.poolsSuspended)
+	}
+	return ctrl.Result{}, nil
+}
+
 func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpandav1alpha2.Redpanda, cluster cluster.Cluster) (*clusterReconciliationState, error) {
 	logger := log.FromContext(ctx)
 
-	// fetch any related node pools
 	var err error
-	var existingPools []*redpandav1alpha2.NodePool
+	var resolvedPools []conversion.OwnedPool
 	if r.UseNodePools {
-		existingPools, err = controller.FromSourceCluster(ctx, cluster.GetClient(), "pool", rp, &redpandav1alpha2.NodePoolList{})
+		resolvedPools, err = controller.PoolsForCluster(ctx, cluster.GetClient(), client.ObjectKeyFromObject(rp))
 		if err != nil {
-			logger.Error(err, "fetching desired node pools")
+			logger.Error(err, "fetching desired pools")
 			return nil, err
 		}
 	}
 
-	rpcluster := lifecycle.NewClusterWithPools(rp, existingPools...)
+	rpcluster := lifecycle.NewClusterWithResolvedPools(rp, resolvedPools)
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -551,6 +596,7 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 		status:                status,
 		restartOnConfigChange: restartOnConfigChange,
 		brokerMode:            brokerMode,
+		poolsSuspended:        brokerPoolSuspension(resolvedPools, r.LicenseFilePath),
 		arbitration:           &brokerset.Arbitration{},
 	}, nil
 }
@@ -823,9 +869,16 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		}
 		clusterName = clusterNameFromPoolSet(set.Name, poolName)
 		nodePoolLabelValue = poolName
+		// The ref follows the pool's owner: BrokerSet rewrites it in place
+		// when a RedpandaBrokerPool takes the pool, which keeps pod names
+		// (see Broker.PodName). Draining pools have left the spec, and the
+		// drain never rewrites refs.
 		clusterRef = redpandav1alpha2.ClusterRef{
 			Kind: ptr.To(redpandav1alpha2.NodePoolKind),
 			Name: poolName,
+		}
+		if pool, ok := conversion.FindPool(state.cluster.Pools, poolName); ok {
+			clusterRef = pool.Ref()
 		}
 	}
 

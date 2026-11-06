@@ -787,6 +787,17 @@ const (
 	// "Deployed" condition when it evaluates to False because a broker pool has not
 	// started to deploy for a cluster.
 	RedpandaBrokerPoolDeployedReasonNotDeployed RedpandaBrokerPoolDeployedCondition = "NotDeployed"
+	// RedpandaBrokerPoolDeployedReasonSupersededByNodePool - This reason is used
+	// with the "Deployed" condition when it evaluates to False because a NodePool
+	// of the same name still owns the pool. Annotating the NodePool with
+	// operator.redpanda.com/migrate-to-broker-pool or deleting it hands the pool to
+	// the broker pool.
+	RedpandaBrokerPoolDeployedReasonSupersededByNodePool RedpandaBrokerPoolDeployedCondition = "SupersededByNodePool"
+	// RedpandaBrokerPoolDeployedReasonLicenseInvalid - This reason is used with the
+	// "Deployed" condition when it evaluates to False because the operator has no
+	// valid enterprise license. While a broker pool without a license owns a pool,
+	// the operator suspends changes to that cluster's resources and brokers.
+	RedpandaBrokerPoolDeployedReasonLicenseInvalid RedpandaBrokerPoolDeployedCondition = "LicenseInvalid"
 	// RedpandaBrokerPoolDeployedReasonError - This reason is used when a broker
 	// pool has only been partially reconciled and we have early returned due to a
 	// retryable error occurring prior to applying the desired broker pool state.
@@ -2352,6 +2363,16 @@ func (s *RedpandaBrokerPoolStatus) SetDeployed(reason RedpandaBrokerPoolDeployed
 	case RedpandaBrokerPoolDeployedReasonNotDeployed:
 		if message == "" {
 			message = "Broker pool not deployed to cluster"
+		}
+		status = metav1.ConditionFalse
+	case RedpandaBrokerPoolDeployedReasonSupersededByNodePool:
+		if message == "" {
+			message = "A NodePool of the same name owns this pool"
+		}
+		status = metav1.ConditionFalse
+	case RedpandaBrokerPoolDeployedReasonLicenseInvalid:
+		if message == "" {
+			message = "Managing a RedpandaBrokerPool requires an enterprise license"
 		}
 		status = metav1.ConditionFalse
 	case RedpandaBrokerPoolDeployedReasonError:

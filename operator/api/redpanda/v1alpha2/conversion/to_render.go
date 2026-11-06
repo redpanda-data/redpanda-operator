@@ -33,8 +33,10 @@ type V2Defaulters struct {
 	ConfiguratorArgs []string
 }
 
-// ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart RenderState.
-func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpandachart.RenderState, error) {
+// ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart
+// RenderState. pools are the cluster's pools as [ResolvePools] resolves them;
+// a NodePool's pool arrives converted by [NodePoolToBrokerPool].
+func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.RedpandaBrokerPool) (*redpandachart.RenderState, error) {
 	spec := defaultV2Spec(defaulters, cluster)
 
 	dot, err := redpandachart.Chart.Dot(config, helmette.Release{
@@ -54,7 +56,7 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}
-		renderedPools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
+		renderedPools, err := convertBrokerPoolsToPools(state.Values, pools, defaulters)
 		if err != nil {
 			return err
 		}
@@ -337,10 +339,10 @@ func convertStatefulsetSidecarV2Fields(state *redpandachart.RenderState, values 
 	return nil
 }
 
-func convertV2NodepoolsToPools(values redpandachart.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpandachart.Pool, error) {
+func convertBrokerPoolsToPools(values redpandachart.Values, pools []*redpandav1alpha2.RedpandaBrokerPool, defaulters *V2Defaulters) ([]redpandachart.Pool, error) {
 	converted := make([]redpandachart.Pool, len(pools))
 	for i, pool := range pools {
-		set, err := convertV2NodepoolToPool(values, pool, defaulters)
+		set, err := convertBrokerPoolToPool(values, pool, defaulters)
 		if err != nil {
 			return nil, err
 		}
@@ -349,7 +351,16 @@ func convertV2NodepoolsToPools(values redpandachart.Values, pools []*redpandav1a
 	return converted, nil
 }
 
-func convertV2NodepoolToPool(clusterValues redpandachart.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpandachart.Pool, err error) {
+// convertBrokerPoolToPool renders a pool of a Redpanda cluster from the
+// fields it shares with a NodePool, merged as a NodePool spec. A NodePool
+// and a RedpandaBrokerPool with equal shared fields thus render the same
+// StatefulSet, which is what lets one replace the other without a roll.
+func convertBrokerPoolToPool(clusterValues redpandachart.Values, pool *redpandav1alpha2.RedpandaBrokerPool, defaulters *V2Defaulters) (_ redpandachart.Pool, err error) {
+	spec := redpandav1alpha2.NodePoolSpec{
+		EmbeddedNodePoolSpec: brokerPoolNodeSpec(pool),
+		ClusterRef:           pool.Spec.ClusterRef,
+	}
+
 	// we grab *just* the default values here
 	v, err := redpandachart.Chart.LoadValues(map[string]any{})
 	if err != nil {
@@ -388,30 +399,30 @@ func convertV2NodepoolToPool(clusterValues redpandachart.Values, pool *redpandav
 	// next we default our images. Unset pool image fields inherit the
 	// cluster's, which defaultV2Spec has already run through the defaulter.
 	if defaulters.RedpandaImage != nil {
-		image := ptr.Deref(pool.Spec.Image, redpandav1alpha2.RedpandaImage{})
+		image := ptr.Deref(spec.Image, redpandav1alpha2.RedpandaImage{})
 		image.Repository = ptr.To(ptr.Deref(image.Repository, clusterValues.Image.Repository))
 		image.Tag = ptr.To(ptr.Deref(image.Tag, clusterValues.Image.Tag))
-		pool.Spec.Image = &image
+		spec.Image = &image
 	}
 	if defaulters.SidecarImage != nil {
-		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.SidecarImage)
+		spec.SidecarImage = defaulters.SidecarImage(spec.SidecarImage)
 	}
 
 	// now we merge everything in to construct the pool
-	if err := convertJSON(pool.Spec, &defaultSet); err != nil {
+	if err := convertJSON(spec, &defaultSet); err != nil {
 		return redpandachart.Pool{}, err
 	}
 
 	// and do a little bit of conversion
-	if err := convertJSON(pool.Spec.SidecarImage, &defaultSet.SideCars.Image); err != nil {
+	if err := convertJSON(spec.SidecarImage, &defaultSet.SideCars.Image); err != nil {
 		return redpandachart.Pool{}, err
 	}
 
 	// this is needed since normally the image is taken from the top-level cluster CRD, but node pools
 	// can override it
-	if pool.Spec.Image != nil {
-		repo := ptr.Deref(pool.Spec.Image.Repository, "")
-		tag := ptr.Deref(pool.Spec.Image.Tag, "")
+	if spec.Image != nil {
+		repo := ptr.Deref(spec.Image.Repository, "")
+		tag := ptr.Deref(spec.Image.Tag, "")
 		if repo != "" && tag != "" {
 			image := fmt.Sprintf("%s:%s", repo, tag)
 

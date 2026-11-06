@@ -139,6 +139,10 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 			// no StatefulSet.
 			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
+		require.NoError(t, (&redpanda.BrokerPoolReconciler{
+			Manager:         mgr,
+			BrokerCREnabled: true,
+		}).SetupWithManager(ctx, mgr, ""))
 
 		require.NoError(t, (&redpanda.RedpandaReconciler{
 			Manager:       mgr,

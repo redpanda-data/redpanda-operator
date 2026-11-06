@@ -77,21 +77,12 @@ func TestBrokersForNodePool(t *testing.T) {
 		Name: "pool-2", Kind: ptr.To(redpandav1alpha2.NodePoolKind),
 	})
 
-	owned := brokersForNodePool([]redpandav1alpha2.Broker{mine, v1Twin, otherPool}, "pool-1")
+	owned := brokersForPool([]redpandav1alpha2.Broker{mine, v1Twin, otherPool}, "pool-1", (*redpandav1alpha2.ClusterRef).IsNodePool)
 	require.Equal(t, []redpandav1alpha2.Broker{mine}, owned,
 		"only Brokers whose clusterRef names this NodePool belong to it; label matches alone do not")
 }
 
 func TestBrokerBackedPoolStatus(t *testing.T) {
-	pool := func(replicas int32) *redpandav1alpha2.NodePool {
-		return &redpandav1alpha2.NodePool{
-			ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-			Spec: redpandav1alpha2.NodePoolSpec{
-				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Replicas: ptr.To(replicas)},
-			},
-		}
-	}
-
 	healthy := testBroker{
 		generation:   "5",
 		podScheduled: podScheduled(metav1.ConditionTrue, statuses.BrokerPodScheduledReasonScheduled),
@@ -100,10 +91,10 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 	}
 
 	t.Run("all healthy reports Deployed", func(t *testing.T) {
-		embedded, generation, reason := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		embedded, generation, reason := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			healthy.build(), healthy.build(), healthy.build(),
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonDeployed, reason)
+		require.Equal(t, poolDeployed, reason)
 		require.Equal(t, int64(5), generation)
 		require.Equal(t, redpandav1alpha2.EmbeddedNodePoolStatus{
 			Name:             "pool-1",
@@ -121,10 +112,10 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 		rotating.ready = false
 		rotating.configSynced = false
 
-		embedded, _, reason := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		embedded, _, reason := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			healthy.build(), healthy.build(), rotating.build(),
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonScaling, reason)
+		require.Equal(t, poolScaling, reason)
 		require.Equal(t, int32(2), embedded.Replicas)
 		require.Equal(t, int32(2), embedded.ReadyReplicas)
 		require.Equal(t, int32(2), embedded.UpToDateReplicas)
@@ -136,10 +127,10 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 		unschedulable.podScheduled = podScheduled(metav1.ConditionFalse, statuses.BrokerPodScheduledReasonUnschedulable)
 		unschedulable.ready = false
 
-		embedded, _, reason := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		embedded, _, reason := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			healthy.build(), healthy.build(), unschedulable.build(),
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonDeployed, reason)
+		require.Equal(t, poolDeployed, reason)
 		require.Equal(t, int32(3), embedded.Replicas)
 		require.Equal(t, int32(2), embedded.ReadyReplicas)
 	})
@@ -149,10 +140,10 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 		condemned.decommission = true
 		condemned.configSynced = false
 
-		embedded, _, reason := brokerBackedPoolStatus(pool(2), []redpandav1alpha2.Broker{
+		embedded, _, reason := brokerBackedPoolStatus("pool-1", 2, []redpandav1alpha2.Broker{
 			healthy.build(), healthy.build(), condemned.build(),
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonScaling, reason)
+		require.Equal(t, poolScaling, reason)
 		require.Equal(t, int32(3), embedded.Replicas)
 		require.Equal(t, int32(2), embedded.DesiredReplicas)
 		require.Equal(t, int32(1), embedded.CondemnedReplicas)
@@ -164,10 +155,10 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 			podScheduled: podScheduled(metav1.ConditionUnknown, "NotReconciled"),
 		}
 
-		embedded, generation, reason := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		embedded, generation, reason := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			unreconciled.build(), unreconciled.build(), unreconciled.build(),
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonScaling, reason)
+		require.Equal(t, poolScaling, reason)
 		require.Equal(t, int64(-1), generation)
 		require.Equal(t, int32(0), embedded.Replicas)
 		require.Equal(t, int32(0), embedded.ReadyReplicas)
@@ -177,7 +168,7 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 		older := healthy
 		older.generation = "4"
 
-		_, generation, _ := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		_, generation, _ := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			healthy.build(), older.build(), healthy.build(),
 		})
 		require.Equal(t, int64(4), generation)
@@ -187,18 +178,18 @@ func TestBrokerBackedPoolStatus(t *testing.T) {
 		tombstone := healthy.build()
 		tombstone.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{ResourcesReleased: true}
 
-		embedded, _, reason := brokerBackedPoolStatus(pool(3), []redpandav1alpha2.Broker{
+		embedded, _, reason := brokerBackedPoolStatus("pool-1", 3, []redpandav1alpha2.Broker{
 			healthy.build(), healthy.build(), healthy.build(), tombstone,
 		})
-		require.Equal(t, statuses.NodePoolDeployedReasonDeployed, reason,
+		require.Equal(t, poolDeployed, reason,
 			"a tombstone+replacement pair at one index must not read as a scale-up")
 		require.Equal(t, int32(3), embedded.Replicas)
 	})
 
 	t.Run("quiesced synthesis is idempotent", func(t *testing.T) {
 		brokers := []redpandav1alpha2.Broker{healthy.build(), healthy.build(), healthy.build()}
-		first, firstGen, firstReason := brokerBackedPoolStatus(pool(3), brokers)
-		second, secondGen, secondReason := brokerBackedPoolStatus(pool(3), brokers)
+		first, firstGen, firstReason := brokerBackedPoolStatus("pool-1", 3, brokers)
+		second, secondGen, secondReason := brokerBackedPoolStatus("pool-1", 3, brokers)
 		require.Equal(t, first, second)
 		require.Equal(t, firstGen, secondGen)
 		require.Equal(t, firstReason, secondReason)

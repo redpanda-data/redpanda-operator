@@ -124,7 +124,7 @@ const defaultMaxConcurrentReconciles = 5
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools;redpandabrokerpools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -149,6 +149,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 		schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha2"},
 		&redpandav1alpha2.Redpanda{}, &redpandav1alpha2.RedpandaList{},
 		&redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{},
+		&redpandav1alpha2.RedpandaBrokerPool{}, &redpandav1alpha2.RedpandaBrokerPoolList{},
 	)
 
 	// Index Pipelines by their clusterRef name so we can efficiently look up
@@ -228,13 +229,16 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	// A pool's brokers are part of its cluster's broker list, so adding,
 	// removing, or resizing one must re-resolve the cluster's Pipelines.
 	if c.UseNodePools {
-		builder = builder.Watches(&redpandav1alpha2.NodePool{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			ref := o.(*redpandav1alpha2.NodePool).Spec.ClusterRef
+		pipelinesForPool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+			ref := o.(redpandav1alpha2.ClusterReferencingObject).GetClusterSource().GetClusterRef()
 			if !ref.IsV2() {
 				return nil
 			}
 			return pipelinesFor(ctx, types.NamespacedName{Namespace: ref.GetNamespace(o.GetNamespace()), Name: ref.Name})
-		}), ctrlbuilder.WithPredicates(controller.ClusterSourcePredicate))
+		})
+		builder = builder.
+			Watches(&redpandav1alpha2.NodePool{}, pipelinesForPool, ctrlbuilder.WithPredicates(controller.PoolSourcePredicate)).
+			Watches(&redpandav1alpha2.RedpandaBrokerPool{}, pipelinesForPool, ctrlbuilder.WithPredicates(controller.PoolSourcePredicate))
 	}
 
 	return builder.Complete(c)

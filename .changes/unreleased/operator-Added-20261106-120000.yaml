@@ -1,0 +1,13 @@
+project: operator
+kind: Added
+body: >-
+  RedpandaBrokerPool now defines pools of a Redpanda cluster, as NodePool does, and its CRD is installed with the
+  stable CRDs. It needs `--enable-v2-nodepools` and an enterprise license (`enterprise.licenseSecretRef` in the
+  operator chart). Without a license, the operator suspends changes to the resources and brokers of a cluster that
+  has a pool owned by a RedpandaBrokerPool; it never removes the pool. To move a pool from a NodePool without rolling
+  its brokers, create a RedpandaBrokerPool with the same name, `clusterRef`, and spec, then annotate the NodePool
+  with `operator.redpanda.com/migrate-to-broker-pool: "true"` or delete it. Until the RedpandaBrokerPool exists, the
+  NodePool keeps the pool, and the RedpandaBrokerPool reports `Deployed=False` with reason `SupersededByNodePool`
+  and whether its spec matches. Do not downgrade the operator below this version after deleting a NodePool whose
+  pool a RedpandaBrokerPool took, or the older operator decommissions that pool.
+time: 2026-11-06T12:00:00.000000000-08:00

@@ -61,6 +61,12 @@ func TestBrokerPodName(t *testing.T) {
 		},
 	}
 	assert.Equal(t, "rp-high-mem-1", nodePoolBroker.PodName())
+
+	// A RedpandaBrokerPool taking the pool rewrites the ref in place; the pod
+	// name must not move, or the Broker would orphan its pod.
+	brokerPoolBroker := nodePoolBroker.DeepCopy()
+	brokerPoolBroker.Spec.ClusterRef.Kind = ptr.To(BrokerPoolKind)
+	assert.Equal(t, nodePoolBroker.PodName(), brokerPoolBroker.PodName())
 }
 
 func TestPodOutdated(t *testing.T) {

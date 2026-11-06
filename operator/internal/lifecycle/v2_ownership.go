@@ -30,7 +30,7 @@ var _ OwnershipResolver[ClusterWithPools, *ClusterWithPools] = (*V2OwnershipReso
 func NewV2OwnershipResolver() *V2OwnershipResolver {
 	return &V2OwnershipResolver{
 		operatorLabel:  defaultOperatorLabel,
-		ownerLabel:     defaultOwnerLabel,
+		ownerLabel:     DefaultOwnerLabel,
 		namespaceLabel: DefaultNamespaceLabel,
 	}
 }

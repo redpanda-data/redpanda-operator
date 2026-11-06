@@ -1330,6 +1330,22 @@ func TestRedpandaBrokerPool(t *testing.T) {
 				status.SetDeployed(RedpandaBrokerPoolDeployedReasonNotDeployed, "reason")
 			},
 		},
+		"Deployed/SupersededByNodePool": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonSupersededByNodePool),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonSupersededByNodePool, "reason")
+			},
+		},
+		"Deployed/LicenseInvalid": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonLicenseInvalid),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonLicenseInvalid, "reason")
+			},
+		},
 		"Deployed/Error": {
 			condition: RedpandaBrokerPoolDeployed,
 			reason:    string(RedpandaBrokerPoolDeployedReasonError),
