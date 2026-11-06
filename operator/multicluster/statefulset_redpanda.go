@@ -240,9 +240,21 @@ func redpandaContainerPorts(l *redpandav1alpha2.StretchListeners, pool *redpanda
 	return ports
 }
 
-// metricsEnvironmentVariables returns the REDPANDA_METRICS_K8S_* env vars for
-// the Redpanda container if metrics reporting is enabled.
+// metricsEnvironmentVariables returns the redpanda container's telemetry env
+// vars: the REDPANDA_METRICS_K8S_* values, or, for Redpanda versions that
+// read them from metricsConfigMap, only the directory to read them from.
 func metricsEnvironmentVariables(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.EnvVar {
+	if metricsFromDir(state, pool) {
+		return redpanda.MetricsDirEnv()
+	}
+	return metricsValues(state, pool)
+}
+
+func metricsFromDir(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) bool {
+	return state.Spec().IsMetricsReporterEnabled() && redpanda.MetricsFromDir(pool.Spec.Image.GetTag())
+}
+
+func metricsValues(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.EnvVar {
 	if !state.Spec().IsMetricsReporterEnabled() {
 		return nil
 	}

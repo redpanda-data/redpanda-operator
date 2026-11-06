@@ -48,6 +48,7 @@ func RenderClusterResources(state *RenderState) ([]kube.Object, error) {
 //
 // Membership:
 //   - redpandaConfigMap — per-pool bootstrap + redpanda config
+//   - metricsConfigMap — per-pool telemetry values (Redpanda versions that read them from a dir)
 //   - rpkProfileConfigMapForPool — per-pool rpk profile (when External enabled)
 //   - poolSecrets — per-pool lifecycle/configurator/fs-validator
 //   - loadBalancerServicesForPool — per-pod LB Services within this pool
@@ -80,6 +81,7 @@ func RenderInClusterPoolResources(state *RenderState, pool *redpandav1alpha2.Red
 
 	var manifests []kube.Object
 	manifests = appendIfNotNil(manifests, cm)
+	manifests = appendIfNotNil(manifests, metricsConfigMap(state, pool))
 	manifests = appendIfNotNil(manifests, rpkProfileConfigMapForPool(state, pool))
 	manifests = appendIfNotNil(manifests, secrets...)
 	manifests = appendIfNotNil(manifests, lbs...)

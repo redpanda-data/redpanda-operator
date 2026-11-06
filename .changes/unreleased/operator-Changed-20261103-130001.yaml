@@ -1,0 +1,5 @@
+project: operator
+kind: Changed
+body: |-
+    With Redpanda v26.3.0 or later, brokers read the `REDPANDA_METRICS_K8S_*` telemetry values from a mounted per-pool ConfigMap instead of env vars, so operator and Kubernetes upgrades with pinned Redpanda and sidecar images no longer roll `Redpanda` or `StretchCluster` brokers. The first operator upgrade onto it rolls brokers once.
+time: 2026-11-03T13:00:01.000000-08:00

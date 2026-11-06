@@ -154,6 +154,10 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	// Kube API access token volume.
 	volumes = append(volumes, redpanda.KubeTokenAPIVolume())
 
+	if metricsFromDir(state, pool) {
+		volumes = append(volumes, redpanda.MetricsVolume(poolFullname))
+	}
+
 	return volumes
 }
 
@@ -217,6 +221,10 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 	// HostTunerStateVolumeMount in charts/redpanda for the full rationale.
 	if state.Spec().Tuning.IsTuneAioEventsEnabled() && state.Spec().Tuning.IsApplyHostTunersEnabled() {
 		mounts = append(mounts, redpanda.HostTunerStateVolumeMount())
+	}
+
+	if metricsFromDir(state, pool) {
+		mounts = append(mounts, redpanda.MetricsVolumeMount())
 	}
 
 	return mounts
