@@ -421,25 +421,19 @@ func applyBasicClusterForDevEnv(ctx context.Context, restConfig *rest.Config) er
 }
 
 // operatorCmdFlags returns the --additional-cmd-flags entries passed to the
-// shared operator's helm install. The v2 nodepool controller is opt-in
-// (false by default in the operator). It's enabled here only when the dev
-// env was started with -acceptance-setup-nodepools > 0 — i.e. when the user
-// invoked `task dev:setup-dev-env-with-nodepools` — because the dev-env
-// manifest applies NodePool CRDs in that mode and the controller has to be
-// running for them to reconcile.
+// shared operator's helm install. The NodePool and RedpandaBrokerPool
+// controllers are opt-in in the operator; the suite runs them so features
+// can use pools.
 func operatorCmdFlags() []string {
-	flags := []string{
+	return []string{
 		"--configurator-image-pull-policy=IfNotPresent",
 		"--additional-controllers=decommission",
 		"--unbind-pvcs-after=5s",
 		"--cluster-connection-timeout=500ms",
 		"--enable-shadowlinks",
 		"--enable-broker",
+		"--enable-v2-nodepools",
 	}
-	if testutil.AcceptanceSetupNodePools() > 0 {
-		flags = append(flags, "--enable-v2-nodepools=true")
-	}
-	return flags
 }
 
 // renderDevEnvNodePools returns N NodePool manifests separated by YAML document
