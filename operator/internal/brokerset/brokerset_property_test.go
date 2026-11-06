@@ -39,6 +39,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/failedpods"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -258,6 +259,21 @@ func TestBrokerSetPassProperties(t *testing.T) {
 			require.Less(t, ptr.Deref(b.Spec.NetworkIndex, 0), w.desiredReplicas(b.Labels[redpandav1alpha2.NodePoolLabel]),
 				"granted %s, which a scale-down removes, a no-drain roll", b.Name)
 		}
+	}))
+
+	// detect-disk-lost found its data directory empty under a node_id on
+	// record. With that ID on its Broker too, the Broker controller marks it
+	// DiskLost; without, a pod rebuilt without the ID passes the guard and
+	// registers a new node_id on the empty disk.
+	t.Run("NoDrainGrantsNeverGoToAPodTheGuardRefused", rapid.MakeCheck(func(t *rapid.T) {
+		w := genDecisionWith(t, "guard refused")
+		// A revocation off a stale read conflicts, to retry next pass.
+		w.staleReads = false
+		r := w.pass(ctx, t)
+		candidate := w.brokers[0]
+		_, wrote := r.noDrainBy[candidate.Name]
+		require.False(t, wrote || r.post[candidate.Name].HasNoDrainRollGrant(),
+			"%s: %s holds a no-drain grant though detect-disk-lost refused its disk", w.change, candidate.Name)
 	}))
 
 	t.Run("NoDrainGrantsWaitWhileAPodIsTerminatingOrMissing", rapid.MakeCheck(func(t *rapid.T) {
@@ -607,7 +623,7 @@ var decisionChanges = []string{
 	"decommission in flight", "grant held into a decommission", "lost disk", "seen alive", "split views",
 	"reported down", "silent", "starting", "hung", "hung seen alive", "node gone", "unmigrated pool", "no-drain held", "normal grant",
 	"candidate hung", "kubelet restarted", "kubelet restarted, alone", "candidate unschedulable", "candidate not yet adopted",
-	"candidate unschedulable beside one that runs", "candidate never joined",
+	"candidate unschedulable beside one that runs", "candidate never joined", "guard refused",
 	"stale grant on the candidate", "grant held by the candidate",
 	"unready current", "candidate in the other pool", "scale-down removes a failing pod",
 	"grant held in pb, beside its scale-down's excess",
@@ -755,6 +771,27 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 		// Mid-migration, its StatefulSet was orphan-deleted, and its Broker
 		// hasn't adopted its pod.
 		w.pod(candidate).OwnerReferences = nil
+	case "guard refused":
+		// Its Broker may not have recorded the node_id its pod carries. It
+		// may hold a grant the rule would otherwise switch to no-drain, or
+		// keep.
+		set(candidate, other("pa"), "guard refused")
+		if rapid.Bool().Draw(t, "its ID unrecorded") {
+			w.unrecorded[candidate.Name] = int(*candidate.Status.BrokerID)
+			candidate.Status.BrokerID, candidate.Status.Conditions = nil, nil
+		}
+		held := rapid.SampledFrom([]string{"no grant", "drained grant", "no-drain grant"}).Draw(t, "grant held")
+		w.change += ", " + held
+		checksum := "stale"
+		if rapid.Bool().Draw(t, "keyed on its template") {
+			checksum = candidate.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+		}
+		switch held {
+		case "drained grant":
+			candidate.SetRollGrant(checksum, time.Now().Add(5*time.Minute))
+		case "no-drain grant":
+			candidate.SetNoDrainRollGrant(checksum, time.Now().Add(5*time.Minute))
+		}
 	case "stale grant on the candidate", "grant held by the candidate":
 		// Its template moved on mid-roll; it never could drain. Held, it was
 		// re-keyed before its broker was seen failing.
@@ -953,7 +990,7 @@ func genDecisionWith(t *rapid.T, change string) *propertyWorld {
 	// Or the candidate held a grant, its template since outran or not, so the
 	// rule decides on a re-key or a switch to no-drain too.
 	if !slices.Contains([]string{"normal grant", "grant held into a decommission", "decommission in flight", "lost disk", "stale grant on the candidate", "grant held by the candidate", "scale-down", "scale-down removes a failing pod", "started mid-pass", "grant held in pb, beside its scale-down's excess"}, w.change) &&
-		!strings.HasPrefix(w.change, "no-drain held") && rapid.Bool().Draw(t, "via a held grant") {
+		!strings.HasPrefix(w.change, "no-drain held") && !strings.HasPrefix(w.change, "guard refused") && rapid.Bool().Draw(t, "via a held grant") {
 		checksum := "stale"
 		if rapid.Bool().Draw(t, "keyed on its template") {
 			checksum = candidate.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
@@ -1151,6 +1188,25 @@ func newBrokerPod(b, src *redpandav1alpha2.Broker, state string) *corev1.Pod {
 		status.State = corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}}
 		if state == "between crashes" {
 			status.State = corev1.ContainerState{Running: &corev1.ContainerStateRunning{StartedAt: metav1.NewTime(now.Add(-20 * time.Second))}}
+		}
+	case "guard refused":
+		// Redpanda never ran in this sandbox: init stops at the guard.
+		pod.Status.Phase = corev1.PodPending
+		pod.Status.Conditions = append(pod.Status.Conditions, corev1.PodCondition{
+			Type: corev1.PodInitialized, Status: corev1.ConditionFalse, LastTransitionTime: metav1.NewTime(now.Add(-2 * time.Minute)),
+		})
+		pod.Status.InitContainerStatuses = []corev1.ContainerStatus{{
+			Name:  DetectDiskLostContainerName,
+			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
+			LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{
+				ExitCode:   detectdisklost.ExitCodeEmptyDataDir,
+				StartedAt:  metav1.NewTime(now.Add(-40 * time.Second)),
+				FinishedAt: metav1.NewTime(now.Add(-30 * time.Second)),
+			}},
+		}}
+		status = corev1.ContainerStatus{
+			Name:  redpandachart.RedpandaContainerName,
+			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "PodInitializing"}},
 		}
 	case "pending":
 		pod.Status = corev1.PodStatus{Phase: corev1.PodPending}
