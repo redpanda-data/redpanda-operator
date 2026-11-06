@@ -288,8 +288,11 @@ type clusterReconciliationState struct {
 	// brokerMode is true when this cluster manages brokers via Broker CRs
 	// (--enable-broker plus the use-broker-cr annotation).
 	brokerMode bool
-	// poolsSuspended, when set, is why the steps wrapped by poolStep are
-	// skipped this pass; see brokerPoolSuspension.
+	// poolsSuspended, when set, is why the steps that apply the pools' specs
+	// (reconcileResources, reconcilePools, reconcileDecommission) do nothing
+	// this pass; see brokerPoolSuspension. Recovery steps still run:
+	// failed-pod replacement holds off while a StatefulSet change is pending,
+	// so it never applies a frozen spec.
 	poolsSuspended string
 	// brokerRequeue is the soonest requeue requested via requeueNoLaterThan.
 	brokerRequeue time.Duration
@@ -494,9 +497,9 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		r.reconcilePoolSuspension,
 		// we sync all our non pool resources first so that they're in-place
 		// prior to us scaling up our node pools
-		poolStep(r.reconcileResources),
+		r.reconcileResources,
 		// next we sync up all of our pools themselves
-		poolStep(r.reconcilePools),
+		r.reconcilePools,
 		// now we memoize the admin client onto the state
 		r.initAdminClient,
 		// replace outdated pods whose broker cannot start, ahead of the steps
@@ -511,25 +514,11 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		// now we ensure that we reconcile all of our decommissioning nodes
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
-		poolStep(r.reconcileDecommission),
+		r.reconcileDecommission,
 		// finally reconcile all of our license information
 		r.reconcileLicense,
 		// now reconcile cluster configuration
 		r.reconcileClusterConfig,
-	}
-}
-
-// poolStep wraps a step that applies the pools' specs — resources,
-// StatefulSets, Broker CRs, scale-downs, and rolls — so that it is skipped
-// while the cluster's pools are suspended (see brokerPoolSuspension).
-// Recovery steps still run: failed-pod replacement holds off while any
-// StatefulSet change is pending, so it never applies a frozen spec.
-func poolStep(step clusterReconciliationFn) clusterReconciliationFn {
-	return func(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
-		if state.poolsSuspended != "" {
-			return ctrl.Result{}, nil
-		}
-		return step(ctx, state, cluster)
 	}
 }
 
@@ -618,6 +607,10 @@ func (r *RedpandaReconciler) reconcileParameterValidation(ctx context.Context, s
 }
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
+	if state.poolsSuspended != "" {
+		return ctrl.Result{}, nil
+	}
+
 	ctx, span := trace.Start(ctx, "reconcileResources")
 	logger := log.FromContext(ctx)
 
@@ -645,6 +638,10 @@ func (r *RedpandaReconciler) reconcileResources(ctx context.Context, state *clus
 // every scale down happens a single broker at a time, ending reconciliation early and requeueing
 // the cluster if a decommissioning operation/scale down is currently in progress.
 func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
+	if state.poolsSuspended != "" {
+		return ctrl.Result{}, nil
+	}
+
 	ctx, span := trace.Start(ctx, "reconcilePools")
 	logger := log.FromContext(ctx)
 
@@ -1179,6 +1176,12 @@ func brokerAnswer(ctx context.Context, admin *rpadmin.AdminAPI, endpoints lazyEn
 }
 
 func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
+	// Ahead of the deferred status write: reconcilePoolSuspension already
+	// set ResourcesSynced, and a condition may be set only once.
+	if state.poolsSuspended != "" {
+		return ctrl.Result{}, nil
+	}
+
 	var health rpadmin.ClusterHealthOverview
 
 	ctx, span := trace.Start(ctx, "reconcileDecommission")

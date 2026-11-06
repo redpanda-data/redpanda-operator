@@ -89,3 +89,21 @@ func TestBrokerPoolSuspension(t *testing.T) {
 		})
 	}
 }
+
+// TestSuspendedPoolStepsDoNothing pins the freeze: the steps that apply the
+// pools' specs return before touching the state, which here is empty and
+// would panic if read.
+func TestSuspendedPoolStepsDoNothing(t *testing.T) {
+	r := &RedpandaReconciler{}
+	for name, step := range map[string]clusterReconciliationFn{
+		"reconcileResources":    r.reconcileResources,
+		"reconcilePools":        r.reconcilePools,
+		"reconcileDecommission": r.reconcileDecommission,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result, err := step(t.Context(), &clusterReconciliationState{poolsSuspended: "frozen"}, nil)
+			require.NoError(t, err)
+			require.Zero(t, result)
+		})
+	}
+}
