@@ -949,6 +949,25 @@ func (s *BrokerControllerSuite) TestDetectDiskLostBlocksEmptyDataDir() {
 		if assert.NotNil(ct, replacement.Status.BrokerID) {
 			assert.NotEqual(ct, brokerID, *replacement.Status.BrokerID, "the replacement is a new node; the old node_id is never reused")
 		}
+
+		// The finished dismantle leaves one Warning on the tombstone. Events
+		// outlive the Broker they regard, so this holds once the tombstone
+		// has been decommissioned and deleted as well.
+		var events corev1.EventList
+		if !assert.NoError(ct, c.List(ctx, &events, client.InNamespace(target.Namespace))) {
+			return
+		}
+		var remediated []corev1.Event
+		for _, ev := range events.Items {
+			if ev.InvolvedObject.Name == target.Name && ev.Reason == "DiskLostRemediated" {
+				remediated = append(remediated, ev)
+			}
+		}
+		if assert.Len(ct, remediated, 1, "one DiskLostRemediated Event on the tombstone") {
+			assert.Equal(ct, corev1.EventTypeWarning, remediated[0].Type)
+			assert.Contains(ct, remediated[0].Message, "pod "+target.PodName()+" and its persistent volume claims were deleted")
+			assert.Contains(ct, remediated[0].Message, fmt.Sprintf("the operator decommissions dead node_id %d on its own", brokerID))
+		}
 	}, 8*time.Minute, 5*time.Second)
 }
 

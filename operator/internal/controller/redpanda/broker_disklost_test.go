@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -34,14 +35,21 @@ import (
 )
 
 // diskLostCluster is a minimal cluster.Cluster for exercising the DiskLost
-// reconcilers: the fake client doubles as the uncached reader.
+// reconcilers: the fake client doubles as the uncached reader, and Events
+// land in recorder.
 type diskLostCluster struct {
 	cluster.Cluster
-	client client.Client
+	client.Client
+	recorder *events.FakeRecorder
 }
 
-func (c *diskLostCluster) GetClient() client.Client    { return c.client }
-func (c *diskLostCluster) GetAPIReader() client.Reader { return c.client }
+func newDiskLostCluster(c client.Client) *diskLostCluster {
+	return &diskLostCluster{Client: c, recorder: events.NewFakeRecorder(8)}
+}
+
+func (c *diskLostCluster) GetClient() client.Client                     { return c.Client }
+func (c *diskLostCluster) GetAPIReader() client.Reader                  { return c.Client }
+func (c *diskLostCluster) GetEventRecorder(string) events.EventRecorder { return c.recorder }
 
 func diskLostScheme(t *testing.T) *runtime.Scheme {
 	s := runtime.NewScheme()
@@ -132,21 +140,21 @@ func diskLostFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) 
 	return broker, pod, []client.Object{pod, pvc, pv}
 }
 
-func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, objs []client.Object) (client.Client, *brokerReconciliationState, error) {
-	c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
-		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
+func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, objs []client.Object) (*diskLostCluster, *brokerReconciliationState, error) {
+	c := newDiskLostCluster(fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
+		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build())
 	r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 	state, err := r.fetchState(t.Context(), mcreconcile.Request{}, c, broker)
 	require.NoError(t, err)
-	_, err = r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
+	_, err = r.reconcileDiskLost(context.Background(), state, c)
 	return c, state, err
 }
 
 // TestDetectDiskLostMarksDeadNode covers the positive proof: dead node
 // (no Node object carries the PV's pinned hostname), timeout elapsed,
 // broker-owned pod. The marking pass sets the latch and phase but deletes
-// NOTHING — dismantle acts only on the persisted latch — and the recorded
-// BrokerID is untouched.
+// NOTHING — dismantle acts only on the persisted latch — emits no Event, and
+// leaves the recorded BrokerID untouched.
 func TestDetectDiskLostMarksDeadNode(t *testing.T) {
 	broker, _, objs := diskLostFixture()
 	c, state, err := runDiskLost(t, broker, objs)
@@ -154,6 +162,7 @@ func TestDetectDiskLostMarksDeadNode(t *testing.T) {
 
 	require.NotNil(t, broker.Status.DiskLost, "the latch must be set")
 	require.False(t, broker.Status.DiskLost.ResourcesReleased)
+	require.Empty(t, c.recorder.Events)
 	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
 	require.Equal(t, ptr.To(int32(1)), broker.Status.BrokerID, "identity is immutable")
 
@@ -201,7 +210,8 @@ func TestDetectDiskLostNegatives(t *testing.T) {
 
 // TestDismantleDiskLost covers the dismantle pass: pod and every claim
 // (ExistingClaims included — the migrated-broker shape) are deleted, and
-// ResourcesReleased is set once the reader confirms them gone.
+// ResourcesReleased is set once the reader confirms them gone, with one
+// Warning Event telling the human what happened.
 func TestDismantleDiskLost(t *testing.T) {
 	broker, _, objs := diskLostFixture()
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
@@ -210,6 +220,8 @@ func TestDismantleDiskLost(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
 	require.True(t, broker.Status.DiskLost.ResourcesReleased)
+	require.Len(t, c.recorder.Events, 1)
+	require.Regexp(t, `^Warning DiskLostRemediated Disk lost \(detected .+\): pod rp-1 and its persistent volume claims were deleted and a replacement broker takes the slot; the operator decommissions dead node_id 1 on its own once the replacement has registered\.$`, <-c.recorder.Events)
 
 	ctx := context.Background()
 	var gone corev1.Pod
@@ -253,7 +265,7 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 			WithObjects(objs[2:]...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
 		r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 		state := &brokerReconciliationState{broker: broker, initialStatus: broker.Status.DeepCopy()}
-		result, err := r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
+		result, err := r.reconcileDiskLost(context.Background(), state, newDiskLostCluster(c))
 		require.NoError(t, err)
 		require.True(t, result.IsZero(), "must fall through to reconcileDecommission")
 	})
@@ -268,7 +280,7 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 			WithObjects(objs[2:]...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
 		r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 		state := &brokerReconciliationState{broker: broker, initialStatus: broker.Status.DeepCopy()}
-		result, err := r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
+		result, err := r.reconcileDiskLost(context.Background(), state, newDiskLostCluster(c))
 		require.NoError(t, err)
 		require.False(t, result.IsZero())
 		require.Equal(t, redpandav1alpha2.BrokerPhaseDecommissioned, state.phase)

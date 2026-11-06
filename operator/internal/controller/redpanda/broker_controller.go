@@ -58,8 +58,14 @@ import (
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=persistentvolumes,verbs=get;list;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
+
+// eventReasonDiskLostRemediated is the Warning Event a Broker gets once its
+// disk-lost dismantle has finished. Warning rather than Normal: the broker's
+// data is gone for good, so even a clean self-heal deserves a human's eye.
+const eventReasonDiskLostRemediated = "DiskLostRemediated"
 
 const defaultMarkDiskLostAfter = 5 * time.Minute
 
@@ -672,6 +678,15 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 		// we're done
 		l.Info("disk-lost dismantle complete: pod and PVCs gone, network index released")
 		broker.Status.DiskLost.ResourcesReleased = true
+		// Without a recorded node_id the engine deletes the tombstone without
+		// decommissioning anything, so that case alone asks for a human.
+		nodeIDNote := "no node_id was recorded, so a ghost member may remain in the cluster and needs decommissioning by hand"
+		if broker.Status.BrokerID != nil {
+			nodeIDNote = fmt.Sprintf("the operator decommissions dead node_id %d on its own once the replacement has registered", *broker.Status.BrokerID)
+		}
+		cluster.GetEventRecorder("broker-controller").Eventf(broker, nil, corev1.EventTypeWarning, eventReasonDiskLostRemediated, "Dismantle",
+			"Disk lost (detected %s): pod %s and its persistent volume claims were deleted and a replacement broker takes the slot; %s.",
+			broker.Status.DiskLost.At.UTC().Format(time.RFC3339), podName, nodeIDNote)
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
 
 	}
