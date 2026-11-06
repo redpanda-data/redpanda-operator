@@ -23,10 +23,13 @@ import (
 var ErrInvalidInputParameters = fmt.Errorf("invalid input parameters")
 
 const (
-	// crashLoopRunWindow mirrors kubelet's backoff reset: a run this long
-	// counts as healthy, so the crash that ended it is a one-off, not a loop;
-	// one this long whose startup probe hasn't passed may be hung, though
-	// kubelet may wait far longer to restart it.
+	// crashLoopRunWindow mirrors kubelet's backoff reset, twice its default
+	// MaxContainerBackOff: a run this long counts as healthy, so the crash
+	// that ended it is a one-off, not a loop; one this long whose startup
+	// probe hasn't passed may be hung, though kubelet may wait far longer to
+	// restart it.
+	//
+	// https://github.com/kubernetes/kubernetes/blob/v1.37.0/pkg/kubelet/apis/config/v1beta1/defaults.go#L45
 	crashLoopRunWindow = 10 * time.Minute
 	// startFailureWindow outlasts the transient causes of a container never
 	// running: registry or API server blips, a Secret not yet written, an
