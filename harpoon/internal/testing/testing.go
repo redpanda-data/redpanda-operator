@@ -429,7 +429,7 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 	for k, v := range oldOptions.Env {
 		newOptions.Env[k] = v
 	}
-	newClient, err := kubernetesClient(t.options.SchemeRegisterers, t.options.KubectlOptions)
+	newClient, err := kubernetesClient(t.options.SchemeRegisterers, newOptions)
 	require.NoError(t, err)
 
 	t.options.KubectlOptions = newOptions
@@ -480,6 +480,7 @@ func (t *TestingT) DumpDiagnostics(ctx context.Context) {
 		{"all-resources", []string{"get", "all", "-o", "wide"}},
 		{"pod-descriptions", []string{"describe", "pods"}},
 		{"conditions", []string{"get", "redpanda", "-o", "yaml"}},
+		{"pools", []string{"get", "nodepools,redpandabrokerpools", "-o", "yaml"}},
 	}
 
 	artifactsDir := os.Getenv("ACCEPTANCE_ARTIFACTS_DIR")

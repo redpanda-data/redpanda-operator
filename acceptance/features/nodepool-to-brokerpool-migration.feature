@@ -11,6 +11,7 @@ Feature: Migrating NodePools to RedpandaBrokerPools
     Given the enterprise license is available as Secret "redpanda-license"
     And I helm install "redpanda-operator" "../operator/chart" with values:
     """
+    logLevel: trace
     image:
       tag: dev
       repository: localhost/redpanda-operator

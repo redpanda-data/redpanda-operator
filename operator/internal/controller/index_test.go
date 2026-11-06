@@ -10,12 +10,16 @@
 package controller
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -74,4 +78,43 @@ func TestIndexByClusterSource(t *testing.T) {
 			require.ElementsMatch(t, tc.expected, indexByClusterSource(v2)(tc.obj))
 		})
 	}
+}
+
+func TestPoolsForCluster(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	ref := redpandav1alpha2.ClusterRef{Name: "rp"}
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithIndex(&redpandav1alpha2.NodePool{}, clusterReferenceIndexName(PoolIndex), v2ClusterKeys).
+		WithIndex(&redpandav1alpha2.RedpandaBrokerPool{}, clusterReferenceIndexName(PoolIndex), v2ClusterKeys).
+		WithObjects(
+			&redpandav1alpha2.NodePool{
+				ObjectMeta: metav1.ObjectMeta{Name: "blue", Namespace: "ns"},
+				Spec:       redpandav1alpha2.NodePoolSpec{ClusterRef: ref},
+			},
+			&redpandav1alpha2.RedpandaBrokerPool{
+				ObjectMeta: metav1.ObjectMeta{Name: "green", Namespace: "ns"},
+				Spec:       redpandav1alpha2.BrokerPoolSpec{ClusterRef: ref},
+			},
+			// Another cluster's pool, and a pool naming another namespace.
+			&redpandav1alpha2.NodePool{
+				ObjectMeta: metav1.ObjectMeta{Name: "other", Namespace: "ns"},
+				Spec:       redpandav1alpha2.NodePoolSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-2"}},
+			},
+			&redpandav1alpha2.RedpandaBrokerPool{
+				ObjectMeta: metav1.ObjectMeta{Name: "elsewhere", Namespace: "ns-2"},
+				Spec:       redpandav1alpha2.BrokerPoolSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp", Namespace: ptr.To("ns")}},
+			},
+		).Build()
+
+	pools, err := PoolsForCluster(t.Context(), c, types.NamespacedName{Namespace: "ns", Name: "rp"})
+	require.NoError(t, err)
+
+	var got []string
+	for _, p := range pools {
+		ref := p.Ref()
+		got = append(got, fmt.Sprintf("%s:%s", p.BrokerPool.Name, ref.GetKind()))
+	}
+	require.Equal(t, []string{"blue:NodePool", "green:RedpandaBrokerPool"}, got)
 }

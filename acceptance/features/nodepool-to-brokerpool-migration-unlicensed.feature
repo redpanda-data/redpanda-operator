@@ -10,6 +10,7 @@ Feature: Migrating NodePools to RedpandaBrokerPools without a license
     Given the enterprise license is available as Secret "redpanda-license"
     And I helm install "redpanda-operator" "../operator/chart" with values:
     """
+    logLevel: trace
     image:
       tag: dev
       repository: localhost/redpanda-operator
@@ -84,6 +85,7 @@ Feature: Migrating NodePools to RedpandaBrokerPools without a license
     # Licensing the operator resumes management with the pool intact.
     When I helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
+    logLevel: trace
     image:
       tag: dev
       repository: localhost/redpanda-operator
