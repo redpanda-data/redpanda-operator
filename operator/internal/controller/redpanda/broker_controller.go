@@ -301,8 +301,8 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
 	}
 
-	if broker.Spec.ClusterRef.IsNodePool() && broker.Labels[redpandav1alpha2.ClusterNameLabel] == "" {
-		l.Info("NodePool-referenced Broker is missing the cluster-name label; cannot derive its pod name",
+	if broker.Spec.ClusterRef.IsPool() && broker.Labels[redpandav1alpha2.ClusterNameLabel] == "" {
+		l.Info("pool-referenced Broker is missing the cluster-name label; cannot derive its pod name",
 			"label", redpandav1alpha2.ClusterNameLabel)
 		phase := redpandav1alpha2.BrokerPhaseStuck
 		if broker.IsDiskLost() {

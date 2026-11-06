@@ -584,6 +584,20 @@
           description: >
             This reason is used with the "Deployed" condition when it evaluates to False because
             a broker pool has not started to deploy for a cluster.
+        - name: SupersededByNodePool
+          message: A NodePool of the same name owns this pool
+          description: >
+            This reason is used with the "Deployed" condition when it evaluates to False because
+            a NodePool of the same name still owns the pool. Annotating the NodePool with
+            operator.redpanda.com/migrate-to-broker-pool or deleting it hands the pool to the
+            broker pool.
+        - name: LicenseInvalid
+          message: Managing a RedpandaBrokerPool requires an enterprise license
+          description: >
+            This reason is used with the "Deployed" condition when it evaluates to False because
+            the operator has no valid enterprise license. While a broker pool without a license
+            owns a pool, the operator applies no changes to that cluster's resources and pools,
+            but still recovers its failed brokers.
     - name: Quiesced
       final: true
       description: >

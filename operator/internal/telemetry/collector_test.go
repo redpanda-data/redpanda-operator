@@ -87,9 +87,26 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 				Tuning: &redpandav1alpha2.StretchTuning{ApplyHostTuners: ptr.To(true)},
 			},
 		},
+		// A RedpandaBrokerPool waiting to take np-1's pool: np-1 still owns
+		// it, so its brokers count once.
+		&redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: metav1.ObjectMeta{Name: "np-1", Namespace: "default"},
+			Spec: redpandav1alpha2.BrokerPoolSpec{
+				ClusterRef:             redpandav1alpha2.ClusterRef{Name: "rp-1"},
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{Replicas: ptr.To(int32(2))},
+			},
+		},
+		// A pool of rp-1 with unset replicas, which the chart renders as 3.
+		&redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: metav1.ObjectMeta{Name: "bp-2", Namespace: "default"},
+			Spec: redpandav1alpha2.BrokerPoolSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-1"},
+			},
+		},
 		&redpandav1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{Name: "bp-1", Namespace: "default"},
 			Spec: redpandav1alpha2.BrokerPoolSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{Name: "sc-1", Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind)},
 				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 					Replicas: ptr.To(int32(3)),
 					Resources: &redpandav1alpha2.StretchResources{
@@ -246,7 +263,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 
 	// Redpanda fleet aggregates.
 	require.Equal(t, 1, payload.Redpanda.Count)
-	require.Equal(t, 5, payload.Redpanda.BrokerCount) // 3 rendered statefulset + 2 nodepool
+	require.Equal(t, 8, payload.Redpanda.BrokerCount) // 3 rendered statefulset + 2 nodepool + 3 broker pool
 	require.Equal(t, []string{"v25.2.1"}, payload.Redpanda.Versions)
 	require.Equal(t, 1, payload.Redpanda.TLS)
 	require.Equal(t, 1, payload.Redpanda.SASL)
@@ -255,9 +272,9 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Redpanda.ManagedConnectors)
 	require.Equal(t, 1, payload.Redpanda.GatewayAPIExternalAccess)
 	require.Equal(t, 1, payload.Redpanda.HostTuners)
-	// Sizing: 4c/16Gi per broker × 5 brokers (rp-1 default pool + correlated np-1).
-	require.Equal(t, 20, payload.Redpanda.TotalCPUCores)
-	require.Equal(t, 80, payload.Redpanda.TotalMemoryGiB)
+	// Sizing: 4c/16Gi per broker × 8 brokers (rp-1 default pool + correlated np-1 and bp-2).
+	require.Equal(t, 32, payload.Redpanda.TotalCPUCores)
+	require.Equal(t, 128, payload.Redpanda.TotalMemoryGiB)
 	require.Equal(t, []string{"4c/16Gi"}, payload.Redpanda.BrokerSizes)
 
 	// Stretch sizing from the RedpandaBrokerPool: 8c/32Gi × 3.

@@ -202,7 +202,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
 	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
 	cmd.Flags().StringVar(&o.connectDefaultImage, "connect-default-image", "", "Default Redpanda Connect image (repo:tag) used when a Pipeline CR does not pin its own .spec.image. Per-Pipeline .spec.image wins; if neither is set, falls back to the operator binary's hardcoded PipelineDefaultImage.")
-	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
+	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enable the v2 NodePool and RedpandaBrokerPool controllers; requires both CRDs")
 	cmd.Flags().BoolVar(&o.enableBrokerController, "enable-broker", false, "Specifies whether or not to enable the Broker controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().BoolVar(&o.enableRedpandaControllers, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
@@ -524,6 +524,7 @@ func Run(
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
+			LicenseFilePath:                opts.licenseFilePath,
 			BrokerCREnabled:                opts.enableBrokerController,
 			OperatorImage:                  operatorImage.String(),
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
@@ -538,7 +539,8 @@ func Run(
 		// the following 2 controllers depend on the Redpanda controller being run, so
 		// only run them if we run the Redpanda controller
 
-		// NodePool Reconciler
+		// NodePool and RedpandaBrokerPool Reconcilers. Each resolves which
+		// kind owns a pool through the index the other registers.
 		if opts.enableV2NodepoolController {
 			setupLog.Info("starting NodePool controller")
 			if err := (&redpandacontrollers.NodePoolReconciler{
@@ -546,6 +548,16 @@ func Run(
 				BrokerCREnabled: opts.enableBrokerController,
 			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+				return err
+			}
+
+			setupLog.Info("starting RedpandaBrokerPool controller")
+			if err := (&redpandacontrollers.BrokerPoolReconciler{
+				Manager:         mcmanager,
+				BrokerCREnabled: opts.enableBrokerController,
+				LicenseFilePath: opts.licenseFilePath,
+			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "RedpandaBrokerPool")
 				return err
 			}
 		}

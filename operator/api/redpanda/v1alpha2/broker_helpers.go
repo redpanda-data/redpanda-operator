@@ -27,9 +27,9 @@ import (
 // nodePools — matching the per-pool StatefulSet naming. The owning pool is
 // read from the Broker's node pool label.
 func (b *Broker) PodName() string {
-	if b.Spec.ClusterRef.IsNodePool() {
-		// for nodepools, ClusterRef.Name is a NodePool name,
-		// so we need to rely on the cluster name in the label
+	if b.Spec.ClusterRef.IsPool() {
+		// ClusterRef.Name is the pool's name, so the cluster half comes
+		// from the label.
 		return fmt.Sprintf("%s-%s-%d", b.Labels[ClusterNameLabel], b.Spec.ClusterRef.Name, ptr.Deref(b.Spec.NetworkIndex, 0))
 	}
 	name := b.Spec.ClusterRef.Name

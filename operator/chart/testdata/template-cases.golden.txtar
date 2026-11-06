@@ -144,6 +144,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -1126,6 +1127,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -1883,6 +1885,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -2892,6 +2895,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -3669,6 +3673,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -4664,6 +4669,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -5427,6 +5433,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -6644,6 +6651,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -7687,6 +7695,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -8683,6 +8692,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -9444,6 +9454,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -10479,6 +10490,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -11333,6 +11345,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -12414,6 +12427,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -13303,6 +13317,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -14318,6 +14333,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -15084,6 +15100,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -16085,6 +16102,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -16851,6 +16869,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -17884,6 +17903,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -18693,6 +18713,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -19529,6 +19550,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -20310,6 +20332,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -21319,6 +21342,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -22102,6 +22126,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -23335,6 +23360,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -24284,6 +24310,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -25164,6 +25191,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -25916,6 +25944,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -26927,6 +26956,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -27700,6 +27730,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -28702,6 +28733,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -29948,6 +29980,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -31167,6 +31200,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -31996,6 +32030,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -33037,6 +33072,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -33801,6 +33837,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -34977,6 +35014,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -36309,6 +36347,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -37469,6 +37508,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -38238,6 +38278,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -39656,6 +39697,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -40703,6 +40745,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -41717,6 +41760,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -42501,6 +42545,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -43841,6 +43886,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -45309,6 +45355,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -46519,6 +46566,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -48117,6 +48165,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -49347,6 +49396,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -50250,6 +50300,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -51467,6 +51518,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -52403,6 +52455,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -53659,6 +53712,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -55575,6 +55629,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -56979,6 +57034,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -58185,6 +58241,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -59215,6 +59272,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -60460,6 +60518,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -61937,6 +61996,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -64957,6 +65017,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -66548,6 +66609,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -69725,6 +69787,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -71026,6 +71089,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -74783,6 +74847,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -76330,6 +76395,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -77661,6 +77727,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -79245,6 +79312,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -81745,6 +81813,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -83046,6 +83115,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -85473,6 +85543,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -87024,6 +87095,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -88543,6 +88615,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -89901,6 +89974,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -91513,6 +91587,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -93129,6 +93204,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -94922,6 +94998,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -96427,6 +96504,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -98129,6 +98207,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -99304,6 +99383,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -100061,6 +100141,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -100231,6 +100312,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -101133,6 +101215,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -101303,6 +101386,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -101981,6 +102065,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -102151,6 +102236,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -103061,6 +103147,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -103231,6 +103318,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -103909,6 +103997,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -104079,6 +104168,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -104983,6 +105073,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -105153,6 +105244,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   - redpandas
   - users
   verbs:
@@ -105831,6 +105923,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -106814,6 +106907,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -107571,6 +107665,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -108596,6 +108691,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -109449,6 +109545,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -110475,6 +110572,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -111327,6 +111425,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -112308,6 +112407,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -113065,6 +113165,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -114063,6 +114164,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -114838,6 +114940,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -115819,6 +115922,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -116576,6 +116680,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -117557,6 +117662,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -118314,6 +118420,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -119295,6 +119402,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -120052,6 +120160,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -121041,6 +121150,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -121798,6 +121908,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -122787,6 +122898,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -123544,6 +123656,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -124562,6 +124675,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -125319,6 +125433,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -126333,6 +126448,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -127068,6 +127184,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -128086,6 +128203,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -128843,6 +128961,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -129858,6 +129977,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -130615,6 +130735,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -131756,6 +131877,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -132513,6 +132635,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -133530,6 +133653,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -134287,6 +134411,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -135304,6 +135429,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -136061,6 +136187,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -137077,6 +137204,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -137834,6 +137962,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -138880,6 +139009,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -139711,6 +139841,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -140812,6 +140943,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -141643,6 +141775,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -142738,6 +142871,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -143569,6 +143703,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -144597,6 +144732,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -145428,6 +145564,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -146448,6 +146585,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -147279,6 +147417,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -148391,6 +148530,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -149148,6 +149288,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -150136,6 +150277,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -150899,6 +151041,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -151929,6 +152072,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -152791,6 +152935,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list
@@ -153773,6 +153918,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandabrokerpools
   verbs:
   - get
   - list

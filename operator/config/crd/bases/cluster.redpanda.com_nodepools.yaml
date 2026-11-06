@@ -26,6 +26,11 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
+        description: |-
+          NodePool defines a pool of brokers for a Redpanda cluster. RedpandaBrokerPool
+          replaces it: create a RedpandaBrokerPool with the same name and spec, then
+          annotate the NodePool with `operator.redpanda.com/migrate-to-broker-pool:
+          "true"` or delete it. NodePool will be removed in a future release.
         properties:
           apiVersion:
             description: |-

@@ -1,0 +1,5 @@
+project: operator
+kind: Deprecated
+body: >-
+  NodePool is deprecated in favor of RedpandaBrokerPool and will be removed in a future release.
+time: 2026-11-06T12:00:00.000000000-08:00

@@ -33,11 +33,15 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/rapidutil"
 )
 
-func TestNodepoolConversion(t *testing.T) {
+func TestPoolConversion(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		values := rapid.MakeCustom[redpandachart.Values](rapidutil.KubernetesTypes).Draw(t, "values")
-		pools := rapid.SliceOf(rapid.MakeCustom[redpandav1alpha2.NodePool](rapidutil.KubernetesTypes)).Draw(t, "pools")
-		_, err := convertV2NodepoolsToPools(values, functional.MapFn(ptr.To, pools), &V2Defaulters{})
+		// A RedpandaBrokerPool's stretch-only fields hold interfaces rapid
+		// can't draw; the conversion reads only the fields it shares with a
+		// NodePool, which a converted NodePool covers.
+		nodePools := rapid.SliceOf(rapid.MakeCustom[redpandav1alpha2.NodePool](rapidutil.KubernetesTypes)).Draw(t, "nodePools")
+		pools := functional.MapFn(NodePoolToBrokerPool, functional.MapFn(ptr.To, nodePools))
+		_, err := convertBrokerPoolsToPools(values, pools, &V2Defaulters{})
 		require.NoError(t, err)
 	})
 }
@@ -45,7 +49,7 @@ func TestNodepoolConversion(t *testing.T) {
 // TestPersistentVolumeClaimRetentionPolicyPrecedence pins the precedence chain for
 // persistentVolumeClaimRetentionPolicy: NodePool override > Redpanda CR cluster-level
 // value > chart default. The chain is implicit in the order of convertV2Fields and
-// convertV2NodepoolsToPools, so this test guards against silent regressions if those
+// convertBrokerPoolsToPools, so this test guards against silent regressions if those
 // are re-ordered.
 func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 	deletePolicy := func(scaled, deleted appsv1.PersistentVolumeClaimRetentionPolicyType) *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy {
@@ -111,7 +115,7 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 					},
 				},
 			}
-			converted, err := convertV2NodepoolToPool(state.Values, pool, &V2Defaulters{})
+			converted, err := convertBrokerPoolToPool(state.Values, NodePoolToBrokerPool(pool), &V2Defaulters{})
 			require.NoError(t, err)
 			got := converted.Statefulset.PersistentVolumeClaimRetentionPolicy
 			require.NotNil(t, got, "rendered pool should always carry a policy (chart default ensures this)")
@@ -191,7 +195,7 @@ func TestNodePoolImagePrecedence(t *testing.T) {
 				},
 			}
 
-			state, err := ConvertV2ToRenderState(nil, &V2Defaulters{RedpandaImage: operatorDefault}, cluster, []*redpandav1alpha2.NodePool{pool})
+			state, err := ConvertV2ToRenderState(nil, &V2Defaulters{RedpandaImage: operatorDefault}, cluster, []*redpandav1alpha2.RedpandaBrokerPool{NodePoolToBrokerPool(pool)})
 			require.NoError(t, err)
 
 			sets, err := redpandachart.RenderNodePools(state)
@@ -325,7 +329,7 @@ func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alp
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
 		RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
 		SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
-	}, cluster, []*redpandav1alpha2.NodePool{pool})
+	}, cluster, []*redpandav1alpha2.RedpandaBrokerPool{NodePoolToBrokerPool(pool)})
 	require.NoError(t, err)
 
 	// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and

@@ -38,6 +38,8 @@ func (t *TestingT) InstallHelmChart(ctx context.Context, chart string, options h
 	require.NoError(t, err)
 
 	t.Cleanup(func(ctx context.Context) {
+		t.dumpOnFailure(ctx)
+
 		t.Logf("uninstalling chart %q", chart)
 		err := t.helmClient.Uninstall(ctx, helm.Release{
 			Name:      rel.Name,

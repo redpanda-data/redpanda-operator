@@ -100,10 +100,10 @@ const (
 
 	// ClusterNameLabel carries the name of the Redpanda cluster a Broker
 	// belongs to. It is required on Brokers whose ClusterRef points at a
-	// NodePool: the ref names the pool, not the cluster, and pod names are
-	// `<cluster>-<pool>-<ordinal>` — the cluster half is only recoverable
-	// from this label without fetching the NodePool. Whoever creates Broker
-	// CRs must always set it.
+	// NodePool or RedpandaBrokerPool: the ref names the pool, not the
+	// cluster, and pod names are `<cluster>-<pool>-<ordinal>` — the cluster
+	// half is only recoverable from this label without fetching the pool.
+	// Whoever creates Broker CRs must always set it.
 	ClusterNameLabel = "cluster.redpanda.com/cluster-name"
 
 	// DefaultNodePoolName mirrors vectorizedv1alpha1.DefaultNodePoolName:
@@ -160,8 +160,11 @@ type BrokerSpec struct {
 	//   - V1 Cluster: group=redpanda.vectorized.io, kind=Cluster
 	//   - V2 Redpanda: group=cluster.redpanda.com (default), kind=Redpanda (default)
 	//   - NodePool: group=cluster.redpanda.com (default), kind=NodePool
-	// When pointing to a NodePool, the controller resolves the underlying
-	// cluster through the NodePool's own ClusterRef.
+	//   - RedpandaBrokerPool: group=cluster.redpanda.com (default), kind=RedpandaBrokerPool
+	// When pointing to a NodePool or RedpandaBrokerPool, the controller
+	// resolves the underlying cluster through the pool's own `clusterRef`.
+	// The operator rewrites this reference in place when a pool moves from a
+	// NodePool to a RedpandaBrokerPool; the Broker's pod is not replaced.
 	// +kubebuilder:validation:Required
 	ClusterRef ClusterRef `json:"clusterRef"`
 

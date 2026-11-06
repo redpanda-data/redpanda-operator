@@ -198,9 +198,9 @@ func brokerPhaseCounts(brokers []redpandav1alpha2.Broker, kind string) map[Broke
 		}
 		// Same resolution as Broker.PodName: every creator stamps the
 		// cluster-name label; without it the ref names the cluster unless it
-		// names a NodePool.
+		// names a pool.
 		name := b.Labels[redpandav1alpha2.ClusterNameLabel]
-		if name == "" && !b.Spec.ClusterRef.IsNodePool() {
+		if name == "" && !b.Spec.ClusterRef.IsPool() {
 			name = b.Spec.ClusterRef.Name
 		}
 		if name == "" {

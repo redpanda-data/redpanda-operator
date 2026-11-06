@@ -572,8 +572,11 @@ Supported targets: +
 - V1 Cluster: group=redpanda.vectorized.io, kind=Cluster +
 - V2 Redpanda: group=cluster.redpanda.com (default), kind=Redpanda (default) +
 - NodePool: group=cluster.redpanda.com (default), kind=NodePool +
-When pointing to a NodePool, the controller resolves the underlying +
-cluster through the NodePool's own ClusterRef. + |  | Required: \{} +
+- RedpandaBrokerPool: group=cluster.redpanda.com (default), kind=RedpandaBrokerPool +
+When pointing to a NodePool or RedpandaBrokerPool, the controller +
+resolves the underlying cluster through the pool's own `clusterRef`. +
+The operator rewrites this reference in place when a pool moves from a +
+NodePool to a RedpandaBrokerPool; the Broker's pod is not replaced. + |  | Required: \{} +
 
 | *`decommission`* __boolean__ | Decommission, when set to true, triggers the Broker controller to +
 decommission this broker via the Redpanda admin API. Decommission is +
@@ -3638,7 +3641,9 @@ The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_KEYFILEPATH` to
 
 
 
-
+RedpandaBrokerPool defines a pool of Redpanda brokers, deployed as one
+StatefulSet, for the Redpanda or StretchCluster resource that `clusterRef`
+references. Managing RedpandaBrokerPools requires an enterprise license.
 
 
 

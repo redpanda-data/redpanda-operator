@@ -23,6 +23,7 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -48,9 +49,10 @@ func RegisterClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U c
 	return enqueueFromSourceCluster(mgr, name, clusterName, l), nil
 }
 
-// EnqueueFromNodePool maps a NodePool event to the objects indexed under name
-// by [RegisterClusterSourceIndex] that reference the pool's cluster.
-func EnqueueFromNodePool[T client.Object, U clientList[T]](mgr multicluster.Manager, name, clusterName string, l U) mchandler.EventHandlerFunc {
+// EnqueueFromPool maps a NodePool or RedpandaBrokerPool event to the objects
+// indexed under name by [RegisterClusterSourceIndex] that reference the
+// pool's cluster.
+func EnqueueFromPool[T client.Object, U clientList[T]](mgr multicluster.Manager, name, clusterName string, l U) mchandler.EventHandlerFunc {
 	return enqueueReferencing(mgr, name, clusterName, l, v2ClusterKeys)
 }
 
@@ -169,9 +171,13 @@ func enqueueReferencing[T client.Object, U clientList[T]](mgr multicluster.Manag
 }
 
 func FromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c client.Client, name string, cluster *redpandav1alpha2.Redpanda, l U) ([]T, error) {
+	return fromSourceClusterKey(ctx, c, name, client.ObjectKeyFromObject(cluster), l)
+}
+
+func fromSourceClusterKey[T client.Object, U clientList[T]](ctx context.Context, c client.Client, name string, cluster types.NamespacedName, l U) ([]T, error) {
 	list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
 	err := c.List(ctx, list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), client.ObjectKeyFromObject(cluster).String()),
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), cluster.String()),
 	})
 	if err != nil {
 		return nil, err
@@ -180,20 +186,54 @@ func FromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c 
 	return list.GetItems(), nil
 }
 
-// NodePoolsFor returns the NodePools bound to cluster: the set
-// [FromSourceCluster] reads from the "pool" index, found by filtering a plain
-// List so that callers don't depend on the NodePool controller having
-// registered that index.
-func NodePoolsFor(ctx context.Context, ctl *kube.Ctl, cluster *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
+// PoolIndex is the [RegisterClusterSourceIndex] name that the NodePool and
+// RedpandaBrokerPool controllers file their objects under.
+const PoolIndex = "pool"
+
+// PoolsForCluster resolves the pools of the Redpanda cluster through the
+// [PoolIndex] indexes, so the NodePool and RedpandaBrokerPool controllers
+// must both be registered.
+func PoolsForCluster(ctx context.Context, c client.Client, cluster types.NamespacedName) ([]conversion.OwnedPool, error) {
+	nodePools, err := fromSourceClusterKey(ctx, c, PoolIndex, cluster, &redpandav1alpha2.NodePoolList{})
+	if err != nil {
+		return nil, err
+	}
+	brokerPools, err := fromSourceClusterKey(ctx, c, PoolIndex, cluster, &redpandav1alpha2.RedpandaBrokerPoolList{})
+	if err != nil {
+		return nil, err
+	}
+	return conversion.ResolvePools(nodePools, sameNamespace(brokerPools, cluster.Namespace)), nil
+}
+
+// sameNamespace drops RedpandaBrokerPools outside the cluster's namespace.
+// The index honors clusterRef.namespace, which exists for ShadowLinks and
+// other cluster-referencing CRs; pools never span namespaces. NodePools keep
+// whatever the index binds, so no existing pool can drop out on upgrade.
+func sameNamespace(pools []*redpandav1alpha2.RedpandaBrokerPool, namespace string) []*redpandav1alpha2.RedpandaBrokerPool {
+	return functional.Filter(pools, func(p *redpandav1alpha2.RedpandaBrokerPool) bool { return p.Namespace == namespace })
+}
+
+// PoolsFor returns the rendered spec of each pool of cluster, as
+// [PoolsForCluster] resolves them, found by filtering plain Lists so that
+// callers don't depend on the pool controllers having registered the
+// indexes.
+func PoolsFor(ctx context.Context, ctl *kube.Ctl, cluster *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.RedpandaBrokerPool, error) {
+	key := client.ObjectKeyFromObject(cluster).String()
+	bound := func(o client.Object) bool { return slices.Contains(v2ClusterKeys(o), key) }
+
 	// A pool's clusterRef may name another namespace, and the index this
 	// mirrors spans all of them.
-	var pools redpandav1alpha2.NodePoolList
-	if err := ctl.List(ctx, "", &pools); err != nil {
+	var nodePools redpandav1alpha2.NodePoolList
+	if err := ctl.List(ctx, "", &nodePools); err != nil {
+		return nil, err
+	}
+	var brokerPools redpandav1alpha2.RedpandaBrokerPoolList
+	if err := ctl.List(ctx, "", &brokerPools); err != nil {
 		return nil, err
 	}
 
-	key := client.ObjectKeyFromObject(cluster).String()
-	return functional.Filter(pools.GetItems(), func(pool *redpandav1alpha2.NodePool) bool {
-		return slices.Contains(v2ClusterKeys(pool), key)
-	}), nil
+	return conversion.BrokerPools(conversion.ResolvePools(
+		functional.Filter(nodePools.GetItems(), func(p *redpandav1alpha2.NodePool) bool { return bound(p) }),
+		sameNamespace(functional.Filter(brokerPools.GetItems(), func(p *redpandav1alpha2.RedpandaBrokerPool) bool { return bound(p) }), cluster.Namespace),
+	)), nil
 }

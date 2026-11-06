@@ -1109,8 +1109,9 @@ func TestBrokerPool(t *testing.T) {
 			pool     *redpandav1alpha2.RedpandaBrokerPool
 			expected int32
 		}{
-			{"default", &redpandav1alpha2.RedpandaBrokerPool{}, 1},
-			{"custom", &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{Replicas: ptr.To(int32(3))}}}, 3},
+			{"stretch default", &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{ClusterRef: redpandav1alpha2.ClusterRef{Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind)}}}, 1},
+			{"redpanda default", &redpandav1alpha2.RedpandaBrokerPool{}, 3},
+			{"custom", &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{Replicas: ptr.To(int32(2))}}}, 2},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {

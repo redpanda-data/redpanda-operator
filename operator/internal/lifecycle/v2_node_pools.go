@@ -61,7 +61,7 @@ func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpan
 		RedpandaImage:    defaultImage(m.redpandaImage),
 		SidecarImage:     defaultImage(m.sideCarImage),
 		ConfiguratorArgs: m.cloudSecrets.AdditionalConfiguratorArgs(),
-	}, cluster.Redpanda, cluster.NodePools)
+	}, cluster.Redpanda, cluster.BrokerPools())
 }
 
 func isNodePool(object client.Object) bool {
