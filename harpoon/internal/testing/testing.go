@@ -10,12 +10,14 @@
 package testing
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -113,6 +115,8 @@ type TestingT struct {
 	restConfig    *rest.Config
 	options       *TestingOptions
 	failure       bool
+	// dumped records that a failure's diagnostics were already captured.
+	dumped        bool
 	messagePrefix string
 	featureName   string
 	featureTags   []string
@@ -254,6 +258,8 @@ func (t *TestingT) ApplyManifest(ctx context.Context, fileOrDirectory string) {
 	require.NoError(t, err)
 
 	t.Cleanup(func(ctx context.Context) {
+		t.dumpOnFailure(ctx)
+
 		t.Logf("Deleting manifest %q", fileOrDirectory)
 		output, err := KubectlDelete(ctx, fileOrDirectory, opts)
 		require.NoError(t, err)
@@ -449,6 +455,17 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 	return cluster.Name()
 }
 
+// dumpOnFailure captures a failed scenario's diagnostics once, from the
+// first cleanup to run. Later cleanups delete what the scenario applied and
+// installed, and feature diagnostics only run after them.
+func (t *TestingT) dumpOnFailure(ctx context.Context) {
+	if !t.failure || t.dumped {
+		return
+	}
+	t.dumped = true
+	t.DumpDiagnostics(ctx)
+}
+
 // RequireCondition expects some condition to be found in an array of object conditions.
 func (t *TestingT) RequireCondition(expected metav1.Condition, conditions []metav1.Condition) {
 	if !t.HasCondition(expected, conditions) {
@@ -536,7 +553,7 @@ func dumpPodLogs(ctx context.Context, t *TestingT, kubectlOpts *KubectlOptions, 
 		for _, container := range pod.Spec.Containers {
 			opts := kubectlOpts.Clone()
 			opts.Namespace = namespace
-			args := opts.args([]string{"logs", pod.Name, "-c", container.Name, "--tail=200"})
+			args := opts.args([]string{"logs", pod.Name, "-c", container.Name})
 			//nolint:gosec // test code
 			cmd := exec.CommandContext(ctx, "kubectl", args...)
 			cmd.Env = opts.environment()
@@ -544,6 +561,7 @@ func dumpPodLogs(ctx context.Context, t *TestingT, kubectlOpts *KubectlOptions, 
 			if err != nil {
 				continue
 			}
+			output = headAndTail(output, 100, 200)
 
 			logName := fmt.Sprintf("pod-%s-%s", pod.Name, container.Name)
 			if artifactsDir != "" {
@@ -556,6 +574,18 @@ func dumpPodLogs(ctx context.Context, t *TestingT, kubectlOpts *KubectlOptions, 
 			}
 		}
 	}
+}
+
+// headAndTail keeps a log's first head and last tail lines: startup shows
+// what a process set up, the tail what it was doing when the test failed.
+func headAndTail(log []byte, head, tail int) []byte {
+	lines := bytes.Split(log, []byte("\n"))
+	if len(lines) <= head+tail {
+		return log
+	}
+	omitted := []byte(fmt.Sprintf("... %d lines omitted ...", len(lines)-head-tail))
+	kept := append(append(slices.Clone(lines[:head]), omitted), lines[len(lines)-tail:]...)
+	return bytes.Join(kept, []byte("\n"))
 }
 
 // HasCondition returns if a condition is found in an array of object conditions.

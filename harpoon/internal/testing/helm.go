@@ -38,11 +38,7 @@ func (t *TestingT) InstallHelmChart(ctx context.Context, chart string, options h
 	require.NoError(t, err)
 
 	t.Cleanup(func(ctx context.Context) {
-		// The release's pods go with it, and feature diagnostics run after
-		// scenario cleanup, so a failure's operator logs are captured here.
-		if t.IsFailure() {
-			t.DumpDiagnostics(ctx)
-		}
+		t.dumpOnFailure(ctx)
 
 		t.Logf("uninstalling chart %q", chart)
 		err := t.helmClient.Uninstall(ctx, helm.Release{

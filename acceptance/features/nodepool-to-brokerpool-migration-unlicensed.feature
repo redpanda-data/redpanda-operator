@@ -57,6 +57,9 @@ Feature: Migrating NodePools to RedpandaBrokerPools without a license
         repository: localhost/redpanda-operator
         tag: dev
     """
+    # Fails fast, and says whether the NodePool exists, if the operator never
+    # reconciles it.
+    And NodePool "blue" should eventually have condition "Bound" with reason "Bound"
     And cluster "np-migration" is stable with 2 nodes
     When I snapshot pod UIDs for cluster "np-migration"
     And I apply Kubernetes manifest:
