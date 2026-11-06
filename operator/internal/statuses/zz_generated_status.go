@@ -796,7 +796,8 @@ const (
 	// RedpandaBrokerPoolDeployedReasonLicenseInvalid - This reason is used with the
 	// "Deployed" condition when it evaluates to False because the operator has no
 	// valid enterprise license. While a broker pool without a license owns a pool,
-	// the operator suspends changes to that cluster's resources and brokers.
+	// the operator applies no changes to that cluster's resources and pools, but
+	// still recovers its failed brokers.
 	RedpandaBrokerPoolDeployedReasonLicenseInvalid RedpandaBrokerPoolDeployedCondition = "LicenseInvalid"
 	// RedpandaBrokerPoolDeployedReasonError - This reason is used when a broker
 	// pool has only been partially reconciled and we have early returned due to a

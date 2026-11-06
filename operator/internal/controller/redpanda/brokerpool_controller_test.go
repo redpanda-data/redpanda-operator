@@ -52,7 +52,9 @@ func TestDifferingFields(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			np := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: tc.nodePool}}
 			bp := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: tc.brokerPool}}
-			require.Equal(t, tc.want, differingFields(np, bp))
+			got, err := differingFields(np, bp)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

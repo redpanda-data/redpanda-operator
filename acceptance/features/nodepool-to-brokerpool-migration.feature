@@ -200,8 +200,8 @@ Feature: Migrating NodePools to RedpandaBrokerPools
     """
     Then RedpandaBrokerPool "blue" should eventually have condition "Deployed" with reason "LicenseInvalid" and a message containing "no license configured"
     # Deleting the NodePool hands the pool to the unlicensed RedpandaBrokerPool.
-    # The operator freezes the cluster's brokers rather than dropping the pool,
-    # which would decommission them.
+    # The operator freezes the pool rather than dropping it, which would
+    # decommission its brokers.
     When I delete NodePool "blue"
     Then Redpanda "np-migration" should eventually have condition "ResourcesSynced" with reason "TerminalError" and a message containing "RedpandaBrokerPools blue require an enterprise license"
     And the StatefulSet for pool "blue" of cluster "np-migration" should keep 1 replica for 60 seconds

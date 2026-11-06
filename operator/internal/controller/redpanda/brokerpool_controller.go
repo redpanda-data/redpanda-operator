@@ -354,7 +354,18 @@ func (r *BrokerPoolReconciler) getRedpandaCluster(
 func (r *BrokerPoolReconciler) reconcileRedpandaPoolStatus(ctx context.Context, pool *redpandav1alpha2.RedpandaBrokerPool, k8sClient client.Client) (ctrl.Result, error) {
 	var status statuses.RedpandaBrokerPoolStatus
 
-	clusterKey := types.NamespacedName{Namespace: pool.Spec.ClusterRef.GetNamespace(pool.Namespace), Name: pool.Spec.ClusterRef.Name}
+	originalPoolGeneration := pool.Status.DeployedGeneration
+	originalPoolStatus := pool.Status.EmbeddedBrokerPoolStatus
+
+	clusterKey := types.NamespacedName{Namespace: pool.Namespace, Name: pool.Spec.ClusterRef.Name}
+	if ns := pool.Spec.ClusterRef.GetNamespace(pool.Namespace); ns != pool.Namespace {
+		// The resolver ignores such a pool (see controller.PoolsForCluster),
+		// so it owns nothing to observe.
+		status.SetBound(statuses.RedpandaBrokerPoolBoundReasonNotBound, fmt.Sprintf("clusterRef.namespace %q must be this RedpandaBrokerPool's namespace", ns))
+		status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonNotDeployed)
+		pool.Status.EmbeddedBrokerPoolStatus = redpandav1alpha2.EmbeddedBrokerPoolStatus{}
+		return updateRedpandaPoolStatus(ctx, k8sClient, pool, &status, originalPoolStatus, originalPoolGeneration)
+	}
 	if err := k8sClient.Get(ctx, clusterKey, &redpandav1alpha2.Redpanda{}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
@@ -370,15 +381,12 @@ func (r *BrokerPoolReconciler) reconcileRedpandaPoolStatus(ctx context.Context, 
 	}
 	owner, _ := conversion.FindPool(pools, pool.Name)
 
-	originalPoolGeneration := pool.Status.DeployedGeneration
-	originalPoolStatus := pool.Status.EmbeddedBrokerPoolStatus
-
 	var obs poolObservation
 	if owner.NodePool == nil {
 		obs, err = observePool(ctx, k8sClient, r.BrokerCREnabled, poolSource{
-			name: pool.Name,
-			// The Redpanda chart's default, which an unset replicas renders.
-			desiredReplicas: ptr.Deref(pool.Spec.Replicas, 3),
+			name:            pool.Name,
+			cluster:         clusterKey,
+			desiredReplicas: pool.GetReplicas(),
 			// The owner label tells this pool's StatefulSet apart from a
 			// same-named pool's on another cluster in the namespace.
 			statefulSetLabels: client.MatchingLabels{
@@ -386,8 +394,7 @@ func (r *BrokerPoolReconciler) reconcileRedpandaPoolStatus(ctx context.Context, 
 				lifecycle.DefaultOwnerLabel:     clusterKey.Name,
 				redpandachart.NodePoolLabelName: pool.Name,
 			},
-			brokerNamespace: clusterKey.Namespace,
-			brokerRef:       (*redpandav1alpha2.ClusterRef).IsBrokerPool,
+			brokerRef: (*redpandav1alpha2.ClusterRef).IsBrokerPool,
 		})
 		if err != nil {
 			return ctrl.Result{}, err
@@ -412,12 +419,15 @@ func (r *BrokerPoolReconciler) reconcileRedpandaPoolStatus(ctx context.Context, 
 		}[obs.state])
 	}
 
+	return updateRedpandaPoolStatus(ctx, k8sClient, pool, &status, originalPoolStatus, originalPoolGeneration)
+}
+
+func updateRedpandaPoolStatus(ctx context.Context, k8sClient client.Client, pool *redpandav1alpha2.RedpandaBrokerPool, status *statuses.RedpandaBrokerPoolStatus, originalPoolStatus redpandav1alpha2.EmbeddedBrokerPoolStatus, originalPoolGeneration int64) (ctrl.Result, error) {
 	if status.UpdateConditions(pool) ||
 		!reflect.DeepEqual(originalPoolStatus, pool.Status.EmbeddedBrokerPoolStatus) ||
 		(pool.Status.DeployedGeneration != originalPoolGeneration) {
 		return ignoreConflict(k8sClient.Status().Update(ctx, pool))
 	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -425,7 +435,11 @@ func (r *BrokerPoolReconciler) reconcileRedpandaPoolStatus(ctx context.Context, 
 // doing so changes the pool's brokers.
 func supersededMessage(np *redpandav1alpha2.NodePool, bp *redpandav1alpha2.RedpandaBrokerPool) string {
 	msg := fmt.Sprintf("NodePool %s owns this pool; annotate it with %s: \"true\" or delete it to hand the pool to this RedpandaBrokerPool", client.ObjectKeyFromObject(np), redpandav1alpha2.MigrateToBrokerPoolAnnotation)
-	if fields := differingFields(np, bp); len(fields) > 0 {
+	fields, err := differingFields(np, bp)
+	switch {
+	case err != nil:
+		return fmt.Sprintf("%s. Comparing the specs failed (%v), so the handoff may change the brokers", msg, err)
+	case len(fields) > 0:
 		return fmt.Sprintf("%s. The specs differ in %s, so the handoff applies this RedpandaBrokerPool's values", msg, strings.Join(fields, ", "))
 	}
 	return msg + ". The specs match, so the handoff leaves the brokers unchanged"
@@ -433,9 +447,15 @@ func supersededMessage(np *redpandav1alpha2.NodePool, bp *redpandav1alpha2.Redpa
 
 // differingFields lists the spec fields, by YAML key, in which bp differs
 // from np.
-func differingFields(np *redpandav1alpha2.NodePool, bp *redpandav1alpha2.RedpandaBrokerPool) []string {
-	want := jsonFields(conversion.NodePoolToBrokerPool(np).Spec.EmbeddedBrokerPoolSpec)
-	have := jsonFields(bp.Spec.EmbeddedBrokerPoolSpec)
+func differingFields(np *redpandav1alpha2.NodePool, bp *redpandav1alpha2.RedpandaBrokerPool) ([]string, error) {
+	want, err := jsonFields(conversion.NodePoolToBrokerPool(np))
+	if err != nil {
+		return nil, err
+	}
+	have, err := jsonFields(bp)
+	if err != nil {
+		return nil, err
+	}
 
 	keys := slices.Collect(maps.Keys(want))
 	for key := range have {
@@ -451,22 +471,23 @@ func differingFields(np *redpandav1alpha2.NodePool, bp *redpandav1alpha2.Redpand
 			fields = append(fields, key)
 		}
 	}
-	return fields
+	return fields, nil
 }
 
-func jsonFields(spec redpandav1alpha2.EmbeddedBrokerPoolSpec) map[string]json.RawMessage {
-	// Unset renders the chart's default.
-	spec.Replicas = ptr.To(ptr.Deref(spec.Replicas, 3))
+func jsonFields(pool *redpandav1alpha2.RedpandaBrokerPool) (map[string]json.RawMessage, error) {
+	spec := pool.Spec.EmbeddedBrokerPoolSpec
+	// Unset renders the default.
+	spec.Replicas = ptr.To(pool.GetReplicas())
 
-	var fields map[string]json.RawMessage
 	data, err := json.Marshal(spec)
 	if err != nil {
-		return nil
+		return nil, err
 	}
+	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
-		return nil
+		return nil, err
 	}
-	return fields
+	return fields, nil
 }
 
 // brokerPoolSuspension returns why a cluster's pools are frozen, or "" if
@@ -487,7 +508,7 @@ func brokerPoolSuspension(pools []conversion.OwnedPool, licenseFilePath string) 
 	if err == nil {
 		return ""
 	}
-	return fmt.Sprintf("RedpandaBrokerPools %s require an enterprise license: %v; changes to this cluster's resources and brokers are suspended until one is configured", strings.Join(owners, ", "), err)
+	return fmt.Sprintf("RedpandaBrokerPools %s require an enterprise license: %v; the operator applies no changes to this cluster's resources and pools until one is configured, but still recovers failed brokers", strings.Join(owners, ", "), err)
 }
 
 // brokerPoolLicenseError reports why the operator-level license does not

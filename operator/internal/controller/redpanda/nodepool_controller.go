@@ -192,6 +192,15 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	// Examine if the object is under deletion
 	if !pool.ObjectMeta.DeletionTimestamp.IsZero() {
+		pending, err := brokerPoolPendingInCache(ctx, k8sCluster.GetAPIReader(), k8sClient, pool)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if pending {
+			logger.V(log.DebugLevel).Info("holding finalizer until the RedpandaBrokerPool taking the pool is cached")
+			return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
+		}
+
 		logger.V(log.TraceLevel).Info("deleting finalizer")
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
 			if err := k8sClient.Update(ctx, pool); err != nil {
@@ -243,13 +252,13 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	} else {
 		obs, err := observePool(ctx, k8sClient, r.BrokerCREnabled, poolSource{
 			name:            pool.Name,
+			cluster:         clusterKey,
 			desiredReplicas: ptr.Deref(pool.Spec.Replicas, 3),
 			statefulSetLabels: client.MatchingLabels{
 				lifecycle.DefaultNamespaceLabel: pool.Namespace,
 				redpandachart.NodePoolLabelName: pool.Name,
 			},
-			brokerNamespace: pool.Namespace,
-			brokerRef:       (*redpandav1alpha2.ClusterRef).IsNodePool,
+			brokerRef: (*redpandav1alpha2.ClusterRef).IsNodePool,
 		})
 		if err != nil {
 			return ctrl.Result{}, err
@@ -286,10 +295,12 @@ const (
 
 // poolSource locates a pool's StatefulSet or, in broker mode, its Broker CRs.
 type poolSource struct {
-	name              string
+	name string
+	// cluster is the Redpanda that owns the pool's Broker CRs, which tells
+	// them apart from a same-named pool's on another cluster.
+	cluster           types.NamespacedName
 	desiredReplicas   int32
 	statefulSetLabels client.MatchingLabels
-	brokerNamespace   string
 	// brokerRef matches the clusterRef kind of the pool's Broker CRs.
 	brokerRef func(*redpandav1alpha2.ClusterRef) bool
 }
@@ -344,20 +355,24 @@ func observePool(ctx context.Context, c client.Client, brokerCREnabled bool, src
 	}
 
 	var brokerList redpandav1alpha2.BrokerList
-	if err := c.List(ctx, &brokerList, client.InNamespace(src.brokerNamespace), client.MatchingLabels{
+	if err := c.List(ctx, &brokerList, client.InNamespace(src.cluster.Namespace), client.MatchingLabels{
 		redpandav1alpha2.NodePoolLabel: src.name,
 	}); err != nil {
 		return obs, err
 	}
-	if brokers := brokersForPool(brokerList.Items, src.name, src.brokerRef); len(brokers) > 0 {
+	if brokers := brokersForPool(brokerList.Items, src.cluster.Name, src.name, src.brokerRef); len(brokers) > 0 {
 		obs.status, obs.deployedGeneration, obs.state = brokerBackedPoolStatus(src.name, src.desiredReplicas, brokers)
 	}
 	return obs, nil
 }
 
-func brokersForPool(brokers []redpandav1alpha2.Broker, poolName string, isRef func(*redpandav1alpha2.ClusterRef) bool) []redpandav1alpha2.Broker {
+func brokersForPool(brokers []redpandav1alpha2.Broker, clusterName, poolName string, isRef func(*redpandav1alpha2.ClusterRef) bool) []redpandav1alpha2.Broker {
 	var owned []redpandav1alpha2.Broker
 	for _, b := range brokers {
+		owner := metav1.GetControllerOf(&b)
+		if owner == nil || owner.Kind != redpandav1alpha2.RedpandaKind || owner.Name != clusterName {
+			continue
+		}
 		if isRef(&b.Spec.ClusterRef) && b.Spec.ClusterRef.Name == poolName {
 			owned = append(owned, b)
 		}
@@ -426,6 +441,32 @@ func brokerBackedPoolStatus(poolName string, desiredReplicas int32, brokers []re
 		OutOfDateReplicas: replicas - upToDate,
 		CondemnedReplicas: condemned,
 	}, deployedGeneration, state
+}
+
+// brokerPoolPendingInCache reports whether a RedpandaBrokerPool that takes
+// np's pool exists but hasn't reached the cache yet. Every controller in the
+// process reads that cache, so releasing np before then lets the Redpanda
+// controller see the pool with no owner and scale it down. With no such
+// RedpandaBrokerPool, deleting np deletes the pool.
+func brokerPoolPendingInCache(ctx context.Context, live, cached client.Reader, np *redpandav1alpha2.NodePool) (bool, error) {
+	key := client.ObjectKeyFromObject(np)
+
+	var bp redpandav1alpha2.RedpandaBrokerPool
+	if err := live.Get(ctx, key, &bp); err != nil {
+		return false, client.IgnoreNotFound(err)
+	}
+	ref := bp.Spec.ClusterRef
+	if !bp.DeletionTimestamp.IsZero() || !ref.IsV2() || ref.Name != np.Spec.ClusterRef.Name || ref.GetNamespace(bp.Namespace) != bp.Namespace {
+		return false, nil
+	}
+
+	if err := cached.Get(ctx, key, &redpandav1alpha2.RedpandaBrokerPool{}); err != nil {
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
 }
 
 func (r *NodePoolReconciler) getRedpandaCluster(

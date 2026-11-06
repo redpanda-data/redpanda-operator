@@ -32,6 +32,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 )
@@ -144,17 +145,55 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	var nodePools redpandav1alpha2.NodePoolList
-	if ok, err := c.list(ctx, &nodePools); err != nil {
+	nodePoolsOK, err := c.list(ctx, &nodePools)
+	if err != nil {
 		return nil, err
-	} else if ok {
+	}
+	if nodePoolsOK {
 		payload.NodePools.Count = len(nodePools.Items)
 		payload.NodePools.Enabled = payload.NodePools.Count > 0
-		for i := range nodePools.Items {
-			np := &nodePools.Items[i]
-			replicas := derefInt32(np.Spec.Replicas)
+	}
+	var brokerPools redpandav1alpha2.RedpandaBrokerPoolList
+	if _, err := c.list(ctx, &brokerPools); err != nil {
+		return nil, err
+	}
+
+	// Pools of a Redpanda cluster are resolved as the Redpanda controller
+	// resolves them, so a pool mid-migration from a NodePool counts once.
+	type clusterPools struct {
+		nodePools   []*redpandav1alpha2.NodePool
+		brokerPools []*redpandav1alpha2.RedpandaBrokerPool
+	}
+	byCluster := map[string]*clusterPools{}
+	poolsOf := func(namespace, cluster string) *clusterPools {
+		key := namespace + "/" + cluster
+		if byCluster[key] == nil {
+			byCluster[key] = &clusterPools{}
+		}
+		return byCluster[key]
+	}
+	for i := range nodePools.Items {
+		np := &nodePools.Items[i]
+		pools := poolsOf(np.Namespace, np.Spec.ClusterRef.Name)
+		pools.nodePools = append(pools.nodePools, np)
+	}
+	var stretchPools []*redpandav1alpha2.RedpandaBrokerPool
+	for i := range brokerPools.Items {
+		bp := &brokerPools.Items[i]
+		switch ref := bp.Spec.ClusterRef; {
+		case ref.IsStretchCluster():
+			stretchPools = append(stretchPools, bp)
+		case ref.IsV2():
+			pools := poolsOf(bp.Namespace, ref.Name)
+			pools.brokerPools = append(pools.brokerPools, bp)
+		}
+	}
+	for key, pools := range byCluster {
+		for _, pool := range conversion.ResolvePools(pools.nodePools, pools.brokerPools) {
+			replicas := int(pool.BrokerPool.GetReplicas())
 			payload.Redpanda.BrokerCount += replicas
-			// NodePool brokers inherit the parent Redpanda's per-broker resources.
-			if reqs, found := perBroker[np.Namespace+"/"+np.Spec.ClusterRef.Name]; found {
+			// Pool brokers inherit the parent Redpanda's per-broker resources.
+			if reqs, found := perBroker[key]; found {
 				rpSizing.add(reqs, replicas)
 			}
 		}
@@ -175,19 +214,13 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	// Stretch/multicluster broker sizing lives on RedpandaBrokerPool CRs.
-	var brokerPools redpandav1alpha2.RedpandaBrokerPoolList
-	if ok, err := c.list(ctx, &brokerPools); err != nil {
-		return nil, err
-	} else if ok {
-		var sc sizing
-		for i := range brokerPools.Items {
-			pool := &brokerPools.Items[i]
-			replicas := int(pool.GetReplicas())
-			payload.StretchCluster.BrokerCount += replicas
-			sc.add(pool.Spec.GetResourceRequirements(), replicas)
-		}
-		sc.into(&payload.StretchCluster.TotalCPUCores, &payload.StretchCluster.TotalMemoryGiB, &payload.StretchCluster.BrokerSizes)
+	var sc sizing
+	for _, pool := range stretchPools {
+		replicas := int(pool.GetReplicas())
+		payload.StretchCluster.BrokerCount += replicas
+		sc.add(pool.Spec.GetResourceRequirements(), replicas)
 	}
+	sc.into(&payload.StretchCluster.TotalCPUCores, &payload.StretchCluster.TotalMemoryGiB, &payload.StretchCluster.BrokerSizes)
 
 	// Legacy v1 clusters, unless the running command declares it does not
 	// reconcile that API (SkipV1Collection). Declared outside the guard so the

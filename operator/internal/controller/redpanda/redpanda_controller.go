@@ -230,6 +230,7 @@ func (r *RedpandaReconciler) SetupWithManager(_ context.Context, mgr multicluste
 			})
 			builder.Watches(&redpandav1alpha2.NodePool{}, enqueueClusterFromNodePool, controller.WatchOptions(clusterName)...)
 
+			// Pools bind only to a cluster in their own namespace.
 			enqueueClusterFromBrokerPool := mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 				ref := o.(*redpandav1alpha2.RedpandaBrokerPool).Spec.ClusterRef
 				if !ref.IsV2() {
@@ -238,7 +239,7 @@ func (r *RedpandaReconciler) SetupWithManager(_ context.Context, mgr multicluste
 				return []reconcile.Request{{
 					NamespacedName: types.NamespacedName{
 						Name:      ref.Name,
-						Namespace: ref.GetNamespace(o.GetNamespace()),
+						Namespace: o.GetNamespace(),
 					},
 				}}
 			})
@@ -500,13 +501,13 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		r.initAdminClient,
 		// replace outdated pods whose broker cannot start, ahead of the steps
 		// that can fail while those brokers are down
-		poolStep(r.reconcileFailedPods),
+		r.reconcileFailedPods,
 		// clear maintenance mode on brokers that have been down long enough
 		// that their stuck maintenance flag is blocking auto-decommission
-		poolStep(r.reconcileMaintenanceMode),
+		r.reconcileMaintenanceMode,
 		// recover brokers crashlooping on a retired on-disk identity
 		// (decommissioned-broker bad_rejoin) by wiping their stale state
-		poolStep(r.reconcileStaleDiskWipe),
+		r.reconcileStaleDiskWipe,
 		// now we ensure that we reconcile all of our decommissioning nodes
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
@@ -518,9 +519,11 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 	}
 }
 
-// poolStep wraps a step that writes resources, pods, or brokers so that it is
-// skipped while the cluster's pools are suspended (see brokerPoolSuspension).
-// License and configuration sync still run.
+// poolStep wraps a step that applies the pools' specs — resources,
+// StatefulSets, Broker CRs, scale-downs, and rolls — so that it is skipped
+// while the cluster's pools are suspended (see brokerPoolSuspension).
+// Recovery steps still run: failed-pod replacement holds off while any
+// StatefulSet change is pending, so it never applies a frozen spec.
 func poolStep(step clusterReconciliationFn) clusterReconciliationFn {
 	return func(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
 		if state.poolsSuspended != "" {

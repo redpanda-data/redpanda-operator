@@ -1007,9 +1007,14 @@ func (s *StretchClusterSpec) GetTieredStorageCacheSize() *resource.Quantity {
 
 // --- BrokerPool helpers ---
 
-// GetReplicas returns the replica count for a node pool, defaulting to 1.
+// GetReplicas returns the pool's replica count. Unset defaults to 1 for a
+// pool of a StretchCluster and, as for a NodePool, to the Redpanda chart's 3
+// for a pool of a Redpanda cluster.
 func (n *RedpandaBrokerPool) GetReplicas() int32 {
-	return ptr.Deref(n.Spec.Replicas, 1)
+	if n.Spec.ClusterRef.IsStretchCluster() {
+		return ptr.Deref(n.Spec.Replicas, 1)
+	}
+	return ptr.Deref(n.Spec.Replicas, 3)
 }
 
 // Suffix returns the suffix for this pool's resource names.

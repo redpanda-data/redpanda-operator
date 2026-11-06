@@ -202,7 +202,15 @@ func PoolsForCluster(ctx context.Context, c client.Client, cluster types.Namespa
 	if err != nil {
 		return nil, err
 	}
-	return conversion.ResolvePools(nodePools, brokerPools), nil
+	return conversion.ResolvePools(nodePools, sameNamespace(brokerPools, cluster.Namespace)), nil
+}
+
+// sameNamespace drops RedpandaBrokerPools outside the cluster's namespace.
+// The index honors clusterRef.namespace, which exists for ShadowLinks and
+// other cluster-referencing CRs; pools never span namespaces. NodePools keep
+// whatever the index binds, so no existing pool can drop out on upgrade.
+func sameNamespace(pools []*redpandav1alpha2.RedpandaBrokerPool, namespace string) []*redpandav1alpha2.RedpandaBrokerPool {
+	return functional.Filter(pools, func(p *redpandav1alpha2.RedpandaBrokerPool) bool { return p.Namespace == namespace })
 }
 
 // PoolsFor returns the rendered spec of each pool of cluster, as
@@ -226,6 +234,6 @@ func PoolsFor(ctx context.Context, ctl *kube.Ctl, cluster *redpandav1alpha2.Redp
 
 	return conversion.BrokerPools(conversion.ResolvePools(
 		functional.Filter(nodePools.GetItems(), func(p *redpandav1alpha2.NodePool) bool { return bound(p) }),
-		functional.Filter(brokerPools.GetItems(), func(p *redpandav1alpha2.RedpandaBrokerPool) bool { return bound(p) }),
+		sameNamespace(functional.Filter(brokerPools.GetItems(), func(p *redpandav1alpha2.RedpandaBrokerPool) bool { return bound(p) }), cluster.Namespace),
 	)), nil
 }

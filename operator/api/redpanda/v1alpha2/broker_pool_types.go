@@ -64,7 +64,9 @@ type BrokerPoolSpec struct {
 	EmbeddedBrokerPoolSpec `json:",inline"`
 	// Specifies the Redpanda or StretchCluster resource this pool belongs
 	// to. `kind` defaults to `Redpanda`; set it to `StretchCluster` for a
-	// pool of a stretch cluster.
+	// pool of a stretch cluster. A Redpanda resource must be in this pool's
+	// namespace; a pool that references one in another namespace is not
+	// bound.
 	ClusterRef ClusterRef `json:"clusterRef"`
 }
 
