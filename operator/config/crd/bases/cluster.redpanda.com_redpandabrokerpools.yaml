@@ -466,6 +466,9 @@ spec:
                               description: Specifies whether this Listener is enabled.
                               type: boolean
                             nodePort:
+                              description: |-
+                                Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                external Service publishes.
                               format: int32
                               type: integer
                             port:
@@ -669,6 +672,9 @@ spec:
                               description: Specifies whether this Listener is enabled.
                               type: boolean
                             nodePort:
+                              description: |-
+                                Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                external Service publishes.
                               format: int32
                               type: integer
                             port:
@@ -872,6 +878,9 @@ spec:
                               description: Specifies whether this Listener is enabled.
                               type: boolean
                             nodePort:
+                              description: |-
+                                Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                external Service publishes.
                               format: int32
                               type: integer
                             port:
@@ -1154,6 +1163,9 @@ spec:
                               description: Specifies whether this Listener is enabled.
                               type: boolean
                             nodePort:
+                              description: |-
+                                Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                external Service publishes.
                               format: int32
                               type: integer
                             port:

@@ -15,10 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
+func ServiceMonitor(state *RenderState, listeners *redpanda.Listeners) *monitoringv1.ServiceMonitor {
 	if !state.Values.Monitoring.Enabled {
 		return nil
 	}
@@ -33,7 +34,7 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 	endpoint := monitoringv1.Endpoint{
 		Interval: state.Values.Monitoring.ScrapeInterval,
 		Path:     "/public_metrics",
-		Port:     "admin",
+		Port:     listeners.Admin().Reserved.PortName,
 		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 

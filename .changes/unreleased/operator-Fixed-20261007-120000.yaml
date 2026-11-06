@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'The StretchCluster LoadBalancer Services publish the first advertised port of each external listener, and forward it to the listener port. Before, they published the listener port, but clients connect to the advertised port.'
+time: 2026-10-07T12:00:00.000000-04:00

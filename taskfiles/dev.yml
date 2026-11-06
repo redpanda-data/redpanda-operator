@@ -88,7 +88,7 @@ tasks:
         scan=$(mktemp)
         trap 'rm -f "$scan"' EXIT
         grep -rl --include='*_test.go' \
-            --exclude-dir='.claude' --exclude-dir='temp' --exclude-dir='.git' \
+            --exclude-dir='.claude' --exclude-dir='temp' --exclude-dir='.git' --exclude-dir='.jj' \
             -E 'testutil\.(NewTxTar|AssertGolden|Update\(\))|goldenfile\.|OVERWRITE_GOLDEN_FILES' . \
         | while IFS= read -r f; do
             awk -v dir="$(dirname "$f")" '
