@@ -1042,6 +1042,94 @@ func (m *maintenanceSlotAdminAPI) broker(id int) rpadmin.Broker {
 	return b
 }
 
+func TestPodEvictionDeletePreconditions(t *testing.T) {
+	tcs := []struct {
+		name     string
+		replicas int32
+		stale    bool
+		replace  bool
+	}{
+		{"single replica fresh pod is deleted", 1, false, false},
+		{"single replica stale pod is not deleted", 1, true, false},
+		{"multi replica fresh pod is deleted", 3, false, false},
+		{"multi replica stale pod is not deleted", 3, true, false},
+		{"fresh pod that can't start is deleted", 3, false, true},
+		{"stale pod that can't start is not deleted", 3, true, true},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			cluster := pandaCluster()
+			cluster.Spec.NodePools[0].Replicas = ptr.To(tc.replicas)
+
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cluster-first-0",
+					Namespace: "default",
+				},
+				Status: corev1.PodStatus{
+					Conditions: []corev1.PodCondition{{
+						Type:   ClusterUpdatePodCondition,
+						Status: corev1.ConditionTrue,
+						Reason: ClusterUpdateReasonConfig,
+					}},
+				},
+			}
+			c := fake.NewClientBuilder().WithObjects(pod).Build()
+			require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), pod))
+
+			if tc.stale {
+				// NB: Bump the stored ResourceVersion so `pod` no longer
+				// reflects what's on the server.
+				updated := pod.DeepCopy()
+				updated.Labels = map[string]string{"modified": "true"}
+				require.NoError(t, c.Update(ctx, updated))
+				require.NotEqual(t, pod.ResourceVersion, updated.ResourceVersion)
+			}
+
+			ssres := StatefulSetResource{
+				Client:       c,
+				pandaCluster: cluster,
+				nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
+					NodePoolSpec: cluster.Spec.NodePools[0],
+				},
+				logger: ctrl.Log.WithName("TestPodEvictionDeletePreconditions"),
+				adminAPIClientFactory: func(
+					context.Context,
+					client.Reader,
+					*vectorizedv1alpha1.Cluster,
+					string,
+					types.AdminTLSConfigProvider,
+					redpandaclient.DialContextFunc,
+					time.Duration,
+					...string,
+				) (adminutils.AdminAPIClient, error) {
+					return &adminutils.MockAdminAPI{
+						Log:               ctrl.Log.WithName("mockAdminAPI"),
+						MaintenanceStatus: &rpadmin.MaintenanceStatus{Finished: ptr.To(true)},
+					}, nil
+				},
+			}
+
+			var artificialPod corev1.Pod
+			artificialPod.Spec = pod.Spec
+
+			err := ssres.podEviction(ctx, pod, &artificialPod, nil, tc.replace)
+
+			var got corev1.Pod
+			getErr := c.Get(ctx, client.ObjectKeyFromObject(pod), &got)
+			if tc.stale {
+				require.True(t, apierrors.IsConflict(err), "expected conflict, got: %v", err)
+				require.NoError(t, getErr, "stale pod must not be deleted")
+			} else {
+				require.True(t, apierrors.IsNotFound(getErr), "pod should have been deleted, got: %v", getErr)
+			}
+		})
+	}
+}
+
 func TestEvaluateRedpandaUnderReplicatedPartition(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f, err := os.Open("testdata/metrics.golden.txt")
