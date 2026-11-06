@@ -555,24 +555,18 @@ func Run(
 		// ClusterMetricController for parity between operator versions.
 		// Bound to the local manager because the Redpanda CRD only exists
 		// on the local cluster.
-		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr).SetupWithManager(mgr); err != nil {
+		metricsCtl, err := cachedCtl(mgr)
+		if err != nil {
+			return err
+		}
+		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr.GetClient(), metricsCtl, opts.enableBrokerController).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "RedpandaMetrics")
 			return err
 		}
 
 		// Console Reconciler.
 		if opts.enableConsoleController {
-			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
-					// need to set the cache as well.
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			ctl, err := cachedCtl(mgr)
 			if err != nil {
 				return err
 			}
@@ -588,15 +582,7 @@ func Run(
 		// Connect Reconciler (enterprise feature, gated by the operator-level
 		// license from --license-file-path / enterprise.licenseSecretRef).
 		if opts.enableConnectController {
-			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-				Options: client.Options{
-					Scheme: mgr.GetScheme(),
-					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
-					},
-				},
-				FieldManager: string(lifecycle.DefaultFieldOwner),
-			})
+			pipelineCtl, err := cachedCtl(mgr)
 			if err != nil {
 				return err
 			}
@@ -946,7 +932,11 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		return err
 	}
 
-	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	metricsCtl, err := cachedCtl(mgr)
+	if err != nil {
+		return err
+	}
+	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient(), metricsCtl, opts.enableBrokerController).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
 		return err
 	}
@@ -989,4 +979,20 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	}
 
 	return nil
+}
+
+// cachedCtl builds a kube.Ctl that reads through mgr's informer cache, so it
+// sees exactly what mgr.GetClient() sees and never falls out of step with the
+// controllers sharing that cache. It shares mgr's HTTP client and RESTMapper
+// too, so it runs no discovery of its own.
+func cachedCtl(mgr ctrl.Manager) (*kube.Ctl, error) {
+	return kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+		Options: client.Options{
+			HTTPClient: mgr.GetHTTPClient(),
+			Scheme:     mgr.GetScheme(),
+			Mapper:     mgr.GetRESTMapper(),
+			Cache:      &client.CacheOptions{Reader: mgr.GetCache()},
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
 }

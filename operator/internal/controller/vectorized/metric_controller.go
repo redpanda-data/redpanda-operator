@@ -11,17 +11,22 @@ package vectorized
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 )
 
@@ -60,16 +65,29 @@ func init() {
 // ClusterMetricController provides metrics for nodes and cluster
 type ClusterMetricController struct {
 	client.Client
+	// brokers lists Broker CRs for operator_broker_phase on every pass; a
+	// missing Broker CRD is tolerated (see BrokerPhaseRecorder.Observe).
+	brokers *kube.Ctl
+
 	currentLabels              collections.Set[string]
 	currentConfigurationLabels collections.Set[string]
+	brokerPhases               *observability.BrokerPhaseRecorder
+
+	// watchBrokers adds the Broker watch; false while the Broker controller
+	// is off, see SetupWithManager.
+	watchBrokers bool
 }
 
-// NewClusterMetricsController creates ClusterMetricController
-func NewClusterMetricsController(c client.Client) *ClusterMetricController {
+// NewClusterMetricsController creates ClusterMetricController. watchBrokers
+// is whether the Broker controller runs.
+func NewClusterMetricsController(c client.Client, brokers *kube.Ctl, watchBrokers bool) *ClusterMetricController {
 	return &ClusterMetricController{
 		Client:                     c,
+		brokers:                    brokers,
 		currentLabels:              collections.NewConcurrentSet[string](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
+		brokerPhases:               observability.NewBrokerPhaseRecorder(observability.BrokerKindCluster),
+		watchBrokers:               watchBrokers,
 	}
 }
 
@@ -83,7 +101,7 @@ func (r *ClusterMetricController) Reconcile(
 	cl := vectorizedv1alpha1.ClusterList{}
 	err := r.List(ctx, &cl, &client.ListOptions{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("unable to list the clusters: %w", err)
+		return ctrl.Result{}, errors.Wrap(err, "unable to list the clusters")
 	}
 
 	redpandaClusters.Set(float64(len(cl.Items)))
@@ -110,6 +128,7 @@ func (r *ClusterMetricController) Reconcile(
 		if !curLabels.HasAny(key) {
 			desireRedpandaNodes.DeleteLabelValues(key)
 			actualRedpandaNodes.DeleteLabelValues(key)
+			r.currentLabels.Delete(key)
 		}
 	}
 
@@ -132,17 +151,29 @@ func (r *ClusterMetricController) Reconcile(
 	for _, k := range r.currentConfigurationLabels.Values() {
 		if _, exists := misconfiguredClustersCount[k]; !exists {
 			misconfiguredClusters.DeleteLabelValues(k)
+			r.currentConfigurationLabels.Delete(k)
 		}
+	}
+
+	if err := r.brokerPhases.Observe(ctx, r.brokers); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
+// SetupWithManager sets up the controller with the Manager. Every watch feeds
+// SingletonRequest and the Broker watch is conditional, for the reasons
+// RedpandaMetricsReconciler.SetupWithManager gives. Pods need no watch of
+// their own: a pod change reaches this controller through the Cluster status
+// update that follows it.
 func (r *ClusterMetricController) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&vectorizedv1alpha1.Cluster{}).
-		Owns(&corev1.Pod{}).
-		WithOptions(controller.Options{SkipNameValidation: ptr.To(true)}).
-		Complete(r)
+	b := ctrl.NewControllerManagedBy(mgr).
+		Named("cluster-metrics").
+		Watches(&vectorizedv1alpha1.Cluster{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest)).
+		WithOptions(controller.Options{SkipNameValidation: ptr.To(true)})
+	if r.watchBrokers {
+		b = b.Watches(&redpandav1alpha2.Broker{}, handler.EnqueueRequestsFromMapFunc(observability.SingletonRequest), builder.WithPredicates(observability.BrokerPhaseChanged))
+	}
+	return b.Complete(r)
 }

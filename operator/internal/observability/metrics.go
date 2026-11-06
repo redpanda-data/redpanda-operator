@@ -226,7 +226,7 @@ var (
 )
 
 // ====================================================================
-// Group 3 — Redpanda CR resource-state gauges (v2 only).
+// Group 3 — Redpanda CR resource-state gauges.
 //
 // Set by RedpandaMetricsReconciler in operator/internal/controller/
 // redpanda/metric_controller.go. The reconciler recomputes totals from
@@ -237,6 +237,8 @@ var (
 // not consolidated here — that controller is considered legacy and is
 // frozen against unrelated changes. Its metrics continue to live next
 // to its reconciler in operator/internal/controller/vectorized/.
+// BrokerPhase is the one gauge both controllers write, each for its own
+// `kind` (see recorder.go), so it has to be declared once, here.
 // ====================================================================
 
 var (
@@ -259,6 +261,15 @@ var (
 		Name: "redpanda_misconfigured_clusters",
 		Help: "Number of Redpanda clusters whose ConfigurationApplied condition is not True, labeled by reason.",
 	}, []string{"reason"})
+
+	// BrokerPhase counts Broker CRs per owning cluster and status.phase, every
+	// phase zero-filled per cluster. Absent for a cluster without Broker CRs
+	// (StatefulSet mode) and when the Broker CRD is not installed.
+	BrokerPhase = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsNamespace,
+		Name:      "broker_phase",
+		Help:      "Number of Broker CRs per owning cluster in each status.phase. namespace is the Broker's own namespace. kind is the cluster CR the broker belongs to: Cluster (redpanda.vectorized.io) or Redpanda (cluster.redpanda.com; NodePool-referenced brokers count under their Redpanda). phase=Unknown is a broker not yet reconciled, or one in a phase this operator version does not know.",
+	}, []string{"namespace", "kind", "name", "phase"})
 )
 
 func init() {
@@ -285,5 +296,6 @@ func init() {
 		RedpandaDesiredNodes,
 		RedpandaReadyNodes,
 		RedpandaMisconfiguredClusters,
+		BrokerPhase,
 	)
 }
