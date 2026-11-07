@@ -7,6 +7,7 @@ replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-c
 require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cockroachdb/errors v1.11.3
+	github.com/docker/docker v28.4.0+incompatible
 	github.com/go-logr/logr v1.4.4
 	github.com/gonvenience/ytbx v1.4.4
 	github.com/google/cel-go v0.26.1
@@ -22,6 +23,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/pflag v1.0.9
 	github.com/stretchr/testify v1.12.1
+	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.39.0
 	github.com/twmb/franz-go v1.20.4
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
@@ -126,7 +128,6 @@ require (
 	github.com/cyphar/filepath-securejoin v0.5.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v28.4.0+incompatible // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ebitengine/purego v0.9.1 // indirect
@@ -260,7 +261,6 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/cobra v1.10.0 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
-	github.com/testcontainers/testcontainers-go v0.39.0 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect

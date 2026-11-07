@@ -10,17 +10,22 @@
 package kube
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	dockercontainer "github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/k3s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,13 +35,14 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 func TestDialer(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	container, err := k3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")
+	container, err := k3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1", k3sOptions(t)...)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = container.Terminate(context.Background())
@@ -51,6 +57,17 @@ func TestDialer(t *testing.T) {
 	client, err := client.New(restcfg, client.Options{Scheme: s})
 	require.NoError(t, err)
 
+	// k3s serves the API before the node is schedulable.
+	require.Eventually(t, func() bool {
+		var nodes corev1.NodeList
+		if err := client.List(ctx, &nodes); err != nil || len(nodes.Items) == 0 {
+			return false
+		}
+		return slices.ContainsFunc(nodes.Items[0].Status.Conditions, func(c corev1.NodeCondition) bool {
+			return c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue
+		})
+	}, 2*time.Minute, 250*time.Millisecond)
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
@@ -62,7 +79,7 @@ func TestDialer(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Image: "caddy",
+					Image: "caddy:2.10.2",
 					Name:  "caddy",
 					Command: []string{
 						"caddy",
@@ -113,8 +130,10 @@ func TestDialer(t *testing.T) {
 			return false
 		}
 
-		return ready.Status.Phase == corev1.PodRunning
-	}, 30*time.Second, 10*time.Millisecond)
+		return slices.ContainsFunc(ready.Status.Conditions, func(c corev1.PodCondition) bool {
+			return c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue
+		})
+	}, 2*time.Minute, 10*time.Millisecond)
 
 	dialer := NewPodDialer(restcfg)
 	// Set the `ServerName` to match what Caddy generates for the localhost domain,
@@ -223,4 +242,38 @@ func TestDialer(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), canary)
 	})
+}
+
+// k3sOptions adjusts the testcontainers k3s defaults for this test.
+func k3sOptions(t *testing.T) []testcontainers.ContainerCustomizer {
+	opts := []testcontainers.ContainerCustomizer{
+		// The module runs k3s with cgroupns=host. Under that the kubelet tears
+		// down and recreates pod sandboxes while port-forwards still target the
+		// old one; k3d runs k3s in a private cgroup namespace, so do the same.
+		testcontainers.WithHostConfigModifier(func(hc *dockercontainer.HostConfig) {
+			hc.Privileged = true
+			hc.Tmpfs = map[string]string{"/run": "", "/var/run": ""}
+		}),
+		// None of the bundled add-ons are needed; skipping them avoids pulling
+		// their images.
+		testcontainers.WithCmdArgs("--disable=coredns,servicelb,local-storage,metrics-server"),
+	}
+
+	// Authenticate containerd's Docker Hub pulls with the CI credentials, as
+	// pkg/k3d does, so the pod image isn't subject to the anonymous rate limit.
+	user, token := os.Getenv("DOCKERHUB_USER"), os.Getenv("DOCKERHUB_TOKEN")
+	if user != "" && token != "" {
+		auth := map[string]any{"auth": map[string]string{"username": user, "password": token}}
+		registries, err := yaml.Marshal(map[string]any{
+			"configs": map[string]any{"docker.io": auth, "registry-1.docker.io": auth},
+		})
+		require.NoError(t, err)
+		opts = append(opts, testcontainers.WithFiles(testcontainers.ContainerFile{
+			Reader:            bytes.NewReader(registries),
+			ContainerFilePath: "/etc/rancher/k3s/registries.yaml",
+			FileMode:          0o600,
+		}))
+	}
+
+	return opts
 }
