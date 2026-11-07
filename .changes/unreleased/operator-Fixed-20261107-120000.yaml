@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Resources that reference a Redpanda cluster through `cluster.clusterRef`, such as `User`, `Topic`, `Schema`, and `Role`, failed with `error fetching server root CA <namespace>/<cluster>-<cert>-root-certificate: server TLS certificate not found` when the cluster''s certificate set `tls.certs.<cert>.issuerRef`. That Secret only exists for the chart''s own self-signed CA. The operator now verifies brokers the way rpk does: against the certificate''s issued Secret, using its `ca.crt` when `caEnabled` is true and its `tls.crt` otherwise. For `issuerRef` and `secretRef` certificates alike, every certificate in that key is now trusted, not only the first, so a CA bundle or a full chain works.'
+time: 2026-11-07T12:00:00.000000-05:00

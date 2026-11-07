@@ -10,8 +10,18 @@
 package chart
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
+	"slices"
 	"testing"
+	"time"
 
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/assert"
@@ -87,6 +97,36 @@ func TestCertificates(t *testing.T) {
 			ExpectedRootCertKey:    "ca.crt",
 			ExpectedClientCertName: "client-cert",
 		},
+		"certificate with issuer ref": {
+			Cert: &TLSCert{
+				CAEnabled: true,
+				IssuerRef: &cmmetav1.ObjectReference{Name: "private-ca", Kind: "ClusterIssuer"},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "redpanda-default-cert",
+			ExpectedRootCertKey:    "ca.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"certificate with issuer ref without CA": {
+			Cert: &TLSCert{
+				IssuerRef: &cmmetav1.ObjectReference{Name: "private-ca", Kind: "ClusterIssuer"},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "redpanda-default-cert",
+			ExpectedRootCertKey:    "tls.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"certificate with issuer ref and secret ref": {
+			Cert: &TLSCert{
+				CAEnabled: true,
+				IssuerRef: &cmmetav1.ObjectReference{Name: "private-ca", Kind: "ClusterIssuer"},
+				SecretRef: &corev1.LocalObjectReference{Name: "some-cert"},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "some-cert",
+			ExpectedRootCertKey:    "ca.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
 	}
 
 	for name, c := range cases {
@@ -114,6 +154,115 @@ func TestCertificates(t *testing.T) {
 			require.Equal(t, c.ExpectedRootCertName, actualRootCertName)
 			require.Equal(t, c.ExpectedRootCertKey, actualRootCertKey)
 			require.Equal(t, c.ExpectedClientCertName, actualClientCertName)
+		})
+	}
+}
+
+// TestTLSConfig asserts that the operator's clients trust the certificate
+// brokers serve, in each way the serving certificate can be issued.
+func TestTLSConfig(t *testing.T) {
+	t.Parallel()
+
+	ctl := kubetest.NewEnv(t)
+	ctx := t.Context()
+
+	const namespace = "tls-config"
+	serverName := "redpanda." + namespace + ".svc.cluster.local"
+
+	_, err := kube.Create(ctx, ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: namespace},
+	})
+	require.NoError(t, err)
+
+	root := newTestCA(t, "root")
+	rotated := newTestCA(t, "rotated")
+	rootLeaf := root.issue(t, serverName)
+	rotatedLeaf := rotated.issue(t, serverName)
+
+	issuerRef := &cmmetav1.ObjectReference{Name: "private-ca", Kind: "ClusterIssuer"}
+
+	cases := map[string]struct {
+		cert    TLSCert
+		secrets map[string]map[string][]byte
+		served  *x509.Certificate
+		wantErr string
+	}{
+		"self-signed reads the root certificate": {
+			cert: TLSCert{CAEnabled: true},
+			secrets: map[string]map[string][]byte{
+				"redpanda-default-root-certificate": {"tls.crt": root.pem},
+			},
+			served: rootLeaf,
+		},
+		// NB: tls.crt is left out wherever ca.crt should be read; a served
+		// leaf in the pool would verify itself.
+		"issuer ref reads the serving ca.crt": {
+			cert: TLSCert{CAEnabled: true, IssuerRef: issuerRef},
+			secrets: map[string]map[string][]byte{
+				"redpanda-default-cert": {"ca.crt": root.pem},
+			},
+			served: rootLeaf,
+		},
+		"issuer ref without CA reads the serving tls.crt": {
+			cert: TLSCert{IssuerRef: issuerRef},
+			secrets: map[string]map[string][]byte{
+				"redpanda-default-cert": {"tls.crt": encodeCert(rootLeaf)},
+			},
+			served: rootLeaf,
+		},
+		"secret ref reads its ca.crt": {
+			cert: TLSCert{CAEnabled: true, SecretRef: &corev1.LocalObjectReference{Name: "byo-cert"}},
+			secrets: map[string]map[string][]byte{
+				"byo-cert": {"ca.crt": root.pem},
+			},
+			served: rootLeaf,
+		},
+		"ca.crt bundle trusts every CA": {
+			cert: TLSCert{CAEnabled: true, IssuerRef: issuerRef},
+			secrets: map[string]map[string][]byte{
+				"redpanda-default-cert": {"ca.crt": slices.Concat(root.pem, rotated.pem)},
+			},
+			served: rotatedLeaf,
+		},
+		"empty ca.crt": {
+			cert: TLSCert{CAEnabled: true, IssuerRef: issuerRef},
+			secrets: map[string]map[string][]byte{
+				"redpanda-default-cert": {"tls.crt": encodeCert(rootLeaf), "ca.crt": {}},
+			},
+			wantErr: `no PEM certificates in key "ca.crt"`,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			release := helmette.Release{Name: "redpanda", Namespace: namespace, Service: "Helm"}
+			dot, err := Chart.Dot(ctl.RestConfig(), release, Values{
+				ClusterDomain: "cluster.local.",
+				TLS:           TLS{Certs: TLSCertMap{"default": tc.cert}},
+			})
+			require.NoError(t, err)
+			state, err := RenderStateFromDot(dot)
+			require.NoError(t, err)
+
+			for secretName, data := range tc.secrets {
+				secret := corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace},
+					Data:       data,
+				}
+				_, err := kube.Create(ctx, ctl, secret)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = ctl.Delete(ctx, &secret) })
+			}
+
+			cfg, err := state.TLSConfig(InternalTLS{Cert: "default"})
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+
+			_, err = tc.served.Verify(x509.VerifyOptions{Roots: cfg.RootCAs, DNSName: cfg.ServerName})
+			require.NoError(t, err)
 		})
 	}
 }
@@ -251,4 +400,56 @@ func TestFirstUser(t *testing.T) {
 		user, password, mechanism := firstUser([]byte(c.In))
 		assert.Equal(t, [3]string{user, password, mechanism}, c.Out)
 	}
+}
+
+type testCA struct {
+	cert *x509.Certificate
+	key  *ecdsa.PrivateKey
+	pem  []byte
+}
+
+func newTestCA(t *testing.T, cn string) testCA {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: cn},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(time.Hour),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageCertSign,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+	cert, err := x509.ParseCertificate(der)
+	require.NoError(t, err)
+
+	return testCA{cert: cert, key: key, pem: encodeCert(cert)}
+}
+
+func (ca testCA) issue(t *testing.T, dnsName string) *x509.Certificate {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject:      pkix.Name{CommonName: dnsName},
+		DNSNames:     []string{dnsName},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, ca.cert, &key.PublicKey, ca.key)
+	require.NoError(t, err)
+	cert, err := x509.ParseCertificate(der)
+	require.NoError(t, err)
+
+	return cert
+}
+
+func encodeCert(cert *x509.Certificate) []byte {
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 }
