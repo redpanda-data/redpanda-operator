@@ -1,0 +1,6 @@
+project: operator
+kind: Added
+body: >-
+  The chart's post-install notes describe the 50-core limit past which Redpanda v26.3 and later refuse to start a broker
+  of an unlicensed cluster upgrading across a major version, and where the operator reports the refusal.
+time: 2026-11-07T08:55:28.000000000-05:00

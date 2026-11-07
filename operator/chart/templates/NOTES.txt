@@ -18,3 +18,10 @@ The pods will rollout in a few seconds. To check the status:
   kubectl -n {{ .Release.Namespace }} rollout status -w deployment/{{ template "redpanda-operator.fullname" . }}
 
 Now you can install a Redpanda resource!
+
+**Notice**: Redpanda v26.3+ refuses to start a broker upgrading across a major version
+(e.g. v26.2 to v26.3) when a cluster without an Enterprise license runs more
+than 50 cores in total: each broker's --smp, or every core on its node when it
+sets no CPU. `kubectl get redpanda` shows the refusal in its LICENSE column. To
+fix, set spec.clusterSpec.enterprise.license (or licenseSecretRef) or run at
+most 50 cores. See https://docs.redpanda.com/current/get-started/licenses.
