@@ -335,6 +335,12 @@ const (
 	// "LicenseValid" condition when it evaluates to False because a cluster has no
 	// license.
 	ClusterLicenseValidReasonNotPresent ClusterLicenseValidCondition = "NotPresent"
+	// ClusterLicenseValidReasonUpgradeRefused - This reason is used with the
+	// "LicenseValid" condition when it evaluates to False because a broker refused
+	// to start on a new major version: the cluster uses enterprise features without
+	// a license. A refused broker never serves the Admin API, so the operator reads
+	// the refusal from the broker's logs.
+	ClusterLicenseValidReasonUpgradeRefused ClusterLicenseValidCondition = "UpgradeRefused"
 	// ClusterLicenseValidReasonError - This reason is used when a cluster has only
 	// been partially reconciled and we have early returned due to a retryable error
 	// occurring prior to applying the desired cluster state. If it is set on any
@@ -503,6 +509,12 @@ const (
 	// "LicenseValid" condition when it evaluates to False because a cluster has no
 	// license.
 	StretchClusterLicenseValidReasonNotPresent StretchClusterLicenseValidCondition = "NotPresent"
+	// StretchClusterLicenseValidReasonUpgradeRefused - This reason is used with the
+	// "LicenseValid" condition when it evaluates to False because a broker refused
+	// to start on a new major version: the cluster uses enterprise features without
+	// a license. A refused broker never serves the Admin API, so the operator reads
+	// the refusal from the broker's logs.
+	StretchClusterLicenseValidReasonUpgradeRefused StretchClusterLicenseValidCondition = "UpgradeRefused"
 	// StretchClusterLicenseValidReasonError - This reason is used when a stretch
 	// cluster has only been partially reconciled and we have early returned due to
 	// a retryable error occurring prior to applying the desired cluster state. If
@@ -1237,6 +1249,8 @@ func (s *ClusterStatus) SetLicenseValid(reason ClusterLicenseValidCondition, mes
 			message = "No cluster license is present"
 		}
 		status = metav1.ConditionFalse
+	case ClusterLicenseValidReasonUpgradeRefused:
+		status = metav1.ConditionFalse
 	case ClusterLicenseValidReasonError:
 		s.isLicenseValidTransientError = true
 		status = metav1.ConditionFalse
@@ -1652,6 +1666,8 @@ func (s *StretchClusterStatus) SetLicenseValid(reason StretchClusterLicenseValid
 		if message == "" {
 			message = "No cluster license is present"
 		}
+		status = metav1.ConditionFalse
+	case StretchClusterLicenseValidReasonUpgradeRefused:
 		status = metav1.ConditionFalse
 	case StretchClusterLicenseValidReasonError:
 		s.isLicenseValidTransientError = true

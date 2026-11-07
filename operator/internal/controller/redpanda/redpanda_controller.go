@@ -310,6 +310,13 @@ type clusterReconciliationState struct {
 	// BrokerMigration condition, so a finished pool never declares Complete
 	// while another still has a live StatefulSet.
 	migration *brokerset.MigrationAggregator
+	// refusals is what broker logs say about failed starts this pass; see
+	// reconcileStartupRefusals.
+	refusals startupRefusals
+	// refusalsCollected and licenseReconciled mark that those steps ran, so a
+	// chain that stops between them still reconciles the license.
+	refusalsCollected bool
+	licenseReconciled bool
 }
 
 // requeueNoLaterThan records that this pass must requeue within d - the
@@ -444,6 +451,14 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		// sub reconcilers, then just early return
 		if err != nil || result.RequeueAfter > 0 {
 			logger.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
+			// A roll stuck on a refused broker aborts every pass, and that is
+			// exactly when users license the cluster, so the refusal must not
+			// freeze license sync. Its condition reports its own failure;
+			// returning that would turn this pass's requeue into error
+			// backoff.
+			if state.refusalsCollected && !state.licenseReconciled && state.startupRefusalInPlay() {
+				_, _ = r.reconcileLicense(ctx, state, cluster)
+			}
 			return r.syncStatus(ctx, cluster, state, result, err)
 		}
 	}
@@ -502,6 +517,9 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		r.reconcilePools,
 		// now we memoize the admin client onto the state
 		r.initAdminClient,
+		// read why brokers that keep failing to start failed, for the
+		// Healthy and LicenseValid conditions; it never stops the chain
+		r.reconcileStartupRefusals,
 		// replace outdated pods whose broker cannot start, ahead of the steps
 		// that can fail while those brokers are down
 		r.reconcileFailedPods,
@@ -1192,10 +1210,10 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			logger.Error(err, "error decommissioning brokers")
 			if internalclient.IsTerminalClientError(err) {
 				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
-				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonTerminalError, err.Error())
+				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonTerminalError, state.refusals.healthMessages(err.Error())...)
 			} else {
 				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
-				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonError, err.Error())
+				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonError, state.refusals.healthMessages(err.Error())...)
 			}
 			trace.EndSpan(span, err)
 			return
@@ -1210,7 +1228,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		} else {
 			state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
 			// TODO: give more specific message here
-			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, "Cluster is not healthy")
+			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, state.refusals.healthMessages("Cluster is not healthy")...)
 		}
 		trace.EndSpan(span, err)
 	}()
@@ -1430,13 +1448,20 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 
 func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	var license *redpandav1alpha2.RedpandaLicenseStatus
+	state.licenseReconciled = true
 
 	ctx, span := trace.Start(ctx, "reconcileLicense")
 	logger := log.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
-			if internalclient.IsTerminalClientError(err) {
+			// Without an answer from the Admin API, the brokers' logs may
+			// still say why; a license it last confirmed still stands.
+			rp := state.cluster.Redpanda
+			licensed := apimeta.IsStatusConditionTrue(rp.Status.Conditions, statuses.ClusterLicenseValid)
+			if refused, ok := r.setLicenseFromRefusals(state, cluster, licensed, rp.Status.LicenseStatus.DeepCopy(), err.Error()); ok {
+				state.status.LicenseStatus = refused
+			} else if internalclient.IsTerminalClientError(err) {
 				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonTerminalError, err.Error())
 			} else {
 				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonError, err.Error())
@@ -1476,15 +1501,6 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 
-	switch features.LicenseStatus {
-	case rpadmin.LicenseStatusExpired:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired)
-	case rpadmin.LicenseStatusNotPresent:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent)
-	case rpadmin.LicenseStatusValid:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonValid)
-	}
-
 	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
 		inUseFeatures := []string{}
 		for _, feature := range features.Features {
@@ -1520,6 +1536,19 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 	}
 
 	license = licenseStatus()
+	if refused, ok := r.setLicenseFromRefusals(state, cluster, features.LicenseStatus == rpadmin.LicenseStatusValid, license); ok {
+		license = refused
+		return ctrl.Result{}, nil
+	}
+
+	switch features.LicenseStatus {
+	case rpadmin.LicenseStatusExpired:
+		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired)
+	case rpadmin.LicenseStatusNotPresent:
+		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent)
+	case rpadmin.LicenseStatusValid:
+		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonValid)
+	}
 	return ctrl.Result{}, nil
 }
 

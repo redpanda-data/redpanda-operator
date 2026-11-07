@@ -21,6 +21,10 @@
 {{- if (ne $w_1 "") -}}
 {{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` $w_1))) -}}
 {{- end -}}
+{{- $w_2 := (get (fromJson (include "redpanda.coreLimitWarning" (dict "a" (list $state)))) "r") -}}
+{{- if (ne $w_2 "") -}}
+{{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` $w_2))) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $out) | toJson -}}
 {{- break -}}
@@ -39,6 +43,62 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "") | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.coreLimitWarning" -}}
+{{- $state := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (or (ne $state.Values.enterprise.license "") (ne (toJson $state.Values.enterprise.licenseSecretRef) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" "") | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $smp := ((get (fromJson (include "redpanda.brokerSMP" (dict "a" (list $state)))) "r") | int64) -}}
+{{- $replicas := (($state.Values.statefulset.replicas | int) | int64) -}}
+{{- $total := ((mul $smp $replicas) | int64) -}}
+{{- $usage := "" -}}
+{{- if (eq $smp (0 | int64)) -}}
+{{- $usage = `This release sets no CPU for its brokers, so each uses every core on its node.` -}}
+{{- else -}}{{- if (gt $total (50 | int)) -}}
+{{- $usage = (printf `This release runs %d cores (%d brokers x %d).` $total $replicas $smp) -}}
+{{- else -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" "") | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf `%s Redpanda v26.3+ limits clusters without an Enterprise license to %d cores in total; over it, a broker upgrading across a major version (e.g. v26.2 to v26.3) refuses to start and logs cluster_cores_over_limit. To fix, set enterprise.license (or licenseSecretRef) or run at most %d cores. See https://docs.redpanda.com/current/get-started/licenses.` $usage (50 | int) (50 | int))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.brokerSMP" -}}
+{{- $state := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_98_____flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
+{{- $_ := (index $_98_____flags 0) -}}
+{{- $_ := (index $_98_____flags 1) -}}
+{{- $flags := (index $_98_____flags 2) -}}
+{{- range $_, $flag := $flags -}}
+{{- if (hasPrefix "--smp=" $flag) -}}
+{{- $_101_smp__ := (list (atoi (trimPrefix "--smp=" $flag)) nil) -}}
+{{- $smp := ((index $_101_smp__ 0) | int) -}}
+{{- $_ := (index $_101_smp__ 1) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" ($smp | int64)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (0 | int64)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

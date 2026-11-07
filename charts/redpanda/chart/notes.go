@@ -12,6 +12,7 @@ package chart
 
 import (
 	"fmt"
+	"strings"
 
 	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +26,10 @@ import (
 //
 // was:   rpk sasl environment variables
 const rpkSASLEnvironmentVariables = `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
+
+// communityCoreLimit is the most cores, summed across a cluster's brokers,
+// that Redpanda v26.3 and later run without an Enterprise license.
+const communityCoreLimit = 50
 
 // Notes is the entrypoint for NOTES.txt, which is rendered outside of
 // [render] and therefore has no [RenderState] of its own.
@@ -47,6 +52,9 @@ func warnings(state *RenderState) []string {
 	if w := cpuWarning(state); w != "" {
 		out = append(out, fmt.Sprintf(`**Warning**: %s`, w))
 	}
+	if w := coreLimitWarning(state); w != "" {
+		out = append(out, fmt.Sprintf(`**Warning**: %s`, w))
+	}
 	return out
 }
 
@@ -56,6 +64,43 @@ func cpuWarning(state *RenderState) string {
 		return fmt.Sprintf("%dm is below the minimum recommended CPU value for Redpanda", coresInMillis)
 	}
 	return ""
+}
+
+// coreLimitWarning explains the Community Edition core limit when this
+// release's brokers may exceed it and no license is configured. A license set
+// with rpk instead, or brokers outside this release, can't be seen here.
+func coreLimitWarning(state *RenderState) string {
+	if state.Values.Enterprise.License != "" || state.Values.Enterprise.LicenseSecretRef != nil {
+		return ""
+	}
+	smp := brokerSMP(state)
+	replicas := int64(state.Values.Statefulset.Replicas)
+	total := smp * replicas
+	var usage string
+	if smp == 0 {
+		usage = `This release sets no CPU for its brokers, so each uses every core on its node.`
+	} else if total > communityCoreLimit {
+		usage = fmt.Sprintf(`This release runs %d cores (%d brokers x %d).`, total, replicas, smp)
+	} else {
+		return ""
+	}
+	return fmt.Sprintf(
+		`%s Redpanda v26.3+ limits clusters without an Enterprise license to %d cores in total; over it, a broker upgrading across a major version (e.g. v26.2 to v26.3) refuses to start and logs cluster_cores_over_limit. To fix, set enterprise.license (or licenseSecretRef) or run at most %d cores. See https://docs.redpanda.com/current/get-started/licenses.`,
+		usage, communityCoreLimit, communityCoreLimit,
+	)
+}
+
+// brokerSMP is the --smp each broker starts with, or 0 when none is set and
+// Redpanda takes every core on its node.
+func brokerSMP(state *RenderState) int64 {
+	_, _, flags := RedpandaAdditionalStartFlags(&state.Values, Pool{Statefulset: state.Values.Statefulset})
+	for _, flag := range flags {
+		if strings.HasPrefix(flag, "--smp=") {
+			smp, _ := helmette.Atoi(strings.TrimPrefix(flag, "--smp="))
+			return int64(smp)
+		}
+	}
+	return 0
 }
 
 func notes(state *RenderState) []string {

@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -167,6 +168,9 @@ type stretchClusterReconciliationState struct {
 	// that broker bootstrap its own standalone cluster instead of joining
 	// (K8S-891). Callers must defer pool-derived rendering while this is set.
 	unobservedBrokerPoolClusters []string
+	// refusals is what broker logs say about failed starts this pass; see
+	// reconcileStartupRefusals.
+	refusals startupRefusals
 }
 
 func (s *stretchClusterReconciliationState) cleanup() {
@@ -416,7 +420,10 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // error or non-zero RequeueAfter stops the rest of the group for the pass.
 // initAdminClient runs before this group in Reconcile.
 //
-// reconcileFailedPods comes first: the later steps can fail while the brokers
+// reconcileStartupRefusals only reads broker logs, so it goes first and never
+// stops the group; reconcileDecommission and reconcileLicense report from it.
+//
+// reconcileFailedPods comes next: the later steps can fail while the brokers
 // it replaces are down, and it holds rather than fails.
 //
 // reconcileMaintenanceMode must precede reconcileDecommission, which requeues
@@ -428,6 +435,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // decommissioned-broker bad_rejoin (K8S-843) the wipe exists to recover.
 func (r *MulticlusterReconciler) clusterRemediationReconcilers() []stretchClusterReconciliationFn {
 	return []stretchClusterReconciliationFn{
+		r.reconcileStartupRefusals,
 		r.reconcileFailedPods,
 		r.reconcileMaintenanceMode,
 		r.reconcileStaleDiskWipe,
@@ -1446,9 +1454,9 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if err != nil {
 			logger.Error(err, "error decommissioning brokers")
 			if internalclient.IsTerminalClientError(err) {
-				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, state.refusals.healthMessages(err.Error())...)
 			} else {
-				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, err.Error())
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, state.refusals.healthMessages(err.Error())...)
 			}
 			trace.EndSpan(span, err)
 			return
@@ -1459,7 +1467,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		} else if health.IsHealthy {
 			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonHealthy)
 		} else {
-			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, "Cluster is not healthy")
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, state.refusals.healthMessages("Cluster is not healthy")...)
 		}
 		trace.EndSpan(span, err)
 	}()
@@ -1695,7 +1703,13 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 
 	defer func() {
 		if err != nil {
-			if internalclient.IsTerminalClientError(err) {
+			// Without an answer from the Admin API, the brokers' logs may
+			// still say why; a license it last confirmed still stands.
+			sc := state.cluster.StretchCluster
+			licensed := apimeta.IsStatusConditionTrue(statuses.GetConditions(sc), statuses.StretchClusterLicenseValid)
+			if refused, ok := r.setLicenseFromRefusals(state, cluster, licensed, sc.Status.LicenseStatus.DeepCopy(), err.Error()); ok {
+				state.status.LicenseStatus = refused
+			} else if internalclient.IsTerminalClientError(err) {
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
@@ -1733,15 +1747,6 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 	if err != nil {
 		logger.Error(err, "error getting license info")
 		return ctrl.Result{}, errors.WithStack(err)
-	}
-
-	switch features.LicenseStatus {
-	case rpadmin.LicenseStatusExpired:
-		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonExpired)
-	case rpadmin.LicenseStatusNotPresent:
-		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent)
-	case rpadmin.LicenseStatusValid:
-		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonValid)
 	}
 
 	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
@@ -1784,6 +1789,19 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 	}
 
 	license = licenseStatus()
+	if refused, ok := r.setLicenseFromRefusals(state, cluster, features.LicenseStatus == rpadmin.LicenseStatusValid, license); ok {
+		license = refused
+		return ctrl.Result{}, nil
+	}
+
+	switch features.LicenseStatus {
+	case rpadmin.LicenseStatusExpired:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonExpired)
+	case rpadmin.LicenseStatusNotPresent:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent)
+	case rpadmin.LicenseStatusValid:
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonValid)
+	}
 	return ctrl.Result{}, nil
 }
 

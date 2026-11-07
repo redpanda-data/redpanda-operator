@@ -192,6 +192,16 @@ func TestTemplate(t *testing.T) {
 				case `ASSERT-FIELD-NOT-CONTAINS`:
 					AssertFieldNotContains(t, params, objs)
 
+				case `ASSERT-NOTES-CONTAINS`:
+					var fragment string
+					require.NoError(t, json.Unmarshal(params[0], &fragment))
+					require.Contains(t, notes, fragment)
+
+				case `ASSERT-NOTES-NOT-CONTAINS`:
+					var fragment string
+					require.NoError(t, json.Unmarshal(params[0], &fragment))
+					require.NotContains(t, notes, fragment)
+
 				case `ASSERT-VALID-RPK-CONFIGURATION`:
 					AssertValidRPKConfiguration(t, objs)
 

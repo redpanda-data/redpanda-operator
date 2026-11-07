@@ -110,6 +110,12 @@ func TestCluster(t *testing.T) {
 			expected:  metav1.ConditionFalse,
 			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonNotPresent, "reason") },
 		},
+		"LicenseValid/UpgradeRefused": {
+			condition: ClusterLicenseValid,
+			reason:    string(ClusterLicenseValidReasonUpgradeRefused),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonUpgradeRefused, "reason") },
+		},
 		"LicenseValid/Error": {
 			condition: ClusterLicenseValid,
 			reason:    string(ClusterLicenseValidReasonError),
@@ -502,6 +508,14 @@ func TestStretchCluster(t *testing.T) {
 			expected:  metav1.ConditionFalse,
 			setFn: func(status *StretchClusterStatus) {
 				status.SetLicenseValid(StretchClusterLicenseValidReasonNotPresent, "reason")
+			},
+		},
+		"LicenseValid/UpgradeRefused": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonUpgradeRefused),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonUpgradeRefused, "reason")
 			},
 		},
 		"LicenseValid/Error": {

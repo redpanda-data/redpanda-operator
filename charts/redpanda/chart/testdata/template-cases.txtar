@@ -984,6 +984,55 @@ resources:
   limits: {}
   requests: {}
 
+-- core-limit-over --
+# ASSERT-NO-ERROR
+# ASSERT-NOTES-CONTAINS ["This release runs 80 cores (5 brokers x 16). Redpanda v26.3+ limits clusters without an Enterprise license to 50 cores in total"]
+statefulset:
+  replicas: 5
+resources:
+  cpu:
+    cores: 16
+
+-- core-limit-at --
+# ASSERT-NO-ERROR
+# ASSERT-NOTES-NOT-CONTAINS ["cluster_cores_over_limit"]
+statefulset:
+  replicas: 5
+resources:
+  cpu:
+    cores: 10
+
+-- core-limit-licensed --
+# ASSERT-NO-ERROR
+# ASSERT-NOTES-NOT-CONTAINS ["cluster_cores_over_limit"]
+enterprise:
+  licenseSecretRef:
+    name: license
+    key: license.key
+statefulset:
+  replicas: 5
+resources:
+  cpu:
+    cores: 16
+
+-- core-limit-smp-flag --
+# ASSERT-NO-ERROR
+# The --smp brokers start with, not resources, decides the count.
+# ASSERT-NOTES-CONTAINS ["This release runs 60 cores (3 brokers x 20)."]
+statefulset:
+  additionalRedpandaCmdFlags:
+  - --smp=20
+
+-- core-limit-no-cpu --
+# ASSERT-NO-ERROR
+# Without --smp each broker takes every core on its node, which the chart can't count.
+# ASSERT-NOTES-CONTAINS ["This release sets no CPU for its brokers, so each uses every core on its node."]
+resources:
+  limits:
+    memory: 10Gi
+  requests:
+    memory: 10Gi
+
 -- flag-overrides --
 # ASSERT-NO-ERROR
 # ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp=67"]

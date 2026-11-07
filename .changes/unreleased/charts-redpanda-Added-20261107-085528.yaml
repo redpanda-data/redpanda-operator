@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Added
+body: >-
+  Without a license configured, the post-install notes warn when the brokers' cores total more than 50, or when the
+  brokers set no CPU and so use every core on their nodes: past 50 cores, Redpanda v26.3 and later refuse to start a
+  broker upgrading across a major version.
+time: 2026-11-07T08:55:28.000000000-05:00

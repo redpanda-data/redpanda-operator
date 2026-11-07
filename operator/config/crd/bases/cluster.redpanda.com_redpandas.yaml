@@ -34204,6 +34204,22 @@ spec:
     subresources:
       status: {}
   - additionalPrinterColumns:
+    - jsonPath: .status.license.type
+      name: License Type
+      priority: 1
+      type: string
+    - jsonPath: .status.license.expiration
+      name: Expires
+      priority: 1
+      type: string
+    - jsonPath: .status.license.violation
+      name: License Violation
+      priority: 1
+      type: boolean
+    - jsonPath: .status.license.inUseFeatures
+      name: Enterprise Features
+      priority: 1
+      type: string
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string

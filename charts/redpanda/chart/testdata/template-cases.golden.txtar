@@ -47329,6 +47329,7 @@ spec:
         name: config
 -- testdata/TestTemplate/30-additional-flags-override-novalues.yaml.notes.golden --
 
+**Warning**: This release runs 297 cores (3 brokers x 99). Redpanda v26.3+ limits clusters without an Enterprise license to 50 cores in total; over it, a broker upgrading across a major version (e.g. v26.2 to v26.3) refuses to start and logs cluster_cores_over_limit. To fix, set enterprise.license (or licenseSecretRef) or run at most 50 cores. See https://docs.redpanda.com/current/get-started/licenses.
 
 
 

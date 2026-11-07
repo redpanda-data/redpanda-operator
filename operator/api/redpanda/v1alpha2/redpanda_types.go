@@ -178,6 +178,10 @@ func (s *RedpandaLicenseStatus) String() string {
 // +kubebuilder:resource:path=redpandas
 // +kubebuilder:resource:shortName=rp
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="License Type",type="string",JSONPath=".status.license.type",priority=1,description=""
+// +kubebuilder:printcolumn:name="Expires",type="string",JSONPath=".status.license.expiration",priority=1,description=""
+// +kubebuilder:printcolumn:name="License Violation",type="boolean",JSONPath=".status.license.violation",priority=1,description=""
+// +kubebuilder:printcolumn:name="Enterprise Features",type="string",JSONPath=".status.license.inUseFeatures",priority=1,description=""
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
 // +kubebuilder:printcolumn:name="License",type="string",JSONPath=".status.conditions[?(@.type==\"LicenseValid\")].message",description=""
