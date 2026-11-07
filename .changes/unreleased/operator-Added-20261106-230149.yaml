@@ -1,0 +1,6 @@
+project: operator
+kind: Added
+body: >-
+  `kubectl get -o wide` for Redpanda and StretchCluster resources now shows the license type and expiration,
+  whether enterprise features are in use without a valid license, and the enterprise features in use.
+time: 2026-11-06T23:01:49.000000000-05:00

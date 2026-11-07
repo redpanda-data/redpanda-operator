@@ -1,0 +1,12 @@
+project: operator
+kind: Added
+body: >-
+  When a broker refuses to start on a new major version because the cluster uses enterprise features without a
+  license, the Redpanda and StretchCluster resources now say so: `LicenseValid` is False with reason
+  `UpgradeRefused` and names the brokers and features, `status.license.violation` is true, and a
+  `BrokerStartupRefused` Warning event is emitted. A refused broker never serves the Admin API, so the operator
+  reads the refusal from its logs, including after Redpanda's crash loop limit trips. The `Healthy` condition names
+  brokers that the crash loop limit holds until `startup_log` is deleted from their data directory or an hour passes.
+  While a refusal is reported, the operator keeps applying the license from the Redpanda resource even when a roll
+  is stuck on the refused broker.
+time: 2026-11-06T17:45:47.000000000-05:00

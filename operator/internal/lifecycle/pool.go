@@ -207,6 +207,12 @@ func (p *PoolTracker) IsClusterObserved(clusterName string) bool {
 	return p.observedClusters[clusterName]
 }
 
+// UnseenClusters returns the clusters, by canonical name, whose pods this
+// reconcile couldn't list.
+func (p *PoolTracker) UnseenClusters() []string {
+	return slices.Clone(p.unseenClusters)
+}
+
 // ExistingStatefulSets returns a list of the names of the existing StatefulSets tracked by the PoolTracker.
 func (p *PoolTracker) ExistingStatefulSets() []string {
 	sets := []string{}

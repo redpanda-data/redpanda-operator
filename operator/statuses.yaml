@@ -124,6 +124,12 @@
           description: >
             This reason is used with the "LicenseValid" condition when it evaluates to False because
             a cluster has no license.
+        - name: UpgradeRefused
+          description: >
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a broker refused to start on a new major version: the cluster uses enterprise features
+            without a license. A refused broker never serves the Admin API, so the operator reads
+            the refusal from the broker's logs.
     - name: ResourcesSynced
       description: >
         This condition indicates whether the Kubernetes resources for a cluster
@@ -298,6 +304,12 @@
           description: >
             This reason is used with the "LicenseValid" condition when it evaluates to False because
             a cluster has no license.
+        - name: UpgradeRefused
+          description: >
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a broker refused to start on a new major version: the cluster uses enterprise features
+            without a license. A refused broker never serves the Admin API, so the operator reads
+            the refusal from the broker's logs.
     - name: ResourcesSynced
       description: >
         This condition indicates whether the Kubernetes resources for a stretch cluster
