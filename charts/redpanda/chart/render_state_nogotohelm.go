@@ -15,7 +15,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"reflect"
 	"slices"
@@ -197,13 +196,11 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 		return nil, serverTLSError(ErrServerCertificatePublicKeyNotFound)
 	}
 
-	block, _ := pem.Decode(serverPublicKey)
-	serverParsedCertificate, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, serverTLSError(fmt.Errorf("unable to parse public key %w", err))
-	}
+	// NB: the key may hold a bundle.
 	pool := x509.NewCertPool()
-	pool.AddCert(serverParsedCertificate)
+	if !pool.AppendCertsFromPEM(serverPublicKey) {
+		return nil, serverTLSError(fmt.Errorf("no PEM certificates in key %q", rootCertKey))
+	}
 
 	tlsConfig.RootCAs = pool
 

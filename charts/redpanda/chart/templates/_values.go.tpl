@@ -727,7 +727,7 @@
 {{- $name := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (eq (toJson $c.secretRef) "null") -}}
+{{- if (and (eq (toJson $c.secretRef) "null") (eq (toJson $c.issuerRef) "null")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.TLSCert.RootSecretName" (dict "a" (list $c $state $name)))) "r"))) (dict "key" "tls.crt"))) | toJson -}}
 {{- break -}}
